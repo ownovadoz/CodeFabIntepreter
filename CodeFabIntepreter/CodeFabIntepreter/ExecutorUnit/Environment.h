@@ -16,7 +16,7 @@ public:
 
     void define(const string& name, const Value& value);
     optional<Value> get(const string& name) const;
-    bool assign(const string& name, const Value& value);
+    void assign(const string& name, const Value& value);
 
 private:
     Environment* enclosing;

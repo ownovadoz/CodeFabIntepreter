@@ -8,9 +8,8 @@
 class RuntimeError : public std::runtime_error {
     public:
         RuntimeError(std::string var_name, const std::string& message)
-            : std::runtime_error(message), var_name(std::move(var_name))
-        {
+            : std::runtime_error(message), var_name(std::move(var_name)) {
         }
-
+private:
         std::string var_name;
 };

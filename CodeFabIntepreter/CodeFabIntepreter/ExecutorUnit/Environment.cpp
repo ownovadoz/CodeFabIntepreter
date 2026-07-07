@@ -13,21 +13,14 @@ void Environment::define(const string& name, const Value& value)
 optional<Value> Environment::get(const string& name) const
 {
     auto found = values.find(name);
-    if (found != values.end())
-    {
-        return found->second;
-    }
+    if (found != values.end()) return found->second;
 
     throw RuntimeError(name, "Undefined variable '" + name + "'.");
 }
 
-bool Environment::assign(const string& name, const Value& value)
+void Environment::assign(const string& name, const Value& value)
 {
     auto found = values.find(name);
-    if (found != values.end())
-    {
-        found->second = value;
-        return true;
-    }
+    if (found != values.end()) found->second = value;
     throw RuntimeError(name, "Undefined variable '" + name + "'.");
 }
