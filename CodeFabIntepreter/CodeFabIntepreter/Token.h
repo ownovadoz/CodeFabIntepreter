@@ -6,6 +6,7 @@
 #include "Value.h"
 
 using std::string;
+using std::vector;
 
 enum class TokenType
 {
@@ -95,7 +96,7 @@ private:
     int       line;
 };
 
-inline string tokensToString(const std::vector<Token>& tokens)
+inline string tokensToString(const vector<Token>& tokens)
 {
     string result = "[ \n";
     for (int i = 0; i < static_cast<int>(tokens.size()); i++)
