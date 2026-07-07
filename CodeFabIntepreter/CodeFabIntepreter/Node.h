@@ -1,8 +1,6 @@
 ﻿#pragma once
 
-#include "Visitor.h"
-
-using std::vector;
+class Visitor;
 
 #define interface struct
 
