@@ -1,4 +1,6 @@
 #pragma once
+#include "CodeFabFacade.h"
+
 #include <string>
 
 using std::string;
@@ -9,4 +11,5 @@ public:
 	const string& getLine() const { return line; }
 private:
 	string line;
+	CodeFabFacade code_fab_facade;
 };

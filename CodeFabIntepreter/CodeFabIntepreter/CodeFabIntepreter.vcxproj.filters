@@ -36,6 +36,12 @@
     <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CodeFabFacade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CodeFabFacadeTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -45,6 +51,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="CheckerUnit\VariableScopeChecker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeFabFacade.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InterfaceForCodeFabTest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

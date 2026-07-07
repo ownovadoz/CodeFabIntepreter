@@ -33,7 +33,7 @@ private:
 };
 
 TEST_F(PromptShellTestFixture, NormalLineTest) {
-	string input = "var x = 10;";
+	string input = "var a = \"11111111111\"";
 	EXPECT_EQ(input, runPromptTest(input));
 }
 
