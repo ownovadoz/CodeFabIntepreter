@@ -143,6 +143,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
     <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp" />
     <ClCompile Include="AssemblerUnit\Tokenizer\LexerTest.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp" />
