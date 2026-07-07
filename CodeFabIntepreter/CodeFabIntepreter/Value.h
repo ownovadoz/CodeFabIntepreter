@@ -60,5 +60,7 @@ inline std::string stringify(const Value& value)
         return numberToString(std::get<double>(value));
     }
 
-    return std::get<std::string>(value);
+    if (isString(value)) return std::get<std::string>(value);
+
+    return "nil";
 }
