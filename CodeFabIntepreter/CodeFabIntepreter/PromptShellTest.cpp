@@ -1,11 +1,12 @@
-#include "PromptShell.h"
-
 #include <gmock/gmock.h>
 #include <iostream>
 #include <string>
+
+#include "PromptShell.h"
+
 using std::string;
 
-class PromptShellTest : public ::testing::Test {
+class PromptShellTestFixture : public ::testing::Test {
 protected:
 	void SetUp() override {
 		originalCinBuffer = std::cin.rdbuf();
@@ -31,23 +32,23 @@ private:
 	PromptShell shell;
 };
 
-TEST_F(PromptShellTest, NormalLineTest) {
+TEST_F(PromptShellTestFixture, NormalLineTest) {
 	string input = "var x = 10;";
 	EXPECT_EQ(input, runPromptTest(input));
 }
 
-TEST_F(PromptShellTest, EmptyLineTest) {
+TEST_F(PromptShellTestFixture, EmptyLineTest) {
 	string input = "";
 	EXPECT_EQ(input, runPromptTest(input));
 }
 
-TEST_F(PromptShellTest, WithLineFeedTest) {
+TEST_F(PromptShellTestFixture, WithLineFeedTest) {
 	string input = "var x = 10;\n var y = 20;\n var z = 30;";
 	string expectedOutput = "var x = 10;";
 	EXPECT_EQ(expectedOutput, runPromptTest(input));
 }
 
-TEST_F(PromptShellTest, ExitTest) {
+TEST_F(PromptShellTestFixture, ExitTest) {
 	string input = "exit";
 	string expectedOutput = "";
 	EXPECT_EQ(expectedOutput, runPromptTest(input));
