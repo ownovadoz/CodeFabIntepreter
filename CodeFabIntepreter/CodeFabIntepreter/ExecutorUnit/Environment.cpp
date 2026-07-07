@@ -1,4 +1,5 @@
 #include "Environment.h"
+#include "../RuntimeError.h"
 
 Environment::Environment(Environment* enclosing)
     : enclosing(enclosing)
@@ -17,7 +18,7 @@ optional<Value> Environment::get(const string& name) const
         return found->second;
     }
 
-    return std::nullopt;
+    throw RuntimeError(name, "Undefined variable '" + name + "'.");
 }
 
 bool Environment::assign(const string& name, const Value& value)
@@ -28,5 +29,5 @@ bool Environment::assign(const string& name, const Value& value)
         found->second = value;
         return true;
     }
-    return false;
+    throw RuntimeError(name, "Undefined variable '" + name + "'.");
 }

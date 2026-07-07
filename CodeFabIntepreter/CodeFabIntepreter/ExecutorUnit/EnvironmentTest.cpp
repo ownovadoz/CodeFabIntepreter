@@ -1,4 +1,5 @@
 #include "Environment.h"
+#include "../RuntimeError.h"
 
 #include <gmock/gmock.h>
 
@@ -17,12 +18,12 @@ TEST_F(EnvironmentTestFixture, DefinedVariableIsReadable)
     EXPECT_EQ(std::get<double>(*value), 3.0);
 }
 
-TEST_F(EnvironmentTestFixture, UndefinedVariableReturnsNullopt)
+TEST_F(EnvironmentTestFixture, UndefinedVariableThrowException)
 {
-    EXPECT_FALSE(env.get("x").has_value());
+    EXPECT_THROW(env.get("x"), RuntimeError);
 }
 
-TEST_F(EnvironmentTestFixture, AssignToUndefinedVariableFails)
+TEST_F(EnvironmentTestFixture, AssignToUndefinedThrowException)
 {
-    EXPECT_FALSE(env.assign("x", 1.0));
+    EXPECT_THROW(env.assign("x", 1.0), RuntimeError);
 }
