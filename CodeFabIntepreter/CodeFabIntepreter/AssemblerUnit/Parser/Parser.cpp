@@ -1,4 +1,5 @@
 ﻿#include "Parser.h"
+#include "Expression.h"
 #include "Statement.h"
 
 #include <memory>
@@ -6,9 +7,9 @@
 using std::shared_ptr;
 using std::make_shared;
 
-Node* Parser::parse()
+shared_ptr<Node> Parser::parse()
 {
-	switch (tokens.front().type) {
+	switch (tokens.front().getType()) {
 	case TokenType::VAR:
 		return parseVarStmt();
 	}
@@ -16,45 +17,36 @@ Node* Parser::parse()
 	return nullptr;
 }
 
-Node* Parser::parseVarStmt() {
-	auto stmt = new VarDeclareStmt();
+shared_ptr<Node> Parser::parseVarStmt() {
+	if (!expectPeek(TokenType::IDENTIFIER)) return nullptr;	// throw
+	Token name = current_token;
 
-	if (!expectPeek(TokenType::IDENTIFIER)) {
-		return nullptr;	// throw
-	}
-
-	stmt->setName(current_token);
-
+	shared_ptr<Expression> initializer;
 	if (expectPeek(TokenType::EQUAL)) {
-		auto initializer = parseExpression();
-		if (!initializer) {
-			return nullptr;	// throw
-		}
-
-		stmt->setInitializer(initializer);
+		initializer = parseExpression();
+		if (!initializer) return nullptr;	// throw
 	}
 
-	if (!expectPeek(TokenType::SEMICOLON)) {
-		return nullptr;	// throw
-	}
+	if (!expectPeek(TokenType::SEMICOLON)) return nullptr;	// throw
 
+	auto stmt = make_shared<VarDeclareStmt>();
+	stmt->setName(name);
+	stmt->setInitializer(initializer);
 	return stmt;
 }
 
 shared_ptr<Expression> Parser::parseExpression() {
-	if (!(expectPeek(TokenType::NUMBER) || expectPeek(TokenType::STRING))) {
-		return nullptr;	// throw
-	}
+	if (!isLiteralOperand(peek_token.getType())) return nullptr;	// throw
+	nextToken();
 
 	shared_ptr<Expression> left = make_shared<LiteralExpr>(current_token);
 
-	if (isBinaryOperator(peek_token.type)) {
+	if (isBinaryOperator(peek_token.getType())) {
 		nextToken();
 		Token op = current_token;
 
-		if (!(expectPeek(TokenType::NUMBER) || expectPeek(TokenType::STRING))) {
-			return nullptr;	// throw
-		}
+		if (!isLiteralOperand(peek_token.getType())) return nullptr;	// throw
+		nextToken();
 
 		shared_ptr<Expression> right = make_shared<LiteralExpr>(current_token);
 		left = make_shared<BinaryExpr>(left, op, right);
@@ -63,7 +55,11 @@ shared_ptr<Expression> Parser::parseExpression() {
 	return left;
 }
 
-bool Parser::isBinaryOperator(TokenType type) {
+bool Parser::isLiteralOperand(TokenType type) const {
+	return type == TokenType::NUMBER || type == TokenType::STRING;
+}
+
+bool Parser::isBinaryOperator(TokenType type) const {
 	return type == TokenType::PLUS || type == TokenType::MINUS
 		|| type == TokenType::STAR || type == TokenType::SLASH;
 }
@@ -71,20 +67,13 @@ bool Parser::isBinaryOperator(TokenType type) {
 void Parser::nextToken() {
 	current_token = peek_token;
 	current_idx++;
-	if (current_idx + 1 < tokens.size()) {
-		peek_token = tokens[current_idx + 1];
-	}
-	else {
-		peek_token = Token{ TokenType::END_OF_FILE, "" };
-	}
+	if (current_idx + 1 < tokens.size()) peek_token = tokens[current_idx + 1];
+	else peek_token = Token{ TokenType::END_OF_FILE, "" };
 }
 
 bool Parser::expectPeek(TokenType type) {
-	if (peek_token.type == type) {
-		nextToken();
-		return true;
-	}
-	else {
-		return false;
-	}
+	if (peek_token.getType() != type) return false;
+
+	nextToken();
+	return true;
 }

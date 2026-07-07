@@ -1,15 +1,15 @@
 ﻿#pragma once
 
+#include "Expression.h"
 #include "../../Node.h"
 #include "../Tokenizer/Token.h"
-#include "Expression.h"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
+using std::vector;
 
 class Statement : public Node {
 private:

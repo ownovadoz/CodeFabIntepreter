@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Value.h"
 
@@ -76,9 +76,8 @@ inline string tokenTypeToString(TokenType type)
 struct Token
 {
 public:
-    Token() {}
-    Token(TokenType type, string lexeme) : type{ type }, lexeme{ lexeme } {}
-
+    Token() : type{}, lexeme{}, literal{}, line {} {}
+    Token(TokenType type, string lexeme) : type{ type }, lexeme{ lexeme }, line{ 0 } {}
     Token(TokenType type, string lexeme, Value literal, int line)
         : type(type), lexeme(std::move(lexeme)), literal(std::move(literal)), line(line)
     {

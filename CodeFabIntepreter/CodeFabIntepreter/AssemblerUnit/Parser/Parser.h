@@ -1,14 +1,14 @@
 ﻿#pragma once
 
+#include "Expression.h"
 #include "../../Node.h"
 #include "../Tokenizer/Token.h"
-#include "Expression.h"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-using std::vector;
 using std::shared_ptr;
+using std::vector;
 
 class Parser
 {
@@ -23,14 +23,15 @@ public:
 		}
 	}
 
-	Node* parse();
+	shared_ptr<Node> parse();
 
 private:
-	Node* parseVarStmt();
+	shared_ptr<Node> parseVarStmt();
 	shared_ptr<Expression> parseExpression();
 	void nextToken();
 	bool expectPeek(TokenType type);
-	bool isBinaryOperator(TokenType type);
+	bool isLiteralOperand(TokenType type) const;
+	bool isBinaryOperator(TokenType type) const;
 
 	vector<Token> tokens;
 	size_t current_idx = 0;

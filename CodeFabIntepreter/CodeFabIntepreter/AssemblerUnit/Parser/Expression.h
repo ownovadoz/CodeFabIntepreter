@@ -1,13 +1,13 @@
 ﻿#pragma once
 
-#include "../../Node.h"
 #include "../Tokenizer/Token.h"
+#include "../../Node.h"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-using std::vector;
 using std::shared_ptr;
+using std::vector;
 
 class ExpressionOrToken : public Node {
 };
