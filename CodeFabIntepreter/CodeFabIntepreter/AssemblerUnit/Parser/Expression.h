@@ -2,6 +2,10 @@
 
 #include "../../Node.h"
 
+#include <vector>
+
+using std::vector;
+
 class ExpressionOrToken : public Node {
 };
 

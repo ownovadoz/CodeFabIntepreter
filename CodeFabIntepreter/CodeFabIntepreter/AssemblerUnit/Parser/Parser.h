@@ -10,8 +10,5 @@ using std::vector;
 class Parser
 {
 public:
-	Node* parse(vector<Token> tokens);
-
-private:
-
+	Node* parse(const vector<Token>& tokens);
 };

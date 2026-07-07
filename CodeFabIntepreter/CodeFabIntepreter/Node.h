@@ -1,12 +1,11 @@
 ﻿#pragma once
 
-#include <vector>
+#include "Visitor.h"
 
 using std::vector;
 
 #define interface struct
 
 interface Node {
-
-	virtual void accept() = 0;
+	virtual void accept(Visitor& v) = 0;
 };

@@ -1,10 +1,10 @@
 ﻿#pragma once
 
-#include <vector>
-
 #include "../../Node.h"
 #include "../Tokenize/Token.h"
 #include "Expression.h"
+
+#include <vector>
 
 using std::vector;
 
