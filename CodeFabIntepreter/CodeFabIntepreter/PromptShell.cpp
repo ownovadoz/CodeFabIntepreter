@@ -5,21 +5,21 @@ using std::cout;
 using std::string;
 
 void PromptShell::runPrompt() {
-    std::cout << "CodeFab Interpreter - Ctrl+D / Ctrl+Z / exit / EXIT 후 enter로 종료\n";
-    std::cout << "> ";
+    cout << "CodeFab Interpreter - Ctrl+D / Ctrl+Z / exit / EXIT 후 enter로 종료\n";
+    cout << "> ";
 
-    bool captured = false;
-    std::string currentLine;
-    while (std::getline(std::cin, currentLine)){
-        if (currentLine == "exit" || currentLine == "EXIT")
+    bool firstLineHandled = false;
+    string codeLine;
+    while (std::getline(std::cin, codeLine)){
+        if (codeLine == "exit" || codeLine == "EXIT")
             break;
-        if (!captured)
-        {
-            line = currentLine;
-            captured = true;
-        }
-        std::cout << "> ";
+        if (firstLineHandled)
+            break;
+
+        line = codeLine;
+        firstLineHandled = true;
+        cout << "> ";
     }
-    std::cout << "\n";
+    cout << "CodeFab Interpreter Exit\n";
     return;
 }
