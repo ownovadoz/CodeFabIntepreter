@@ -2,9 +2,13 @@
 
 #include <gmock/gmock.h>
 
-TEST(EnvironmentTest, DefinedVariableIsReadable)
-{
+class EnvironmentTestFixture : public testing::Test {
+public:
     Environment env;
+};
+
+TEST_F(EnvironmentTestFixture, DefinedVariableIsReadable)
+{
     env.define("a", 3.0);
 
     auto value = env.get("a");
@@ -13,16 +17,12 @@ TEST(EnvironmentTest, DefinedVariableIsReadable)
     EXPECT_EQ(std::get<double>(*value), 3.0);
 }
 
-TEST(EnvironmentTest, UndefinedVariableReturnsNullopt)
+TEST_F(EnvironmentTestFixture, UndefinedVariableReturnsNullopt)
 {
-    Environment env;
-
     EXPECT_FALSE(env.get("x").has_value());
 }
 
-TEST(EnvironmentTest, AssignToUndefinedVariableFails)
+TEST_F(EnvironmentTestFixture, AssignToUndefinedVariableFails)
 {
-    Environment env;
-
     EXPECT_FALSE(env.assign("x", 1.0));
 }
