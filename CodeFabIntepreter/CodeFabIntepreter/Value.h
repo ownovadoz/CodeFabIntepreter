@@ -4,7 +4,6 @@
 #include <string>
 #include <variant>
 
-// CodeFab 런타임 값 표현: nil(monostate) / boolean / number(double) / string
 using Value = std::variant<std::monostate, bool, double, std::string>;
 
 inline bool isTruthy(const Value& value)
