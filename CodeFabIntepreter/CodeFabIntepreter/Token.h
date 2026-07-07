@@ -84,8 +84,7 @@ public:
             result += ", value=\"" + std::get<string>(literal) + "\"";
         }
 
-        result += ", line=" + std::to_string(line);
-        result += ")";
+        result += ", line=" + std::to_string(line) + ")";
         return result;
     }
 
