@@ -1,10 +1,12 @@
 #pragma once
 #include <string>
 
+using std::string;
+
 class PromptShell {
 public:
 	void runPrompt();
-	const std::string& getLine() const { return line; }
+	const string& getLine() const { return line; }
 private:
-	std::string line;
+	string line;
 };

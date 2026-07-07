@@ -9,11 +9,11 @@ using std::string;
 class PromptShellTestFixture : public ::testing::Test {
 protected:
 	void SetUp() override {
-		originalCinBuffer = std::cin.rdbuf();
+		original_cin_buffer = std::cin.rdbuf();
 	}
 
 	void TearDown() override {
-		std::cin.rdbuf(originalCinBuffer);
+		std::cin.rdbuf(original_cin_buffer);
 	}
 	string runPromptTest(const std::string& input) {
 		feedInput(input);
@@ -21,14 +21,14 @@ protected:
 		return shell.getLine();
 	}
 	void feedInput(const std::string& input) {
-		inputStream.str(input);
-		inputStream.clear();
-		std::cin.rdbuf(inputStream.rdbuf());
+		input_stream.str(input);
+		input_stream.clear();
+		std::cin.rdbuf(input_stream.rdbuf());
 	}
 
 private:
-	std::istringstream inputStream;
-	std::streambuf* originalCinBuffer = nullptr;
+	std::istringstream input_stream;
+	std::streambuf* original_cin_buffer = nullptr;
 	PromptShell shell;
 };
 
