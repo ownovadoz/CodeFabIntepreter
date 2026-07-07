@@ -30,6 +30,12 @@
     <ClCompile Include="PromptShellTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CheckerUnit\VariableScopeCheckerTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -37,6 +43,9 @@
   <ItemGroup>
     <ClInclude Include="PromptShell.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CheckerUnit\VariableScopeChecker.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
