@@ -55,7 +55,7 @@ inline std::string stringify(const Value& value)
         return std::get<bool>(value) ? "true" : "false";
     }
 
-    if (std::holds_alternative<double>(value))
+    if (isNumber(value))
     {
         return numberToString(std::get<double>(value));
     }
