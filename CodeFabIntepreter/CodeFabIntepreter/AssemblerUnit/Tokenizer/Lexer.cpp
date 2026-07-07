@@ -1,5 +1,7 @@
 #include "Lexer.h"
 
+#include <stdexcept>
+
 Lexer::Lexer(string source) : source(std::move(source))
 {
 }
@@ -54,7 +56,10 @@ void Lexer::scanToken()
             line++;
             break;
 
+        case '"': scanString(); break;
+
         default:
+            if (std::isdigit(c)) scanNumber();
             break;
     }
 }
@@ -91,4 +96,38 @@ void Lexer::addToken(TokenType type, Value literal)
 {
     string text = source.substr(start, current - start);
     tokens.emplace_back(type, std::move(text), std::move(literal), line);
+}
+
+char Lexer::peekNext() const
+{
+    if (current + 1 >= static_cast<int>(source.size())) return '\0';
+    return source[current + 1];
+}
+
+void Lexer::scanString()
+{
+    while (peek() != '"' && !isAtEnd())
+    {
+        if (peek() == '\n') line++;
+        advance();
+    }
+
+    advance(); // 닫는 "
+
+    string value = source.substr(start + 1, current - start - 2);
+    addToken(TokenType::STRING, value);
+}
+
+void Lexer::scanNumber()
+{
+    while (std::isdigit(peek())) advance();
+
+    if (peek() == '.' && std::isdigit(peekNext()))
+    {
+        advance(); // .
+        while (std::isdigit(peek())) advance();
+    }
+
+    double value = std::stod(source.substr(start, current - start));
+    addToken(TokenType::NUMBER, value);
 }

@@ -21,7 +21,10 @@ private:
     bool match(char expected);
     char advance();
     char peek() const;
+    char peekNext() const;
     bool isAtEnd() const;
+    void scanString();
+    void scanNumber();
     void addToken(TokenType type);
     void addToken(TokenType type, Value literal);
 
