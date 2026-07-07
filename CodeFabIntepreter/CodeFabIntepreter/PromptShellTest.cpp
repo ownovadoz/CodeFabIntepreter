@@ -32,26 +32,26 @@ private:
 	PromptShell shell;
 };
 
-//TEST_F(PromptShellTestFixture, NormalLineTest) {
-//	string input = "var x = 10;";
-//	EXPECT_EQ(input, runPromptTest(input));
-//}
-//
-//TEST_F(PromptShellTestFixture, EmptyLineTest) {
-//	string input = "";
-//	EXPECT_EQ(input, runPromptTest(input));
-//}
-//
-//TEST_F(PromptShellTestFixture, WithLineFeedTest) {
-//	string input = "var x = 10;\n var y = 20;\n var z = 30;";
-//	string expectedOutput = "var x = 10;";
-//	EXPECT_EQ(expectedOutput, runPromptTest(input));
-//}
-//
-//TEST_F(PromptShellTestFixture, ExitTest) {
-//	string input = "exit";
-//	string expectedOutput = "";
-//	EXPECT_EQ(expectedOutput, runPromptTest(input));
-//	input = "EXIT";
-//	EXPECT_EQ(expectedOutput, runPromptTest(input));
-//}
+TEST_F(PromptShellTestFixture, NormalLineTest) {
+	string input = "var a = \"11111111111\"";
+	EXPECT_EQ(input, runPromptTest(input));
+}
+
+TEST_F(PromptShellTestFixture, EmptyLineTest) {
+	string input = "";
+	EXPECT_EQ(input, runPromptTest(input));
+}
+
+TEST_F(PromptShellTestFixture, WithLineFeedTest) {
+	string input = "var x = 10;\n var y = 20;\n var z = 30;";
+	string expectedOutput = "var x = 10;";
+	EXPECT_EQ(expectedOutput, runPromptTest(input));
+}
+
+TEST_F(PromptShellTestFixture, ExitTest) {
+	string input = "exit";
+	string expectedOutput = "";
+	EXPECT_EQ(expectedOutput, runPromptTest(input));
+	input = "EXIT";
+	EXPECT_EQ(expectedOutput, runPromptTest(input));
+}
