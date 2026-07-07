@@ -66,10 +66,10 @@ public:
     {
     }
 
-    TokenType type;
-    string lexeme;
-    Value literal;
-    int line;
+    TokenType  getType()    const { return type; }
+    string     getLexeme()  const { return lexeme; }
+    Value      getLiteral() const { return literal; }
+    int        getLine()    const { return line; }
 
     string toString() const
     {
@@ -88,6 +88,12 @@ public:
         result += ")";
         return result;
     }
+
+private:
+    TokenType type;
+    string    lexeme;
+    Value     literal;
+    int       line;
 };
 
 inline string tokensToString(const std::vector<Token>& tokens)
