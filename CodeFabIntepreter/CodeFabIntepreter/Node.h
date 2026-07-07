@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-class Visitor;
+struct Visitor;
 
 #define interface struct
 

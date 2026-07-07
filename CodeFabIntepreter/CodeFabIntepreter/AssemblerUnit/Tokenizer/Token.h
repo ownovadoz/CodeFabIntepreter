@@ -76,6 +76,9 @@ inline string tokenTypeToString(TokenType type)
 struct Token
 {
 public:
+    Token() {}
+    Token(TokenType type, string lexeme) : type{ type }, lexeme{ lexeme } {}
+
     Token(TokenType type, string lexeme, Value literal, int line)
         : type(type), lexeme(std::move(lexeme)), literal(std::move(literal)), line(line)
     {

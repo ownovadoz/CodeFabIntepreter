@@ -151,6 +151,9 @@
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="AssemblerUnit\Parser\Statement.cpp" />
+    <ClCompile Include="AssemblerUnit\Parser\Expression.cpp" />
+    <ClCompile Include="AssemblerUnit\Parser\ParserTest.cpp" />
     <ClCompile Include="PromptShell.cpp" />
     <ClCompile Include="PromptShellTest.cpp" />
   </ItemGroup>
