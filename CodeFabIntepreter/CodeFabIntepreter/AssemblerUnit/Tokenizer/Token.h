@@ -1,9 +1,18 @@
-﻿#pragma once
+#pragma once
+
+#include "Value.h"
 
 #include <string>
 #include <vector>
 
-#include "Value.h"
+using std::string;
+using std::vector;
+
+#define TOKEN_LIST_OPEN  "[ \n"
+#define TOKEN_LIST_CLOSE "\n]"
+
+#undef TRUE
+#undef FALSE
 
 enum class TokenType
 {
@@ -22,7 +31,7 @@ enum class TokenType
     END_OF_FILE
 };
 
-inline std::string tokenTypeToString(TokenType type)
+inline string tokenTypeToString(TokenType type)
 {
     switch (type)
     {
@@ -59,44 +68,53 @@ inline std::string tokenTypeToString(TokenType type)
 struct Token
 {
 public:
-    Token(TokenType type, std::string lexeme, Value literal, int line)
+    Token(TokenType type, string lexeme, Value literal, int line)
         : type(type), lexeme(std::move(lexeme)), literal(std::move(literal)), line(line)
     {
     }
 
-    TokenType type;
-    std::string lexeme;
-    Value literal;
-    int line;
+    TokenType  getType()    const { return type; }
+    string     getLexeme()  const { return lexeme; }
+    Value      getLiteral() const { return literal; }
+    int        getLine()    const { return line; }
 
-    std::string toString() const
+    string toString() const
     {
-        std::string result = "Token(" + tokenTypeToString(type) + ", \"" + lexeme + "\"";
+        string result = "Token(" + tokenTypeToString(type) + ", \"" + lexeme + "\"";
 
-        if (std::holds_alternative<double>(literal))
+        if (std::holds_alternative<bool>(literal))
+        {
+            result += ", value=" + string(std::get<bool>(literal) ? "true" : "false");
+        }
+        else if (std::holds_alternative<double>(literal))
         {
             result += ", value=" + numberToString(std::get<double>(literal));
         }
-        else if (std::holds_alternative<std::string>(literal))
+        else if (std::holds_alternative<string>(literal))
         {
-            result += ", value=\"" + std::get<std::string>(literal) + "\"";
+            result += ", value=\"" + std::get<string>(literal) + "\"";
         }
 
-        result += ", line=" + std::to_string(line);
-        result += ")";
+        result += ", line=" + std::to_string(line) + ")";
         return result;
     }
+
+private:
+    TokenType type;
+    string    lexeme;
+    Value     literal;
+    int       line;
 };
 
-inline std::string tokensToString(const std::vector<Token>& tokens)
+inline string tokensToString(const vector<Token>& tokens)
 {
-    std::string result = "[ \n";
+    string result = TOKEN_LIST_OPEN;
     for (int i = 0; i < static_cast<int>(tokens.size()); i++)
     {
         result += tokens[i].toString();
         if (i < static_cast<int>(tokens.size()) - 1)
             result += ", ";
     }
-    result += "\n]";
+    result += TOKEN_LIST_CLOSE;
     return result;
 }

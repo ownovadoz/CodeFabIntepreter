@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Token.h"
+
 #include <string>
 #include <vector>
-
-#include "Token.h"
 
 using std::string;
 using std::vector;

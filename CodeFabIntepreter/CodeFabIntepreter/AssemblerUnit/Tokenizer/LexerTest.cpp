@@ -1,7 +1,7 @@
+#include "Lexer.h"
+
 #include <gmock/gmock.h>
 #include <vector>
-
-#include "Lexer.h"
 
 using std::vector;
 using namespace testing;
