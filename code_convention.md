@@ -3,17 +3,17 @@
 
 
 ## Include
-가장 범용적인 것부터 상단에서 작성하고 줄바꿈으로 서로 구분합니다.
+가장 가까운 헤더부터 상단에 작성하고 줄바꿈으로 서로 구분합니다.
 그리고 각 헤더와 소스코드 파일을 구분해서 그 파일에서 필요한 헤더만 include 합니다.
-> .h 파일을 사용한다고 해서 .cpp에서만 필요한 .h를 include 하지 않습니다.
+> 헤더를 따라가지 않아도 되도록 cpp에 필요한 헤더는 다시 include 합니다.
 
 ```cpp
-#include <iostream>
-#include <string>
+#include "MyClass.h"
 
 #include <android/log.h>
 
-#include "MyClass.h"
+#include <iostream>
+#include <string>
 ```
 
 
