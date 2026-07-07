@@ -148,7 +148,6 @@
     <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeCheckerTest.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
     <ClCompile Include="PromptShell.cpp" />
     <ClCompile Include="PromptShellTest.cpp" />
   </ItemGroup>

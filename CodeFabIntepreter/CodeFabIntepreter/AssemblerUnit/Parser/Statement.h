@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "../../Node.h"
-#include "../Tokenize/Token.h"
+#include "../Tokenizer/Token.h"
 #include "Expression.h"
 
 #include <vector>
