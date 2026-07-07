@@ -8,7 +8,5 @@ int main() {
 #else
 	PromptShell shell;
 	shell.runPrompt();
-
-
 #endif
 }
