@@ -5,36 +5,38 @@
 #include <string>
 using std::string;
 
-TEST(PromptShellTest, NormalLineTest) {
-	// Test the basic functionality of the PromptShell class
+class PromptShellTest : public ::testing::Test {
+protected:
+	void SetUp() override {
+		originalCinBuffer = std::cin.rdbuf();
+	}
+
+	void TearDown() override {
+		std::cin.rdbuf(originalCinBuffer);
+	}
+	string runPromptTest(const std::string& input) {
+		feedInput(input);
+		shell.runPrompt();
+		return shell.getLine();
+	}
+	void feedInput(const std::string& input) {
+		inputStream.str(input);
+		inputStream.clear();
+		std::cin.rdbuf(inputStream.rdbuf());
+	}
+
+private:
 	std::istringstream inputStream;
 	std::streambuf* originalCinBuffer = nullptr;
-	originalCinBuffer = std::cin.rdbuf();
-	string input = "var x = 10;";
-	inputStream.str(input);
-	inputStream.clear();
-	std::cin.rdbuf(inputStream.rdbuf());
-
 	PromptShell shell;
-	shell.runPrompt();
+};
 
-	EXPECT_EQ(input, shell.getLine());
-	std::cin.rdbuf(originalCinBuffer);
+TEST_F(PromptShellTest, NormalLineTest) {
+	string input = "var x = 10;";
+	EXPECT_EQ(input, runPromptTest(input));
 }
 
-TEST(PromptShellTest, EmptyLineTest) {
-	// Test the basic functionality of the PromptShell class
-	std::istringstream inputStream;
-	std::streambuf* originalCinBuffer = nullptr;
-	originalCinBuffer = std::cin.rdbuf();
+TEST_F(PromptShellTest, EmptyLineTest) {
 	string input = "";
-	inputStream.str(input);
-	inputStream.clear();
-	std::cin.rdbuf(inputStream.rdbuf());
-
-	PromptShell shell;
-	shell.runPrompt();
-
-	EXPECT_EQ(input, shell.getLine());
-	std::cin.rdbuf(originalCinBuffer);
+	EXPECT_EQ(input, runPromptTest(input));
 }
