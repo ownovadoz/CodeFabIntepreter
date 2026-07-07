@@ -42,7 +42,15 @@ TEST_F(PromptShellTest, EmptyLineTest) {
 }
 
 TEST_F(PromptShellTest, WithLineFeedTest) {
-	string input = "var x = 10;\n var y = 20;";
+	string input = "var x = 10;\n var y = 20;\n var z = 30;";
 	string expectedOutput = "var x = 10;";
+	EXPECT_EQ(expectedOutput, runPromptTest(input));
+}
+
+TEST_F(PromptShellTest, ExitTest) {
+	string input = "exit";
+	string expectedOutput = "";
+	EXPECT_EQ(expectedOutput, runPromptTest(input));
+	input = "EXIT";
 	EXPECT_EQ(expectedOutput, runPromptTest(input));
 }

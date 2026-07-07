@@ -10,8 +10,9 @@ void PromptShell::runPrompt() {
 
     bool captured = false;
     std::string currentLine;
-    while (std::getline(std::cin, currentLine))
-    {
+    while (std::getline(std::cin, currentLine)){
+        if (currentLine == "exit" || currentLine == "EXIT")
+            break;
         if (!captured)
         {
             line = currentLine;
