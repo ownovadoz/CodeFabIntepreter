@@ -77,6 +77,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 /FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -95,6 +96,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 /FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -111,6 +113,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 /FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,6 +132,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 /FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,10 +143,12 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
+    <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp" />
+    <ClCompile Include="AssemblerUnit\Tokenizer\LexerTest.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeCheckerTest.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
     <ClCompile Include="PromptShell.cpp" />
     <ClCompile Include="PromptShellTest.cpp" />
   </ItemGroup>
@@ -150,16 +156,15 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AssemblerUnit\Tokenizer\Lexer.h" />
+    <ClInclude Include="AssemblerUnit\Tokenizer\Token.h" />
+    <ClInclude Include="AssemblerUnit\Tokenizer\Value.h" />
     <ClInclude Include="AssemblerUnit\Parser\Expression.h" />
     <ClInclude Include="AssemblerUnit\Parser\Statement.h" />
-    <ClInclude Include="AssemblerUnit\Tokenize\Token.h" />
-    <ClInclude Include="AssemblerUnit\Tokenize\Value.h" />
-    <ClInclude Include="Node.h" />
     <ClInclude Include="AssemblerUnit\Parser\Parser.h" />
+    <ClInclude Include="Node.h" />
     <ClInclude Include="CheckerUnit\VariableScopeChecker.h" />
     <ClInclude Include="PromptShell.h" />
-    <ClInclude Include="Token.h" />
-    <ClInclude Include="Value.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

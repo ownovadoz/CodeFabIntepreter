@@ -1,15 +1,18 @@
-﻿#pragma once
+#pragma once
+
+#include "Value.h"
 
 #include <string>
 #include <vector>
-
-#include "Value.h"
 
 using std::string;
 using std::vector;
 
 #define TOKEN_LIST_OPEN  "[ \n"
 #define TOKEN_LIST_CLOSE "\n]"
+
+#undef TRUE
+#undef FALSE
 
 enum class TokenType
 {
