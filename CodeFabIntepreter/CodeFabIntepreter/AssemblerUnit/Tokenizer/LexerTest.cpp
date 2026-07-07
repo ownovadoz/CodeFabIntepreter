@@ -74,3 +74,35 @@ TEST(LexerTest, TokenMetaIsCorrect)
     EXPECT_EQ(tokens[0].getLexeme(), "+");
     EXPECT_EQ(tokens[0].getLine(), 1);
 }
+
+TEST(LexerTest, MultiCharTokens)
+{
+    Lexer lexer("== != <= >=");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::EQUAL_EQUAL);
+    EXPECT_EQ(tokens[1].getType(), TokenType::BANG_EQUAL);
+    EXPECT_EQ(tokens[2].getType(), TokenType::LESS_EQUAL);
+    EXPECT_EQ(tokens[3].getType(), TokenType::GREATER_EQUAL);
+    EXPECT_EQ(tokens[4].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, MultiCharTokenLexemeIsCorrect)
+{
+    Lexer lexer("==");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getLexeme(), "==");
+}
+
+TEST(LexerTest, SingleCharNotConsumedByMultiChar)
+{
+    Lexer lexer("= ! < >");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::EQUAL);
+    EXPECT_EQ(tokens[1].getType(), TokenType::BANG);
+    EXPECT_EQ(tokens[2].getType(), TokenType::LESS);
+    EXPECT_EQ(tokens[3].getType(), TokenType::GREATER);
+    EXPECT_EQ(tokens[4].getType(), TokenType::END_OF_FILE);
+}

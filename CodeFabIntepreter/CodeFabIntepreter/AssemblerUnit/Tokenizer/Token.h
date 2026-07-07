@@ -20,7 +20,11 @@ enum class TokenType
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, SEMICOLON,
 
     // 연산자
-    PLUS, MINUS, STAR, SLASH, BANG, EQUAL, GREATER, LESS,
+    PLUS, MINUS, STAR, SLASH,
+    BANG, BANG_EQUAL,
+    EQUAL, EQUAL_EQUAL,
+    GREATER, GREATER_EQUAL,
+    LESS, LESS_EQUAL,
 
     // 리터럴 / 식별자
     IDENTIFIER, STRING, NUMBER,
@@ -44,10 +48,14 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::MINUS:        return "MINUS";
     case TokenType::STAR:         return "STAR";
     case TokenType::SLASH:        return "SLASH";
-    case TokenType::BANG:         return "BANG";
-    case TokenType::EQUAL:        return "EQUAL";
-    case TokenType::GREATER:      return "GREATER";
-    case TokenType::LESS:         return "LESS";
+    case TokenType::BANG:          return "BANG";
+    case TokenType::BANG_EQUAL:    return "BANG_EQUAL";
+    case TokenType::EQUAL:         return "EQUAL";
+    case TokenType::EQUAL_EQUAL:   return "EQUAL_EQUAL";
+    case TokenType::GREATER:       return "GREATER";
+    case TokenType::GREATER_EQUAL: return "GREATER_EQUAL";
+    case TokenType::LESS:          return "LESS";
+    case TokenType::LESS_EQUAL:    return "LESS_EQUAL";
     case TokenType::IDENTIFIER:   return "IDENTIFIER";
     case TokenType::STRING:       return "STRING";
     case TokenType::NUMBER:       return "NUMBER";
