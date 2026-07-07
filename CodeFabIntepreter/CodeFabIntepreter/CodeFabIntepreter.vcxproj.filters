@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Parser">
+      <UniqueIdentifier>{af98a977-0e26-4592-9abf-3de48327576e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Tokenizer">
+      <UniqueIdentifier>{c01acd2f-a986-4227-8700-8d7e43f59cbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Parser\test">
+      <UniqueIdentifier>{8e37e947-c8d4-4a07-a29e-304754492059}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -42,6 +51,18 @@
     <ClCompile Include="CodeFabFacadeTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AssemblerUnit\Tokenizer\LexerTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AssemblerUnit\Parser\Parser.cpp">
+      <Filter>Header Files\Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp">
+      <Filter>Header Files\Parser\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -57,6 +78,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InterfaceForCodeFabTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\Parser\Statement.h">
+      <Filter>Header Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\Parser\Parser.h">
+      <Filter>Header Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\Parser\Expression.h">
+      <Filter>Header Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\Tokenizer\Lexer.h">
+      <Filter>Header Files\Tokenizer</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\Tokenizer\Token.h">
+      <Filter>Header Files\Tokenizer</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\Tokenizer\Value.h">
+      <Filter>Header Files\Tokenizer</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\Parser\Node.h">
+      <Filter>Header Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="Visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
