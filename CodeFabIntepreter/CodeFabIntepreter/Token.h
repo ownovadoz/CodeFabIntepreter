@@ -8,6 +8,9 @@
 using std::string;
 using std::vector;
 
+#define TOKEN_LIST_OPEN  "[ \n"
+#define TOKEN_LIST_CLOSE "\n]"
+
 enum class TokenType
 {
     // 구분자 / 그룹핑
@@ -98,13 +101,13 @@ private:
 
 inline string tokensToString(const vector<Token>& tokens)
 {
-    string result = "[ \n";
+    string result = TOKEN_LIST_OPEN;
     for (int i = 0; i < static_cast<int>(tokens.size()); i++)
     {
         result += tokens[i].toString();
         if (i < static_cast<int>(tokens.size()) - 1)
             result += ", ";
     }
-    result += "\n]";
+    result += TOKEN_LIST_CLOSE;
     return result;
 }
