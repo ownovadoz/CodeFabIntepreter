@@ -40,3 +40,9 @@ TEST_F(PromptShellTest, EmptyLineTest) {
 	string input = "";
 	EXPECT_EQ(input, runPromptTest(input));
 }
+
+TEST_F(PromptShellTest, WithLineFeedTest) {
+	string input = "var x = 10;\n var y = 20;";
+	string expectedOutput = "var x = 10;";
+	EXPECT_EQ(expectedOutput, runPromptTest(input));
+}
