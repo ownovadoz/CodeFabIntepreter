@@ -79,7 +79,11 @@ public:
     {
         string result = "Token(" + tokenTypeToString(type) + ", \"" + lexeme + "\"";
 
-        if (std::holds_alternative<double>(literal))
+        if (std::holds_alternative<bool>(literal))
+        {
+            result += ", value=" + string(std::get<bool>(literal) ? "true" : "false");
+        }
+        else if (std::holds_alternative<double>(literal))
         {
             result += ", value=" + numberToString(std::get<double>(literal));
         }
