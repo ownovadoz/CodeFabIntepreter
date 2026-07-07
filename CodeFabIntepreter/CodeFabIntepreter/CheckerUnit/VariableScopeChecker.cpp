@@ -7,7 +7,7 @@ CheckResult CheckResult::isOK()
     return CheckResult{ false, "" };
 }
 
-CheckResult CheckResult::checkerUnitHasError(std::string message)
+CheckResult CheckResult::checkerUnitHasError(string message)
 {
     return CheckResult{ true, std::move(message) };
 }
@@ -24,7 +24,7 @@ void VariableScopeChecker::exitScope()
     scope_stack.pop_back();
 }
 
-CheckResult VariableScopeChecker::declareVariable(const std::string& name, const std::vector<std::string>& initializer_references)
+CheckResult VariableScopeChecker::declareVariable(const string& name, const vector<string>& initializer_references)
 {
     if (isDeclaredInCurrentScope(name))
         return CheckResult::checkerUnitHasError("이미 해당 변수는 현재 스코프에서 사용중입니다: '" + name + "'");
@@ -37,7 +37,7 @@ CheckResult VariableScopeChecker::declareVariable(const std::string& name, const
     return CheckResult::isOK();
 }
 
-bool VariableScopeChecker::isDeclaredInCurrentScope(const std::string& name) const
+bool VariableScopeChecker::isDeclaredInCurrentScope(const string& name) const
 {
     if (scope_stack.empty()) return false;
 
