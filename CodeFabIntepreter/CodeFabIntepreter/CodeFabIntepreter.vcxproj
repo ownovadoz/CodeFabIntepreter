@@ -147,6 +147,8 @@
     <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp" />
     <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp" />
     <ClCompile Include="AssemblerUnit\Tokenizer\LexerTest.cpp" />
+    <ClCompile Include="CheckerUnit\SemanticChecker.cpp" />
+    <ClCompile Include="CheckerUnit\SemanticCheckerTest.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeCheckerTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
@@ -165,6 +167,7 @@
     <ClInclude Include="AssemblerUnit\Parser\Expression.h" />
     <ClInclude Include="AssemblerUnit\Parser\Statement.h" />
     <ClInclude Include="AssemblerUnit\Parser\Parser.h" />
+    <ClInclude Include="CheckerUnit\SemanticChecker.h" />
     <ClInclude Include="CheckerUnit\VariableScopeChecker.h" />
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />
