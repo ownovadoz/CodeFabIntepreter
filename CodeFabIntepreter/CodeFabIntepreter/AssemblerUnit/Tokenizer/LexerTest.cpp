@@ -151,7 +151,10 @@ TEST(LexerTest, MultipleLiterals)
     vector<Token> tokens = lexer.scanTokens();
 
     EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
+    EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 123.0);
     EXPECT_EQ(tokens[1].getType(), TokenType::STRING);
+    EXPECT_EQ(std::get<string>(tokens[1].getLiteral()), "abc");
     EXPECT_EQ(tokens[2].getType(), TokenType::NUMBER);
+    EXPECT_DOUBLE_EQ(std::get<double>(tokens[2].getLiteral()), 4.5);
     EXPECT_EQ(tokens[3].getType(), TokenType::END_OF_FILE);
 }
