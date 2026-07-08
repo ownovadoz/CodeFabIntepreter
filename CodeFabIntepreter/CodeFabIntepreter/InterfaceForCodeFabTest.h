@@ -26,13 +26,6 @@ public:
 	virtual void run() = 0;
 };
 
-class NoOpChecker : public IChecker {
-public:
-	void check(Statement* root) override {
-
-	}
-};
-
 class Executor : public IExecutor {
 public:
 	void run() override {
@@ -40,13 +33,6 @@ public:
 	}
 };
 #else
-class NoOpChecker {
-public:
-	void check(Statement* root) {
-
-	}
-};
-
 class Executor {
 public:
 	void run() {
