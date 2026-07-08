@@ -51,6 +51,9 @@
     <ClCompile Include="CodeFabFacadeTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AssemblerUnit\Parser\Parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -62,11 +65,12 @@
     </ClCompile>
     <ClCompile Include="ExecutorUnit\EnvironmentTest.cpp">
       <Filter>Source Files</Filter>
-    <ClCompile Include="AssemblerUnit\Parser\Parser.cpp">
-      <Filter>Header Files\Parser</Filter>
     </ClCompile>
     <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp">
       <Filter>Header Files\Parser\test</Filter>
+    </ClCompile>
+    <ClCompile Include="CodeFabExceptionTest.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -103,9 +107,6 @@
     <ClInclude Include="AssemblerUnit\Parser\Parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ExecutorUnit\Environment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -113,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Visitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeFabException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
