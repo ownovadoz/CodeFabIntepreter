@@ -127,7 +127,7 @@ void Lexer::scanIdentifier()
     while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_')
         advance();
 
-    static const std::unordered_map<string, TokenType> keywords = {
+    static const std::unordered_map<std::string_view, TokenType> keywords = {
         {"and",   TokenType::AND},
         {"else",  TokenType::ELSE},
         {"false", TokenType::FALSE},
@@ -139,7 +139,7 @@ void Lexer::scanIdentifier()
         {"var",   TokenType::VAR},
     };
 
-    string text = source.substr(start, current - start);
+    std::string_view text(source.data() + start, current - start);
     auto it = keywords.find(text);
     TokenType type = (it != keywords.end()) ? it->second : TokenType::IDENTIFIER;
     addToken(type);
