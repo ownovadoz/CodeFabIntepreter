@@ -1,9 +1,9 @@
 #pragma once
-#include "AssemblerUnit/Parser/Statement.h"
-
 #include <string>
 
 using std::string;
+
+class Statement;
 
 #ifdef _DEBUG
 class IAssemblerUnit {
