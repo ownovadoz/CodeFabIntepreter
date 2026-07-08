@@ -57,6 +57,9 @@
     <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

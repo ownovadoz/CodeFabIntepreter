@@ -2,6 +2,7 @@
 
 #include "CodeFabFacade.h"
 #include "InterfaceForCodeFabTest.h"
+#include "CodeFabException.h"
 
 #include <gmock/gmock.h>
 #include <string>
@@ -48,6 +49,15 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCalledMultipleTimesInvokesEachDependency
 
 	facade.execute("var x = 10;");
 	facade.execute("var y = 20;");
+}
+
+TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionAndSkipsRemainingSteps) {
+	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
+		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
+	EXPECT_CALL(mock_checker, run()).Times(0);
+	EXPECT_CALL(mock_executor, run()).Times(0);
+
+	EXPECT_NO_THROW(facade.execute("var x = 10;"));
 }
 
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteDoesNotThrowWithRealDependencies) {

@@ -1,4 +1,7 @@
 #include "CodeFabFacade.h"
+#include "CodeFabException.h"
+
+#include <iostream>
 
 #ifdef _DEBUG
 
@@ -16,17 +19,27 @@ CodeFabFacade::CodeFabFacade(IAssemblerUnit& assembler_unit, IChecker& checker, 
 }
 
 void CodeFabFacade::execute(const string& code_line) {
-    Statement* statement = assembler_unit->assemble(code_line);
-    checker->run();
-    executor->run();
+    try {
+        Statement* statement = assembler_unit->assemble(code_line);
+        checker->run();
+        executor->run();
+    }
+    catch (const CodeFabException& e) {
+        std::cerr << e.what() << std::endl;
+    }
 }
 
 #else
 
 void CodeFabFacade::execute(const string& code_line) {
-    Statement* statement = assembler_unit.assemble(code_line);
-    checker.run();
-    executor.run();
+    try {
+        Statement* statement = assembler_unit.assemble(code_line);
+        checker.run();
+        executor.run();
+    }
+    catch (const CodeFabException& e) {
+        std::cerr << e.what() << std::endl;
+    }
 }
 
 #endif
