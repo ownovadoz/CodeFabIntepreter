@@ -17,20 +17,20 @@ protected:
 };
 
 TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError);
+    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
 }
 
 TEST_F(CheckerTest, DuplicateDeclarationInSameScopeFails) {
     checker.declareVariable("a", {});
 
-    EXPECT_TRUE(checker.declareVariable("a", {}).hasError);
+    EXPECT_TRUE(checker.declareVariable("a", {}).hasError());
 }
 
 TEST_F(CheckerTest, SameNameInNestedScopeSucceeds) {
     checker.declareVariable("a", {});
     checker.enterScope();
 
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError);
+    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
 }
 
 TEST_F(CheckerTest, RedeclaringAfterScopeExitSucceeds) {
@@ -38,17 +38,17 @@ TEST_F(CheckerTest, RedeclaringAfterScopeExitSucceeds) {
     checker.declareVariable("a", {});
     checker.exitScope();
 
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError);
+    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
 }
 
 TEST_F(CheckerTest, SelfReferenceInInitializerFails) {
-    EXPECT_TRUE(checker.declareVariable("a", { "a" }).hasError);
+    EXPECT_TRUE(checker.declareVariable("a", { "a" }).hasError());
 }
 
 TEST_F(CheckerTest, ReferencingOtherVariableInInitializerSucceeds) {
     checker.declareVariable("b", {});
 
-    EXPECT_FALSE(checker.declareVariable("a", { "b" }).hasError);
+    EXPECT_FALSE(checker.declareVariable("a", { "b" }).hasError());
 }
 
 TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
@@ -66,7 +66,7 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 
 	Checker checker;
 
-	EXPECT_FALSE(checker.check(root).hasError);
+	EXPECT_FALSE(checker.check(root).hasError());
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
@@ -81,7 +81,7 @@ TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
 
 	Checker checker;
 
-	EXPECT_TRUE(checker.check(block).hasError);
+	EXPECT_TRUE(checker.check(block).hasError());
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
@@ -98,5 +98,5 @@ TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
 
 	Checker checker;
 
-	EXPECT_FALSE(checker.check(outer).hasError);
+	EXPECT_FALSE(checker.check(outer).hasError());
 }

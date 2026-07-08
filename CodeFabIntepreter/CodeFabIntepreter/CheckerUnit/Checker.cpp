@@ -2,14 +2,14 @@
 
 #include <algorithm>
 
-CheckResult CheckResult::isOK()
+CheckResult CheckResult::ok()
 {
-    return CheckResult{ false, "" };
+    return CheckResult(false, "");
 }
 
 CheckResult CheckResult::checkerUnitHasError(string message)
 {
-    return CheckResult{ true, std::move(message) };
+    return CheckResult(true, std::move(message));
 }
 
 void Checker::enterScope()
@@ -34,7 +34,7 @@ CheckResult Checker::declareVariable(const string& name, const vector<string>& i
         return CheckResult::checkerUnitHasError("자신의 초기화식에서 지역변수를 읽을 수 없습니다: '" + name + "'");
 
     scope_stack.back().insert(name);
-    return CheckResult::isOK();
+    return CheckResult::ok();
 }
 
 bool Checker::isDeclaredInCurrentScope(const string& name) const
@@ -52,7 +52,7 @@ CheckResult Checker::check(Statement* root)
 
 CheckResult Checker::checkStatement(Statement* stmt)
 {
-    if (stmt == nullptr) return CheckResult::isOK();
+    if (stmt == nullptr) return CheckResult::ok();
 
     if (BlockStmt* block = dynamic_cast<BlockStmt*>(stmt))
         return checkBlockStmt(block);
@@ -60,18 +60,18 @@ CheckResult Checker::checkStatement(Statement* stmt)
     if (VarDeclareStmt* var_decl = dynamic_cast<VarDeclareStmt*>(stmt))
         return checkVarDeclareStmt(var_decl);
 
-    return CheckResult::isOK();
+    return CheckResult::ok();
 }
 
 CheckResult Checker::checkBlockStmt(BlockStmt* block)
 {
     enterScope();
 
-    CheckResult result = CheckResult::isOK();
+    CheckResult result = CheckResult::ok();
     for (Statement* stmt : block->getStatements())
     {
         result = checkStatement(stmt);
-        if (result.hasError) break;
+        if (result.hasError()) break;
     }
 
     exitScope();

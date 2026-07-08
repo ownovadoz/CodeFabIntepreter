@@ -13,11 +13,17 @@ using std::vector;
 class CheckResult
 {
 public:
-    static CheckResult isOK();
+    static CheckResult ok();
     static CheckResult checkerUnitHasError(string message);
 
-    bool hasError = false;
-    string message;
+    bool hasError() const { return has_error; }
+    const string& message() const { return error_message; }
+
+private:
+    CheckResult(bool has_error, string message) : has_error(has_error), error_message(std::move(message)) {}
+
+    bool has_error = false;
+    string error_message;
 };
 
 class Checker
