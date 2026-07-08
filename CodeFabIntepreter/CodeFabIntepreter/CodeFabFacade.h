@@ -2,6 +2,7 @@
 #include "InterfaceForCodeFabTest.h"
 #include "AssemblerUnit/AssemblerUnit.h"
 #include "CheckerUnit/Checker.h"
+#include "ExecutorUnit/Interpreter.h"
 #include <string>
 
 #ifdef _DEBUG
@@ -31,7 +32,7 @@ private:
 #else
     AssemblerUnit assembler_unit;
     Checker checker;
-    Executor executor;
+    Interpreter executor;
 #endif
 };
 
