@@ -33,8 +33,19 @@ private:
 };
 
 class UnaryExpr : public Expression {
+public:
+	explicit UnaryExpr(const Token& op, Expression* expr) : op{ op }, expr{ expr } {}
+
+	const Token& getOperator() const {
+		return op;
+	}
+
+	const Expression* getExpr() const {
+		return expr;
+	}
+
 private:
-	Token token; // TODO: better name?
+	Token op;
 	Expression* expr;
 };
 

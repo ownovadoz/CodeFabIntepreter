@@ -23,7 +23,8 @@ private:
 	Statement* parseExpressionStmt();
 
 	Expression* parseExpression();
-	Expression* parseNumberExpr();
+	Expression* parseUnaryExpr();
+	Expression* parsePrimaryExpr();
 
 	void init(const vector<Token>& tokens) {
 		this->tokens = tokens;

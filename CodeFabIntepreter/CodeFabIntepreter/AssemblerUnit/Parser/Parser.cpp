@@ -83,6 +83,12 @@ Statement* Parser::parseVarDeclareStmt() {
 		throw exception();
 	}
 
+	if (advance().getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
+		delete stmt;
+		delete expr;
+		throw exception();
+	}
+
 	stmt->setExpression(expr);
 
 	return stmt;
@@ -101,16 +107,29 @@ Statement* Parser::parseExpressionStmt() {
 }
 
 Expression* Parser::parseExpression() {
-	// now, only support single number case
-	if (peek().getType() == TokenType::NUMBER) {
-		Expression* expr = parseNumberExpr();
-		if (advance().getType() == TokenType::SEMICOLON && peek().getType() == TokenType::END_OF_FILE) {
-			return expr;
-		}
+	switch (peek().getType()) {
+	case TokenType::NUMBER:
+	case TokenType::STRING:
+	case TokenType::TRUE:
+	case TokenType::FALSE:
+	case TokenType::MINUS:
+	case TokenType::BANG:
+		return parseUnaryExpr();
+	default:
+		return nullptr;
 	}
-	return nullptr;
 }
 
-Expression* Parser::parseNumberExpr() {
+Expression* Parser::parseUnaryExpr() {
+	TokenType type = peek().getType();
+	if (type == TokenType::MINUS || type == TokenType::BANG) {
+		Token op = advance();
+		Expression* operand = parseUnaryExpr();
+		return new UnaryExpr(op, operand);
+	}
+	return parsePrimaryExpr();
+}
+
+Expression* Parser::parsePrimaryExpr() {
 	return new LiteralExpr(advance());
 }
