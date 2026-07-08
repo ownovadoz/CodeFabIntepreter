@@ -6,6 +6,7 @@
 #include "../CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <optional>
 #include <vector>
 
 using std::vector;
@@ -18,9 +19,10 @@ namespace {
 
 class CheckerTest : public ::testing::Test {
 protected:
-    void SetUp() override { checker.enterScope(); }
+    void SetUp() override { guard.emplace(checker); }
 
     Checker checker;
+    std::optional<Checker::ScopeGuard> guard;
 };
 
 TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
@@ -35,15 +37,16 @@ TEST_F(CheckerTest, DuplicateDeclarationInSameScopeFails) {
 
 TEST_F(CheckerTest, SameNameInNestedScopeSucceeds) {
     checker.declareVariable(makeIdentifier("a"), {});
-    checker.enterScope();
+    Checker::ScopeGuard inner(checker);
 
     EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }
 
 TEST_F(CheckerTest, RedeclaringAfterScopeExitSucceeds) {
-    checker.enterScope();
-    checker.declareVariable(makeIdentifier("a"), {});
-    checker.exitScope();
+    {
+        Checker::ScopeGuard inner(checker);
+        checker.declareVariable(makeIdentifier("a"), {});
+    }
 
     EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }

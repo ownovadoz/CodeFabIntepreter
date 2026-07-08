@@ -4,18 +4,6 @@
 
 #include <algorithm>
 
-namespace {
-    class ScopeGuard
-    {
-    public:
-        explicit ScopeGuard(Checker& checker) : checker(checker) { checker.enterScope(); }
-        ~ScopeGuard() { checker.exitScope(); }
-
-    private:
-        Checker& checker;
-    };
-}
-
 void Checker::enterScope()
 {
     scope_stack.emplace_back();
