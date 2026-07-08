@@ -20,16 +20,16 @@ private:
 
 class AssignExpr : public Expression {
 private:
-	Token token;				// variable
-	Expression* assign_expr;	// '=' operation
-	Expression* expr;			// expression
+	Token identifier;
+	Expression* assign_expr;
+	Expression* expr;
 };
 
 class BinaryExpr : public Expression {
 private:
 	Expression* op;
-	Expression* lhs;
-	Expression* rhs;
+	Expression* left;
+	Expression* right;
 };
 
 class UnaryExpr : public Expression {
@@ -44,8 +44,8 @@ private:
 };
 
 class LogicalExpr : public Expression {
-public:
+private:
 	Expression* expr;
-	Expression* lhs;
-	Expression* rhs;
+	Expression* left;
+	Expression* right;
 };

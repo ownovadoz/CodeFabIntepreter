@@ -27,24 +27,24 @@ private:
 
 	void init(const vector<Token>& tokens) {
 		this->tokens = tokens;
-		it = this->tokens.begin();
+		current_token_it = this->tokens.begin();
 	}
 
 	const Token& peek() const {
-		return *it;
+		return *current_token_it;
 	}
 
 	const Token& advance() {
 		if (!isAtEnd()) {
-			return *(it++);
+			return *(current_token_it++);
 		}
-		return *it;
+		return *current_token_it;
 	}
 
 	bool isAtEnd() const {
-		return it == tokens.end() || it->getType() == TokenType::END_OF_FILE;
+		return current_token_it == tokens.end() || current_token_it->getType() == TokenType::END_OF_FILE;
 	}
 
 	vector<Token> tokens;
-	vector<Token>::const_iterator it;
+	vector<Token>::const_iterator current_token_it;
 };
