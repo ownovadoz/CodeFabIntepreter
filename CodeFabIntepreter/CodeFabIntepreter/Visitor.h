@@ -17,6 +17,11 @@ public:
 	virtual void visitIndexExpr(const IndexExpr& expr) = 0;
 	virtual void visitIndexSetExpr(const IndexSetExpr& expr) = 0;
 	virtual void visitCallExpr(const CallExpr& expr) = 0;
+	virtual void visitGetExpr(const GetExpr& expr) = 0;
+	virtual void visitSetExpr(const SetExpr& expr) = 0;
+	virtual void visitThisExpr(const ThisExpr& expr) = 0;
+	virtual void visitSuperExpr(const SuperExpr& expr) = 0;
+	virtual void visitInstanceOfExpr(const InstanceOfExpr& expr) = 0;
 };
 
 class StmtVisitor {
@@ -30,4 +35,5 @@ public:
 	virtual void visitForStmt(ForStmt& stmt) = 0;
 	virtual void visitFunctionDeclStmt(FunctionDeclStmt& stmt) = 0;
 	virtual void visitReturnStmt(ReturnStmt& stmt) = 0;
+	virtual void visitClassDeclStmt(ClassDeclStmt& stmt) = 0;
 };

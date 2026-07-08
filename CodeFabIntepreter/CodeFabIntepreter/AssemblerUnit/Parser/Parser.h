@@ -29,12 +29,16 @@ private:
 	unique_ptr<Statement> parseExpressionStmt();
 	unique_ptr<Statement> parseFunctionDeclStmt();
 	unique_ptr<Statement> parseReturnStmt();
+	unique_ptr<Statement> parseClassDeclStmt();
+	unique_ptr<FunctionDeclStmt> parseMethodDecl();
+	unique_ptr<FunctionDeclStmt> parseFunctionBody(const Token& name);
 
 	unique_ptr<Expression> parseExpression();
 	unique_ptr<Expression> parseAssignExpr();
 	unique_ptr<Expression> parseLogicOr();
 	unique_ptr<Expression> parseLogicAnd();
 	unique_ptr<Expression> parseEquality();
+	unique_ptr<Expression> parseInstanceOf();
 	unique_ptr<Expression> parseComparison();
 	unique_ptr<Expression> parseTerm();
 	unique_ptr<Expression> parseFactor();

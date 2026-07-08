@@ -230,6 +230,54 @@ TEST_F(LexerTestFixture, CommaToken)
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
+TEST_F(LexerTestFixture, ColonToken)
+{
+    auto tokens = scan(":");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::COLON);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, DotToken)
+{
+    auto tokens = scan(".");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::DOT);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordClass)
+{
+    auto tokens = scan("Class");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::CLASS);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordThis)
+{
+    auto tokens = scan("this");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::THIS);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordSuper)
+{
+    auto tokens = scan("Super");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::SUPER);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordInstanceof)
+{
+    auto tokens = scan("instanceof");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::INSTANCEOF);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
 TEST_F(LexerTestFixture, KeywordIf)
 {
     auto tokens = scan("if");
