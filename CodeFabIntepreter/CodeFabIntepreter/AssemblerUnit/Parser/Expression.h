@@ -36,6 +36,10 @@ class UnaryExpr : public Expression {
 public:
 	explicit UnaryExpr(const Token& op, Expression* expr) : op{ op }, expr{ expr } {}
 
+	~UnaryExpr() override {
+		delete expr;
+	}
+
 	const Token& getOperator() const {
 		return op;
 	}

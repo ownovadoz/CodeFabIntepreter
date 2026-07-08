@@ -1,12 +1,11 @@
 ﻿#include "Parser.h"
 #include "Statement.h"
 #include "Expression.h"
+#include "../../CodeFabException.h"
 
 #include <vector>
-#include <stdexcept>
 
 using std::vector;
-using std::exception;
 
 // TODO: can I change return type as const Statement*?
 Statement* Parser::parse(const vector<Token>& tokens) {
@@ -55,7 +54,7 @@ Statement* Parser::parseStatement() {
 	case TokenType::AND:
 	case TokenType::OR:
 	case TokenType::ELSE:
-		throw exception();
+		throw CodeFabException(token, "Unexpected token.");
 	}
 	return nullptr;
 }
@@ -69,27 +68,31 @@ Statement* Parser::parseBlockStmt() {
 }
 
 Statement* Parser::parseVarDeclareStmt() {
-	if (advance().getType() != TokenType::VAR) throw exception();
-	if (peek().getType() != TokenType::IDENTIFIER) throw exception();
+	Token var_token = advance();
+	if (var_token.getType() != TokenType::VAR) throw CodeFabException(var_token, "Expect 'var'.");
+	if (peek().getType() != TokenType::IDENTIFIER) throw CodeFabException(peek(), "Expect variable name.");
 
 	VarDeclareStmt* stmt = new VarDeclareStmt{ advance() };
 
-	if (advance().getType() != TokenType::EQUAL) throw exception();
+	try {
+		Token equal_token = advance();
+		if (equal_token.getType() != TokenType::EQUAL) throw CodeFabException(equal_token, "Expect '=' after variable name.");
 
-	Expression* expr = parseExpression();
+		Expression* expr = parseExpression();
 
-	if (expr == nullptr) {
+		if (expr == nullptr) throw CodeFabException(peek(), "Expect expression.");
+
+		Token after_expr_token = advance();
+		if (after_expr_token.getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
+			delete expr;
+			throw CodeFabException(after_expr_token, "Expect ';' after variable declaration.");
+		}
+
+		stmt->setExpression(expr);
+	} catch (...) {
 		delete stmt;
-		throw exception();
+		throw;
 	}
-
-	if (advance().getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
-		delete stmt;
-		delete expr;
-		throw exception();
-	}
-
-	stmt->setExpression(expr);
 
 	return stmt;
 }
@@ -131,5 +134,13 @@ Expression* Parser::parseUnaryExpr() {
 }
 
 Expression* Parser::parsePrimaryExpr() {
-	return new LiteralExpr(advance());
+	switch (peek().getType()) {
+	case TokenType::NUMBER:
+	case TokenType::STRING:
+	case TokenType::TRUE:
+	case TokenType::FALSE:
+		return new LiteralExpr(advance());
+	default:
+		throw CodeFabException(peek(), "Expect expression.");
+	}
 }

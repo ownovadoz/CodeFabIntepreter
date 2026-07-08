@@ -1,254 +1,225 @@
-﻿#include "../Statement.h"
+#include "../Statement.h"
 #include "../Expression.h"
 #include "../Parser.h"
 #include "../../Tokenizer/Token.h"
+#include "../../../CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <string>
 #include <vector>
 
+using std::string;
 using std::vector;
+using namespace testing;
 
-TEST(ParserTest, VarDecalreStmt_SingleNumber_Passed) {
-	vector<Token> tokens = {
+class ParserTestFixture : public Test {
+protected:
+	void TearDown() override {
+		delete stmt;
+	}
+
+	VarDeclareStmt* buildAndParseVarDeclareStmt(const vector<Token>& initializer_tokens) {
+		vector<Token> tokens = {
+			{TokenType::VAR, "var", "var", 1},
+			{TokenType::IDENTIFIER, "a", "a", 1},
+			{TokenType::EQUAL, "=", "=", 1},
+		};
+		tokens.insert(tokens.end(), initializer_tokens.begin(), initializer_tokens.end());
+		tokens.push_back({ TokenType::SEMICOLON, ";", ";", 1 });
+		tokens.push_back({ TokenType::END_OF_FILE, "\n", "\n", 1 });
+
+		stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
+		return stmt;
+	}
+
+	void expectDeclaredName(VarDeclareStmt* stmt, const string& lexeme) {
+		ASSERT_NE(stmt, nullptr);
+
+		const Token& name = stmt->getName();
+
+		EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
+		EXPECT_EQ(name.getLexeme(), lexeme);
+	}
+
+	void expectLiteral(const Expression* expr, TokenType type, const string& lexeme) {
+		const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(expr);
+
+		ASSERT_NE(literal, nullptr);
+
+		const Token& token = literal->getToken();
+
+		EXPECT_EQ(token.getType(), type);
+		EXPECT_EQ(token.getLexeme(), lexeme);
+		EXPECT_EQ(token.getLine(), 1);
+	}
+
+	void expectUnary(const Expression* expr, TokenType op_type, const string& op_lexeme, TokenType operand_type, const string& operand_lexeme) {
+		const UnaryExpr* unary = dynamic_cast<const UnaryExpr*>(expr);
+
+		ASSERT_NE(unary, nullptr);
+
+		const Token& op = unary->getOperator();
+
+		EXPECT_EQ(op.getType(), op_type);
+		EXPECT_EQ(op.getLexeme(), op_lexeme);
+
+		ASSERT_NO_FATAL_FAILURE(expectLiteral(unary->getExpr(), operand_type, operand_lexeme));
+	}
+
+	void expectParseThrows(const vector<Token>& tokens) {
+		EXPECT_THROW(parser.parse(tokens), CodeFabException);
+	}
+
+	Parser parser;
+	VarDeclareStmt* stmt = nullptr;
+};
+
+TEST_F(ParserTestFixture, VarDeclareStmtSingleNumberPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::NUMBER, "10", 10.0, 1} });
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::NUMBER, "10"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtSingleStringPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::STRING, "\"text\"", "text", 1} });
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::STRING, "\"text\""));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtSingleTruePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::TRUE, "true", true, 1} });
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::TRUE, "true"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtSingleFalsePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::FALSE, "false", false, 1} });
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::FALSE, "false"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtNegativeNumberPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::NUMBER, "10", 10.0, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::MINUS, "-", TokenType::NUMBER, "10"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtNegatedTruePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::BANG, "!", "!", 1},
+		{TokenType::TRUE, "true", true, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::BANG, "!", TokenType::TRUE, "true"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtNegatedFalsePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::BANG, "!", "!", 1},
+		{TokenType::FALSE, "false", false, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::BANG, "!", TokenType::FALSE, "false"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtMissingIdentifierFailed) {
+	// var = 10;
+	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
-		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::EQUAL, "=", "=", 1},
 		{TokenType::NUMBER, "10", 10.0, 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
-	};
-
-	Parser parser;
-	VarDeclareStmt* stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-
-	ASSERT_NE(stmt, nullptr);
-
-	const Token& name = stmt->getName();
-
-	EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
-	EXPECT_EQ(name.getLexeme(), "a");
-
-	const LiteralExpr* expr = dynamic_cast<const LiteralExpr*>(stmt->getInitializer());
-
-	ASSERT_NE(expr, nullptr);
-
-	const Token& initializer = expr->getToken();
-
-	EXPECT_EQ(initializer.getType(), TokenType::NUMBER);
-	EXPECT_EQ(initializer.getLexeme(), "10");
-	//EXPECT_EQ(stringify(initializer.getLiteral()), 10.0); // to avoid build error
-	EXPECT_EQ(initializer.getLine(), 1);
+	});
 }
 
-TEST(ParserTest, VarDecalreStmt_SingleString_Passed) {
-	vector<Token> tokens = {
-	{TokenType::VAR, "var", "var", 1},
-	{TokenType::IDENTIFIER, "a", "a", 1},
-	{TokenType::EQUAL, "=", "=", 1},
-	{TokenType::STRING, "\"text\"", "text", 1},
-	{TokenType::SEMICOLON, ";", ";", 1},
-	{TokenType::END_OF_FILE, "\n", "\n", 1}
-	};
-
-	Parser parser;
-	VarDeclareStmt* stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-
-	ASSERT_NE(stmt, nullptr);
-
-	const Token& name = stmt->getName();
-
-	EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
-	EXPECT_EQ(name.getLexeme(), "a");
-
-	const LiteralExpr* expr = dynamic_cast<const LiteralExpr*>(stmt->getInitializer());
-
-	ASSERT_NE(expr, nullptr);
-
-	const Token& initializer = expr->getToken();
-
-	EXPECT_EQ(initializer.getType(), TokenType::STRING);
-	EXPECT_EQ(initializer.getLexeme(), "\"text\"");
-	EXPECT_EQ(initializer.getLine(), 1);
+TEST_F(ParserTestFixture, VarDeclareStmtMissingEqualFailed) {
+	// var a 10;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
 }
 
-TEST(ParserTest, VarDecalreStmt_SingleTrue_Passed) {
-	vector<Token> tokens = {
+TEST_F(ParserTestFixture, VarDeclareStmtNoInitializerFailed) {
+	// var a; — initializer-less var declarations are not supported yet
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtMissingInitializerFailed) {
+	// var a = ;
+	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::EQUAL, "=", "=", 1},
-		{TokenType::TRUE, "true", true, 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
-	};
-
-	Parser parser;
-	VarDeclareStmt* stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-
-	ASSERT_NE(stmt, nullptr);
-
-	const Token& name = stmt->getName();
-
-	EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
-	EXPECT_EQ(name.getLexeme(), "a");
-
-	const LiteralExpr* expr = dynamic_cast<const LiteralExpr*>(stmt->getInitializer());
-
-	ASSERT_NE(expr, nullptr);
-
-	const Token& initializer = expr->getToken();
-
-	EXPECT_EQ(initializer.getType(), TokenType::TRUE);
-	EXPECT_EQ(initializer.getLexeme(), "true");
-	EXPECT_EQ(initializer.getLine(), 1);
+	});
 }
 
-TEST(ParserTest, VarDecalreStmt_SingleFalse_Passed) {
-	vector<Token> tokens = {
+TEST_F(ParserTestFixture, VarDeclareStmtMissingSemicolonFailed) {
+	// var a = 10
+	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::EQUAL, "=", "=", 1},
-		{TokenType::FALSE, "false", false, 1},
-		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
-	};
-
-	Parser parser;
-	VarDeclareStmt* stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-
-	ASSERT_NE(stmt, nullptr);
-
-	const Token& name = stmt->getName();
-
-	EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
-	EXPECT_EQ(name.getLexeme(), "a");
-
-	const LiteralExpr* expr = dynamic_cast<const LiteralExpr*>(stmt->getInitializer());
-
-	ASSERT_NE(expr, nullptr);
-
-	const Token& initializer = expr->getToken();
-
-	EXPECT_EQ(initializer.getType(), TokenType::FALSE);
-	EXPECT_EQ(initializer.getLexeme(), "false");
-	EXPECT_EQ(initializer.getLine(), 1);
+	});
 }
 
-TEST(ParserTest, VarDecalreStmt_NegativeNumber_Passed) {
-	vector<Token> tokens = {
+TEST_F(ParserTestFixture, VarDeclareStmtDanglingMinusFailed) {
+	// var a = -;
+	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::EQUAL, "=", "=", 1},
 		{TokenType::MINUS, "-", "-", 1},
-		{TokenType::NUMBER, "10", 10.0, 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
-	};
-
-	Parser parser;
-	VarDeclareStmt* stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-
-	ASSERT_NE(stmt, nullptr);
-
-	const Token& name = stmt->getName();
-
-	EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
-	EXPECT_EQ(name.getLexeme(), "a");
-
-	const UnaryExpr* expr = dynamic_cast<const UnaryExpr*>(stmt->getInitializer());
-
-	ASSERT_NE(expr, nullptr);
-
-	const Token& op = expr->getOperator();
-
-	EXPECT_EQ(op.getType(), TokenType::MINUS);
-	EXPECT_EQ(op.getLexeme(), "-");
-
-	const LiteralExpr* operand = dynamic_cast<const LiteralExpr*>(expr->getExpr());
-
-	ASSERT_NE(operand, nullptr);
-
-	const Token& operandToken = operand->getToken();
-
-	EXPECT_EQ(operandToken.getType(), TokenType::NUMBER);
-	EXPECT_EQ(operandToken.getLexeme(), "10");
+	});
 }
 
-TEST(ParserTest, VarDecalreStmt_NegatedTrue_Passed) {
-	vector<Token> tokens = {
+TEST_F(ParserTestFixture, VarDeclareStmtDanglingBangFailed) {
+	// var a = !;
+	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::EQUAL, "=", "=", 1},
 		{TokenType::BANG, "!", "!", 1},
-		{TokenType::TRUE, "true", true, 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
-	};
-
-	Parser parser;
-	VarDeclareStmt* stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-
-	ASSERT_NE(stmt, nullptr);
-
-	const Token& name = stmt->getName();
-
-	EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
-	EXPECT_EQ(name.getLexeme(), "a");
-
-	const UnaryExpr* expr = dynamic_cast<const UnaryExpr*>(stmt->getInitializer());
-
-	ASSERT_NE(expr, nullptr);
-
-	const Token& op = expr->getOperator();
-
-	EXPECT_EQ(op.getType(), TokenType::BANG);
-	EXPECT_EQ(op.getLexeme(), "!");
-
-	const LiteralExpr* operand = dynamic_cast<const LiteralExpr*>(expr->getExpr());
-
-	ASSERT_NE(operand, nullptr);
-
-	const Token& operandToken = operand->getToken();
-
-	EXPECT_EQ(operandToken.getType(), TokenType::TRUE);
-	EXPECT_EQ(operandToken.getLexeme(), "true");
+	});
 }
 
-TEST(ParserTest, VarDecalreStmt_NegatedFalse_Passed) {
-	vector<Token> tokens = {
+TEST_F(ParserTestFixture, VarDeclareStmtDanglingMinusWithExtraSemicolonFailed) {
+	// var a = -;; — an extra SEMICOLON must not let a missing operand slip through
+	// as if it were the statement's real terminator.
+	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::EQUAL, "=", "=", 1},
-		{TokenType::BANG, "!", "!", 1},
-		{TokenType::FALSE, "false", false, 1},
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
-	};
-
-	Parser parser;
-	VarDeclareStmt* stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-
-	ASSERT_NE(stmt, nullptr);
-
-	const Token& name = stmt->getName();
-
-	EXPECT_EQ(name.getType(), TokenType::IDENTIFIER);
-	EXPECT_EQ(name.getLexeme(), "a");
-
-	const UnaryExpr* expr = dynamic_cast<const UnaryExpr*>(stmt->getInitializer());
-
-	ASSERT_NE(expr, nullptr);
-
-	const Token& op = expr->getOperator();
-
-	EXPECT_EQ(op.getType(), TokenType::BANG);
-	EXPECT_EQ(op.getLexeme(), "!");
-
-	const LiteralExpr* operand = dynamic_cast<const LiteralExpr*>(expr->getExpr());
-
-	ASSERT_NE(operand, nullptr);
-
-	const Token& operandToken = operand->getToken();
-
-	EXPECT_EQ(operandToken.getType(), TokenType::FALSE);
-	EXPECT_EQ(operandToken.getLexeme(), "false");
+	});
 }
