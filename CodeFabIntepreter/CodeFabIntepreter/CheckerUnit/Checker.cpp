@@ -1,5 +1,7 @@
 #include "Checker.h"
 
+#include "../CodeFabException.h"
+
 #include <algorithm>
 
 void Checker::enterScope()
@@ -16,7 +18,16 @@ void Checker::exitScope()
 
 void Checker::declareVariable(const Token& name, const vector<string>& initializer_references)
 {
-    scope_stack.back().insert(name.getLexeme());
+    const string lexeme = name.getLexeme();
+
+    if (isDeclaredInCurrentScope(lexeme))
+        throw CodeFabException(name, "이미 해당 변수는 현재 스코프에서 사용중입니다: '" + lexeme + "'");
+
+    bool is_self_referenced = std::find(initializer_references.begin(), initializer_references.end(), lexeme) != initializer_references.end();
+    if (is_self_referenced)
+        throw CodeFabException(name, "자신의 초기화식에서 지역변수를 읽을 수 없습니다: '" + lexeme + "'");
+
+    scope_stack.back().insert(lexeme);
 }
 
 bool Checker::isDeclaredInCurrentScope(const string& name) const
@@ -53,8 +64,16 @@ void Checker::checkBlockStmt(BlockStmt* block)
 {
     enterScope();
 
-    for (Statement* stmt : block->getStatements())
-        checkStatement(stmt);
+    try
+    {
+        for (Statement* stmt : block->getStatements())
+            checkStatement(stmt);
+    }
+    catch (...)
+    {
+        exitScope();
+        throw;
+    }
 
     exitScope();
 }
