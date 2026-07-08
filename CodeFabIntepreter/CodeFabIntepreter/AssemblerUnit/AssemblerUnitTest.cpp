@@ -1,5 +1,7 @@
 #include "AssemblerUnit.h"
 
+#include "Parser/Statement.h"
+
 #include <gmock/gmock.h>
 
 TEST(AssemblerUnitTest, EmptyInputReturnsNullptr) {

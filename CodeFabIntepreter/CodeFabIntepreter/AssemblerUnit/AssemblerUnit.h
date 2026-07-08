@@ -1,18 +1,20 @@
 #pragma once
 #include "../InterfaceForCodeFabTest.h"
 
+#include <memory>
 #include <string>
 
 using std::string;
+using std::unique_ptr;
 
 #ifdef _DEBUG
 class AssemblerUnit : public IAssemblerUnit {
 public:
-	Statement* assemble(const string& code_line) override;
+	unique_ptr<Statement> assemble(const string& code_line) override;
 };
 #else
 class AssemblerUnit {
 public:
-	Statement* assemble(const string& code_line);
+	unique_ptr<Statement> assemble(const string& code_line);
 };
 #endif

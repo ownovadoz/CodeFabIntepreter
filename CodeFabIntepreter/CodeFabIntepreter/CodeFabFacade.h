@@ -1,6 +1,7 @@
 #pragma once
 #include "InterfaceForCodeFabTest.h"
 #include "AssemblerUnit/AssemblerUnit.h"
+#include "CheckerUnit/Checker.h"
 #include <string>
 
 #ifdef _DEBUG
@@ -29,7 +30,7 @@ private:
     IExecutor* executor;
 #else
     AssemblerUnit assembler_unit;
-    NoOpChecker checker;
+    Checker checker;
     Executor executor;
 #endif
 };

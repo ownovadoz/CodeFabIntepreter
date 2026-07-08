@@ -1,7 +1,9 @@
 #pragma once
+#include <memory>
 #include <string>
 
 using std::string;
+using std::unique_ptr;
 
 class Statement;
 
@@ -9,26 +11,19 @@ class Statement;
 class IAssemblerUnit {
 public:
 	virtual ~IAssemblerUnit() = default;
-	virtual Statement* assemble(const string& code_line) = 0;
+	virtual unique_ptr<Statement> assemble(const string& code_line) = 0;
 };
 
 class IChecker {
 public:
 	virtual ~IChecker() = default;
-	virtual void run() = 0;
+	virtual void check(Statement* root) = 0;
 };
 
 class IExecutor {
 public:
 	virtual ~IExecutor() = default;
 	virtual void run() = 0;
-};
-
-class NoOpChecker : public IChecker {
-public:
-	void run() override {
-
-	}
 };
 
 class Executor : public IExecutor {
@@ -38,13 +33,6 @@ public:
 	}
 };
 #else
-class NoOpChecker {
-public:
-	void run() {
-
-	}
-};
-
 class Executor {
 public:
 	void run() {
