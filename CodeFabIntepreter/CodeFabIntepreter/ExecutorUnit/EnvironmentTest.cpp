@@ -8,6 +8,8 @@ public:
     Environment env;
 };
 
+// 동일 var 이름이 중복 들어오는 것은 checker unit에서 error 처리하므로 실제 발생 확률 없음.
+
 TEST_F(EnvironmentTestFixture, DefinedVariableIsReadable)
 {
     env.define("a", 3.0);
