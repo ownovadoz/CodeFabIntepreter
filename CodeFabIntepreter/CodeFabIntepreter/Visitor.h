@@ -36,4 +36,5 @@ public:
 	virtual void visitFunctionDeclStmt(FunctionDeclStmt& stmt) = 0;
 	virtual void visitReturnStmt(ReturnStmt& stmt) = 0;
 	virtual void visitClassDeclStmt(ClassDeclStmt& stmt) = 0;
+	virtual void visitImportStmt(ImportStmt& stmt) = 0;
 };

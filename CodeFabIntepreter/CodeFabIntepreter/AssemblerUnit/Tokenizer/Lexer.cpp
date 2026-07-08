@@ -146,6 +146,7 @@ void Lexer::scanIdentifier()
         advance();
 
     static const unordered_map<string_view, TokenType> keywords = {
+        {"alias", TokenType::ALIAS},
         {"and",   TokenType::AND},
         {"Array", TokenType::ARRAY},
         {"Class", TokenType::CLASS},
@@ -154,6 +155,7 @@ void Lexer::scanIdentifier()
         {"for",   TokenType::FOR},
         {"Func",  TokenType::FUNC},
         {"if",    TokenType::IF},
+        {"import", TokenType::IMPORT},
         {"instanceof", TokenType::INSTANCEOF},
         {"or",    TokenType::OR},
         {"print", TokenType::PRINT},
