@@ -9,7 +9,7 @@ using std::runtime_error;
 
 class CodeFabException : public std::runtime_error {
 public:
-    CodeFabException(int line, const string& message)
+    explicit CodeFabException(int line, const string& message)
         : std::runtime_error(formatMessage(line, message)), line(line), message(message) {
     }
 
