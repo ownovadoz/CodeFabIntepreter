@@ -149,7 +149,10 @@ void Lexer::scanIdentifier()
     string_view text(source.data() + start, current - start);
     auto found = keywords.find(text);
     TokenType type = (found != keywords.end()) ? found->second : TokenType::IDENTIFIER;
-    addToken(type);
+
+    if (type == TokenType::TRUE)       addToken(type, true);
+    else if (type == TokenType::FALSE) addToken(type, false);
+    else                               addToken(type);
 }
 
 void Lexer::scanNumber()
