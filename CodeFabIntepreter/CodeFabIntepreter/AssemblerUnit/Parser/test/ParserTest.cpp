@@ -152,6 +152,38 @@ protected:
 		return call_expr;
 	}
 
+	const GetExpr* expectGet(const Expression* expr) {
+		const GetExpr* get_expr = dynamic_cast<const GetExpr*>(expr);
+
+		EXPECT_NE(get_expr, nullptr);
+		return get_expr;
+	}
+
+	const SetExpr* expectSet(const Expression* expr) {
+		const SetExpr* set_expr = dynamic_cast<const SetExpr*>(expr);
+
+		EXPECT_NE(set_expr, nullptr);
+		return set_expr;
+	}
+
+	void expectThis(const Expression* expr) {
+		EXPECT_NE(dynamic_cast<const ThisExpr*>(expr), nullptr);
+	}
+
+	const SuperExpr* expectSuper(const Expression* expr) {
+		const SuperExpr* super_expr = dynamic_cast<const SuperExpr*>(expr);
+
+		EXPECT_NE(super_expr, nullptr);
+		return super_expr;
+	}
+
+	const InstanceOfExpr* expectInstanceOf(const Expression* expr) {
+		const InstanceOfExpr* instance_of_expr = dynamic_cast<const InstanceOfExpr*>(expr);
+
+		EXPECT_NE(instance_of_expr, nullptr);
+		return instance_of_expr;
+	}
+
 	Parser parser;
 	vector<unique_ptr<Statement>> parsed;
 };
@@ -1495,4 +1527,506 @@ TEST_F(ParserTestFixture, RecursiveCallInsideFunctionBodyPassed) {
 	ASSERT_NO_FATAL_FAILURE(expectVariable(call_expr->getCallee(), "fact"));
 	ASSERT_EQ(call_expr->getArguments().size(), 1u);
 	ASSERT_NO_FATAL_FAILURE(expectBinary(call_expr->getArguments()[0].get(), TokenType::MINUS, "-"));
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtEmptyPassed) {
+	// Class Robot { }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+	EXPECT_EQ(class_decl->getName().getLexeme(), "Robot");
+	EXPECT_FALSE(class_decl->getSuperclassName().has_value());
+	EXPECT_EQ(class_decl->getMethods().size(), 0u);
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtWithSuperclassPassed) {
+	// Class SpeedRobot : Robot { }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "SpeedRobot", "SpeedRobot", 1},
+		{TokenType::COLON, ":", ":", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+	ASSERT_TRUE(class_decl->getSuperclassName().has_value());
+	EXPECT_EQ(class_decl->getSuperclassName()->getLexeme(), "Robot");
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtWithMethodPassed) {
+	// Class Robot { speak() { print this.name; } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "speak", "speak", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+	ASSERT_EQ(class_decl->getMethods().size(), 1u);
+	EXPECT_EQ(class_decl->getMethods()[0]->getName().getLexeme(), "speak");
+	EXPECT_EQ(class_decl->getMethods()[0]->getParameters().size(), 0u);
+
+	ASSERT_EQ(class_decl->getMethods()[0]->getBody()->getStatements().size(), 1u);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(class_decl->getMethods()[0]->getBody()->getStatements()[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+	const GetExpr* get_expr = expectGet(print_stmt->getExpr());
+	ASSERT_NE(get_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectThis(get_expr->getObject()));
+	EXPECT_EQ(get_expr->getName().getLexeme(), "name");
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtWithInitMethodPassed) {
+	// Class Robot { init(name) { this.name = name; } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "init", "init", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+	ASSERT_EQ(class_decl->getMethods().size(), 1u);
+	EXPECT_EQ(class_decl->getMethods()[0]->getName().getLexeme(), "init");
+	ASSERT_EQ(class_decl->getMethods()[0]->getParameters().size(), 1u);
+	EXPECT_EQ(class_decl->getMethods()[0]->getParameters()[0].getLexeme(), "name");
+
+	ASSERT_EQ(class_decl->getMethods()[0]->getBody()->getStatements().size(), 1u);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(class_decl->getMethods()[0]->getBody()->getStatements()[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+	const SetExpr* set_expr = expectSet(expr_stmt->getExpr());
+	ASSERT_NE(set_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectThis(set_expr->getObject()));
+	EXPECT_EQ(set_expr->getName().getLexeme(), "name");
+	ASSERT_NO_FATAL_FAILURE(expectVariable(set_expr->getValue(), "name"));
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtMultipleMethodsPassed) {
+	// Class Robot { init(name) { this.name = name; } speak() { print this.name; } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "init", "init", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::IDENTIFIER, "speak", "speak", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+	ASSERT_EQ(class_decl->getMethods().size(), 2u);
+	EXPECT_EQ(class_decl->getMethods()[0]->getName().getLexeme(), "init");
+	EXPECT_EQ(class_decl->getMethods()[1]->getName().getLexeme(), "speak");
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtMissingNameFailed) {
+	// Class { }
+	expectParseThrows({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtMissingBodyBraceFailed) {
+	// Class Robot
+	expectParseThrows({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ClassDeclStmtMissingSuperclassNameFailed) {
+	// Class SpeedRobot : { }
+	expectParseThrows({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "SpeedRobot", "SpeedRobot", 1},
+		{TokenType::COLON, ":", ":", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, GetExprPassed) {
+	// print r.name;
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+
+	const GetExpr* get_expr = expectGet(print_stmt->getExpr());
+	ASSERT_NE(get_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(get_expr->getObject(), "r"));
+	EXPECT_EQ(get_expr->getName().getLexeme(), "name");
+}
+
+TEST_F(ParserTestFixture, GetExprChainedPassed) {
+	// print r.a.b;
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+
+	const GetExpr* outer = expectGet(print_stmt->getExpr());
+	ASSERT_NE(outer, nullptr);
+	EXPECT_EQ(outer->getName().getLexeme(), "b");
+
+	const GetExpr* inner = expectGet(outer->getObject());
+	ASSERT_NE(inner, nullptr);
+	EXPECT_EQ(inner->getName().getLexeme(), "a");
+	ASSERT_NO_FATAL_FAILURE(expectVariable(inner->getObject(), "r"));
+}
+
+TEST_F(ParserTestFixture, SetExprPassed) {
+	// r.name = "robot";
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::STRING, "\"robot\"", "robot", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const SetExpr* set_expr = expectSet(expr_stmt->getExpr());
+	ASSERT_NE(set_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(set_expr->getObject(), "r"));
+	EXPECT_EQ(set_expr->getName().getLexeme(), "name");
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(set_expr->getValue(), TokenType::STRING, "\"robot\""));
+}
+
+TEST_F(ParserTestFixture, SetExprUpdateWithSelfReadPassed) {
+	// r.speed = r.speed + 1;
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "speed", "speed", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "speed", "speed", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const SetExpr* set_expr = expectSet(expr_stmt->getExpr());
+	ASSERT_NE(set_expr, nullptr);
+	EXPECT_EQ(set_expr->getName().getLexeme(), "speed");
+	ASSERT_NO_FATAL_FAILURE(expectBinary(set_expr->getValue(), TokenType::PLUS, "+"));
+}
+
+TEST_F(ParserTestFixture, ThisExprAsReturnValuePassed) {
+	// Class Robot { getSelf() { return this; } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "getSelf", "getSelf", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+	ASSERT_EQ(class_decl->getMethods().size(), 1u);
+
+	ASSERT_EQ(class_decl->getMethods()[0]->getBody()->getStatements().size(), 1u);
+	const ReturnStmt* return_stmt = dynamic_cast<const ReturnStmt*>(class_decl->getMethods()[0]->getBody()->getStatements()[0].get());
+	ASSERT_NE(return_stmt, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectThis(return_stmt->getValue()));
+}
+
+TEST_F(ParserTestFixture, MethodCallOnThisPassed) {
+	// Class Robot { speak() { this.other(); } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "speak", "speak", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "other", "other", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+
+	ASSERT_EQ(class_decl->getMethods()[0]->getBody()->getStatements().size(), 1u);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(class_decl->getMethods()[0]->getBody()->getStatements()[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const CallExpr* call_expr = expectCall(expr_stmt->getExpr());
+	ASSERT_NE(call_expr, nullptr);
+	const GetExpr* get_expr = expectGet(call_expr->getCallee());
+	ASSERT_NE(get_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectThis(get_expr->getObject()));
+	EXPECT_EQ(get_expr->getName().getLexeme(), "other");
+}
+
+TEST_F(ParserTestFixture, SuperMethodCallPassed) {
+	// Class SpeedRobot : Robot { speak() { Super.speak(); } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "SpeedRobot", "SpeedRobot", 1},
+		{TokenType::COLON, ":", ":", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "speak", "speak", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::SUPER, "Super", "Super", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "speak", "speak", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+
+	ASSERT_EQ(class_decl->getMethods()[0]->getBody()->getStatements().size(), 1u);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(class_decl->getMethods()[0]->getBody()->getStatements()[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const CallExpr* call_expr = expectCall(expr_stmt->getExpr());
+	ASSERT_NE(call_expr, nullptr);
+	const SuperExpr* super_expr = expectSuper(call_expr->getCallee());
+	ASSERT_NE(super_expr, nullptr);
+	EXPECT_EQ(super_expr->getMethod().getLexeme(), "speak");
+}
+
+TEST_F(ParserTestFixture, SuperFieldAccessPassed) {
+	// Class SpeedRobot : Robot { getName() { return Super.name; } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "SpeedRobot", "SpeedRobot", 1},
+		{TokenType::COLON, ":", ":", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "getName", "getName", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::SUPER, "Super", "Super", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassDeclStmt* class_decl = dynamic_cast<const ClassDeclStmt*>(program[0].get());
+	ASSERT_NE(class_decl, nullptr);
+
+	ASSERT_EQ(class_decl->getMethods()[0]->getBody()->getStatements().size(), 1u);
+	const ReturnStmt* return_stmt = dynamic_cast<const ReturnStmt*>(class_decl->getMethods()[0]->getBody()->getStatements()[0].get());
+	ASSERT_NE(return_stmt, nullptr);
+
+	const SuperExpr* super_expr = expectSuper(return_stmt->getValue());
+	ASSERT_NE(super_expr, nullptr);
+	EXPECT_EQ(super_expr->getMethod().getLexeme(), "name");
+}
+
+TEST_F(ParserTestFixture, SuperMissingDotFailed) {
+	// Super speak();
+	expectParseThrows({
+		{TokenType::SUPER, "Super", "Super", 1},
+		{TokenType::IDENTIFIER, "speak", "speak", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, InstanceOfExprPassed) {
+	// print robot instanceof Robot;
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "robot", "robot", 1},
+		{TokenType::INSTANCEOF, "instanceof", "instanceof", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+
+	const InstanceOfExpr* instance_of_expr = expectInstanceOf(print_stmt->getExpr());
+	ASSERT_NE(instance_of_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(instance_of_expr->getObject(), "robot"));
+	EXPECT_EQ(instance_of_expr->getClassName().getLexeme(), "Robot");
+}
+
+TEST_F(ParserTestFixture, InstanceOfExprMissingClassNameFailed) {
+	// print robot instanceof;
+	expectParseThrows({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "robot", "robot", 1},
+		{TokenType::INSTANCEOF, "instanceof", "instanceof", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, InstantiationViaCallExprPassed) {
+	// var robot = Robot();
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	const CallExpr* call_expr = expectCall(stmt->getInitializer());
+	ASSERT_NE(call_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(call_expr->getCallee(), "Robot"));
+	EXPECT_EQ(call_expr->getArguments().size(), 0u);
+}
+
+TEST_F(ParserTestFixture, SetExprMissingValueFailed) {
+	// r.name = ;
+	expectParseThrows({
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "name", "name", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, GetExprMissingNameAfterDotFailed) {
+	// print r.;
+	expectParseThrows({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
 }

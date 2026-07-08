@@ -4,10 +4,12 @@
 #include "../../CodeFabException.h"
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 using std::make_unique;
 using std::move;
+using std::optional;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -45,6 +47,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 		return parseFunctionDeclStmt();
 	case TokenType::RETURN:
 		return parseReturnStmt();
+	case TokenType::CLASS:
+		return parseClassDeclStmt();
 	case TokenType::LEFT_PAREN:
 	case TokenType::BANG:
 	case TokenType::IDENTIFIER:
@@ -53,6 +57,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::FALSE:
 	case TokenType::TRUE:
 	case TokenType::ARRAY:
+	case TokenType::THIS:
+	case TokenType::SUPER:
 		return parseExpressionStmt();
 	case TokenType::SEMICOLON:
 		advance();
@@ -78,6 +84,9 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::LEFT_BRACKET:
 	case TokenType::RIGHT_BRACKET:
 	case TokenType::COMMA:
+	case TokenType::COLON:
+	case TokenType::DOT:
+	case TokenType::INSTANCEOF:
 		throw CodeFabException(token, "Unexpected token.");
 	}
 	return nullptr;
@@ -163,12 +172,8 @@ unique_ptr<Statement> Parser::parseForStmt() {
 	return make_unique<ForStmt>(move(init), move(condition), move(increment), move(body));
 }
 
-unique_ptr<Statement> Parser::parseFunctionDeclStmt() {
-	advance();
-
-	Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
-
-	consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
+unique_ptr<FunctionDeclStmt> Parser::parseFunctionBody(const Token& name) {
+	consume(TokenType::LEFT_PAREN, "Expect '(' after name.");
 
 	vector<Token> parameters;
 	if (!check(TokenType::RIGHT_PAREN)) {
@@ -181,7 +186,7 @@ unique_ptr<Statement> Parser::parseFunctionDeclStmt() {
 
 	consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
 
-	if (!check(TokenType::LEFT_BRACE)) throw CodeFabException(peek(), "Expect '{' before function body.");
+	if (!check(TokenType::LEFT_BRACE)) throw CodeFabException(peek(), "Expect '{' before body.");
 
 	function_depth++;
 	unique_ptr<Statement> raw_body = parseBlockStmt();
@@ -190,6 +195,43 @@ unique_ptr<Statement> Parser::parseFunctionDeclStmt() {
 	unique_ptr<BlockStmt> body(static_cast<BlockStmt*>(raw_body.release()));
 
 	return make_unique<FunctionDeclStmt>(name, move(parameters), move(body));
+}
+
+unique_ptr<Statement> Parser::parseFunctionDeclStmt() {
+	advance();
+
+	Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
+
+	return parseFunctionBody(name);
+}
+
+unique_ptr<FunctionDeclStmt> Parser::parseMethodDecl() {
+	Token name = consume(TokenType::IDENTIFIER, "Expect method name.");
+
+	return parseFunctionBody(name);
+}
+
+unique_ptr<Statement> Parser::parseClassDeclStmt() {
+	advance();
+
+	Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
+
+	optional<Token> superclass_name;
+	if (check(TokenType::COLON)) {
+		advance();
+		superclass_name = consume(TokenType::IDENTIFIER, "Expect superclass name.");
+	}
+
+	consume(TokenType::LEFT_BRACE, "Expect '{' before class body.");
+
+	vector<unique_ptr<FunctionDeclStmt>> methods;
+	while (!isAtEnd() && !check(TokenType::RIGHT_BRACE)) {
+		methods.push_back(parseMethodDecl());
+	}
+
+	consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
+
+	return make_unique<ClassDeclStmt>(name, move(superclass_name), move(methods));
 }
 
 unique_ptr<Statement> Parser::parseReturnStmt() {
@@ -227,8 +269,9 @@ unique_ptr<Expression> Parser::parseAssignExpr() {
 
 		VariableExpr* variable = dynamic_cast<VariableExpr*>(left.get());
 		IndexExpr* index_expr = (variable != nullptr) ? nullptr : dynamic_cast<IndexExpr*>(left.get());
+		GetExpr* get_expr = (variable != nullptr || index_expr != nullptr) ? nullptr : dynamic_cast<GetExpr*>(left.get());
 
-		if (variable == nullptr && index_expr == nullptr) throw CodeFabException(equals, "Invalid assignment target.");
+		if (variable == nullptr && index_expr == nullptr && get_expr == nullptr) throw CodeFabException(equals, "Invalid assignment target.");
 
 		unique_ptr<Expression> value = parseAssignExpr();
 
@@ -236,7 +279,11 @@ unique_ptr<Expression> Parser::parseAssignExpr() {
 			return make_unique<AssignExpr>(variable->getToken(), move(value));
 		}
 
-		return make_unique<IndexSetExpr>(index_expr->releaseArray(), index_expr->releaseIndex(), move(value));
+		if (index_expr != nullptr) {
+			return make_unique<IndexSetExpr>(index_expr->releaseArray(), index_expr->releaseIndex(), move(value));
+		}
+
+		return make_unique<SetExpr>(get_expr->releaseObject(), get_expr->getName(), move(value));
 	}
 
 	return left;
@@ -255,9 +302,21 @@ unique_ptr<Expression> Parser::parseLogicAnd() {
 }
 
 unique_ptr<Expression> Parser::parseEquality() {
-	return parseLeftAssocExpr(&Parser::parseComparison, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+	return parseLeftAssocExpr(&Parser::parseInstanceOf, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
 		return make_unique<BinaryExpr>(move(left), op, move(right));
 	});
+}
+
+unique_ptr<Expression> Parser::parseInstanceOf() {
+	unique_ptr<Expression> expr = parseComparison();
+
+	if (check(TokenType::INSTANCEOF)) {
+		advance();
+		Token class_name = consume(TokenType::IDENTIFIER, "Expect class name after 'instanceof'.");
+		expr = make_unique<InstanceOfExpr>(move(expr), class_name);
+	}
+
+	return expr;
 }
 
 unique_ptr<Expression> Parser::parseComparison() {
@@ -320,6 +379,10 @@ unique_ptr<Expression> Parser::parsePostfixExpr() {
 		} else if (check(TokenType::LEFT_PAREN)) {
 			advance();
 			expr = finishCall(move(expr));
+		} else if (check(TokenType::DOT)) {
+			advance();
+			Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
+			expr = make_unique<GetExpr>(move(expr), name);
 		} else {
 			break;
 		}
@@ -355,6 +418,14 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 		return make_unique<VariableExpr>(advance());
 	case TokenType::ARRAY:
 		return parseArrayExpr();
+	case TokenType::THIS:
+		return make_unique<ThisExpr>(advance());
+	case TokenType::SUPER: {
+		Token keyword = advance();
+		consume(TokenType::DOT, "Expect '.' after 'Super'.");
+		Token method = consume(TokenType::IDENTIFIER, "Expect superclass member name.");
+		return make_unique<SuperExpr>(keyword, method);
+	}
 	case TokenType::LEFT_PAREN: {
 		advance();
 		unique_ptr<Expression> expr = parseExpression();

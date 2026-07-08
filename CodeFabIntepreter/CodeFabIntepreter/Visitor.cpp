@@ -11,6 +11,11 @@ void ArrayExpr::accept(ExprVisitor& visitor) const { visitor.visitArrayExpr(*thi
 void IndexExpr::accept(ExprVisitor& visitor) const { visitor.visitIndexExpr(*this); }
 void IndexSetExpr::accept(ExprVisitor& visitor) const { visitor.visitIndexSetExpr(*this); }
 void CallExpr::accept(ExprVisitor& visitor) const { visitor.visitCallExpr(*this); }
+void GetExpr::accept(ExprVisitor& visitor) const { visitor.visitGetExpr(*this); }
+void SetExpr::accept(ExprVisitor& visitor) const { visitor.visitSetExpr(*this); }
+void ThisExpr::accept(ExprVisitor& visitor) const { visitor.visitThisExpr(*this); }
+void SuperExpr::accept(ExprVisitor& visitor) const { visitor.visitSuperExpr(*this); }
+void InstanceOfExpr::accept(ExprVisitor& visitor) const { visitor.visitInstanceOfExpr(*this); }
 
 void ExpressionStmt::accept(StmtVisitor& visitor) { visitor.visitExpressionStmt(*this); }
 void IfStmt::accept(StmtVisitor& visitor) { visitor.visitIfStmt(*this); }
@@ -20,3 +25,4 @@ void PrintStmt::accept(StmtVisitor& visitor) { visitor.visitPrintStmt(*this); }
 void ForStmt::accept(StmtVisitor& visitor) { visitor.visitForStmt(*this); }
 void FunctionDeclStmt::accept(StmtVisitor& visitor) { visitor.visitFunctionDeclStmt(*this); }
 void ReturnStmt::accept(StmtVisitor& visitor) { visitor.visitReturnStmt(*this); }
+void ClassDeclStmt::accept(StmtVisitor& visitor) { visitor.visitClassDeclStmt(*this); }

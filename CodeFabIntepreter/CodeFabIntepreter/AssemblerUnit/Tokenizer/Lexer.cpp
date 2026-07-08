@@ -38,6 +38,8 @@ void Lexer::scanToken()
         case '[': addToken(TokenType::LEFT_BRACKET);  break;
         case ']': addToken(TokenType::RIGHT_BRACKET); break;
         case ',': addToken(TokenType::COMMA);         break;
+        case ':': addToken(TokenType::COLON);         break;
+        case '.': addToken(TokenType::DOT);           break;
         case '+': addToken(TokenType::PLUS);        break;
         case '-': addToken(TokenType::MINUS);       break;
         case '*': addToken(TokenType::STAR);        break;
@@ -140,14 +142,18 @@ void Lexer::scanIdentifier()
     static const unordered_map<string_view, TokenType> keywords = {
         {"and",   TokenType::AND},
         {"Array", TokenType::ARRAY},
+        {"Class", TokenType::CLASS},
         {"else",  TokenType::ELSE},
         {"false", TokenType::FALSE},
         {"for",   TokenType::FOR},
         {"Func",  TokenType::FUNC},
         {"if",    TokenType::IF},
+        {"instanceof", TokenType::INSTANCEOF},
         {"or",    TokenType::OR},
         {"print", TokenType::PRINT},
         {"return", TokenType::RETURN},
+        {"Super", TokenType::SUPER},
+        {"this",  TokenType::THIS},
         {"true",  TokenType::TRUE},
         {"var",   TokenType::VAR},
     };

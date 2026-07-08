@@ -5,9 +5,11 @@
 #include "../Tokenizer/Token.h"
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 using std::move;
+using std::optional;
 using std::unique_ptr;
 using std::vector;
 
@@ -175,4 +177,29 @@ public:
 
 private:
 	unique_ptr<Expression> value;
+};
+
+class ClassDeclStmt : public Statement {
+public:
+	ClassDeclStmt(const Token& name, optional<Token> superclass_name, vector<unique_ptr<FunctionDeclStmt>> methods)
+		: name{ name }, superclass_name{ move(superclass_name) }, methods{ move(methods) } {}
+
+	const Token& getName() const {
+		return name;
+	}
+
+	const optional<Token>& getSuperclassName() const {
+		return superclass_name;
+	}
+
+	const vector<unique_ptr<FunctionDeclStmt>>& getMethods() const {
+		return methods;
+	}
+
+	void accept(StmtVisitor& visitor) override;
+
+private:
+	Token name;
+	optional<Token> superclass_name;
+	vector<unique_ptr<FunctionDeclStmt>> methods;
 };
