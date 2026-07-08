@@ -18,21 +18,54 @@ Value Interpreter::getVariableValue(const string& name) const
 
 void Interpreter::execute(Statement* stmt)
 {
-    // TODO: dispatch to each Statement kind once tests describe the expected behavior.
+    if (stmt == nullptr) return;
+
+    if (BlockStmt* block = dynamic_cast<BlockStmt*>(stmt)) {
+        executeBlockStmt(block);
+        return;
+    }
+
+    if (VarDeclareStmt* var_decl = dynamic_cast<VarDeclareStmt*>(stmt)) {
+        executeVarDeclareStmt(var_decl);
+        return;
+    }
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
 {
-    // TODO: run a block in its own child Environment.
+    Environment* enclosing = current_environment;
+    Environment block_environment(enclosing);
+    current_environment = &block_environment;
+
+    try {
+        for (Statement* stmt : block->getStatements()) {
+            execute(stmt);
+        }
+    }
+    catch (...) {
+        current_environment = enclosing;
+        throw;
+    }
+
+    current_environment = enclosing;
 }
 
 void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
 {
-    // TODO: define the declared variable in the current Environment.
+    Value value;
+    if (const Expression* initializer = var_decl->getInitializer()) {
+        value = evaluate(initializer);
+    }
+
+    current_environment->define(var_decl->getName().getLexeme(), value);
 }
 
 Value Interpreter::evaluate(const Expression* expr)
 {
+    if (const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(expr)) {
+        return evaluateLiteralExpr(literal);
+    }
+
     throw RuntimeError("", "지원하지 않는 표현식입니다.");
 }
 
