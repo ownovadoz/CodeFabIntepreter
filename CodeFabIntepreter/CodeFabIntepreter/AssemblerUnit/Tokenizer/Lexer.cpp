@@ -3,6 +3,12 @@
 #include <stdexcept>
 #include <unordered_map>
 
+using std::isdigit;
+using std::isalpha;
+using std::isalnum;
+using std::unordered_map;
+using std::string_view;
+
 Lexer::Lexer(string source) : source(std::move(source))
 {
 }
@@ -21,8 +27,8 @@ vector<Token> Lexer::scanTokens()
 
 void Lexer::scanToken()
 {
-    char c = advance();
-    switch (c)
+    char current_char = advance();
+    switch (current_char)
     {
         case '(': addToken(TokenType::LEFT_PAREN);  break;
         case ')': addToken(TokenType::RIGHT_PAREN); break;
@@ -36,6 +42,7 @@ void Lexer::scanToken()
         case '=': addToken(match('=') ? TokenType::EQUAL_EQUAL   : TokenType::EQUAL);   break;
         case '>': addToken(match('=') ? TokenType::GREATER_EQUAL : TokenType::GREATER); break;
         case '<': addToken(match('=') ? TokenType::LESS_EQUAL    : TokenType::LESS);    break;
+
 
         case '/':
             if (match('/'))
@@ -60,9 +67,9 @@ void Lexer::scanToken()
         case '"': scanString(); break;
 
         default:
-            if (std::isdigit(static_cast<unsigned char>(c)))
+            if (isdigit(static_cast<unsigned char>(current_char)))
                 scanNumber();
-            else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_')
+            else if (isalpha(static_cast<unsigned char>(current_char)) || current_char == '_')
                 scanIdentifier();
             break;
     }
@@ -124,10 +131,10 @@ void Lexer::scanString()
 
 void Lexer::scanIdentifier()
 {
-    while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_')
+    while (isalnum(static_cast<unsigned char>(peek())) || peek() == '_')
         advance();
 
-    static const std::unordered_map<std::string_view, TokenType> keywords = {
+    static const unordered_map<string_view, TokenType> keywords = {
         {"and",   TokenType::AND},
         {"else",  TokenType::ELSE},
         {"false", TokenType::FALSE},
@@ -139,20 +146,20 @@ void Lexer::scanIdentifier()
         {"var",   TokenType::VAR},
     };
 
-    std::string_view text(source.data() + start, current - start);
-    auto it = keywords.find(text);
-    TokenType type = (it != keywords.end()) ? it->second : TokenType::IDENTIFIER;
+    string_view text(source.data() + start, current - start);
+    auto found = keywords.find(text);
+    TokenType type = (found != keywords.end()) ? found->second : TokenType::IDENTIFIER;
     addToken(type);
 }
 
 void Lexer::scanNumber()
 {
-    while (std::isdigit(static_cast<unsigned char>(peek()))) advance();
+    while (isdigit(static_cast<unsigned char>(peek()))) advance();
 
-    if (peek() == '.' && std::isdigit(static_cast<unsigned char>(peekNext())))
+    if (peek() == '.' && isdigit(static_cast<unsigned char>(peekNext())))
     {
         advance(); // .
-        while (std::isdigit(static_cast<unsigned char>(peek()))) advance();
+        while (isdigit(static_cast<unsigned char>(peek()))) advance();
     }
 
     double value = std::stod(source.substr(start, current - start));
