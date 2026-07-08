@@ -83,6 +83,11 @@ Statement* Parser::parseVarDeclareStmt() {
 		throw exception();
 	}
 
+	if (advance().getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
+		delete stmt;
+		throw exception();
+	}
+
 	stmt->setExpression(expr);
 
 	return stmt;
@@ -107,13 +112,8 @@ Expression* Parser::parseExpression() {
 	case TokenType::TRUE:
 	case TokenType::FALSE:
 	case TokenType::MINUS:
-	case TokenType::BANG: {
-		Expression* expr = parseUnaryExpr();
-		if (advance().getType() == TokenType::SEMICOLON && peek().getType() == TokenType::END_OF_FILE) {
-			return expr;
-		}
-		return nullptr;
-	}
+	case TokenType::BANG:
+		return parseUnaryExpr();
 	default:
 		return nullptr;
 	}
