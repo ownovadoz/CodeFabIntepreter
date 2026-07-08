@@ -25,6 +25,7 @@ private:
     bool isAtEnd() const;
     void scanString();
     void scanNumber();
+    void scanIdentifier();
     void addToken(TokenType type);
     void addToken(TokenType type, Value literal);
 

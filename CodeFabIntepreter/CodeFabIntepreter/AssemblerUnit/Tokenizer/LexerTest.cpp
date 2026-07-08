@@ -6,10 +6,19 @@
 using std::vector;
 using namespace testing;
 
-TEST(LexerTest, SingleCharTokens)
+class LexerTest : public ::testing::Test
 {
-    Lexer lexer("( ) { } ; + - * = ! > <");
-    vector<Token> tokens = lexer.scanTokens();
+protected:
+    vector<Token> scan(const string& source)
+    {
+        Lexer lexer(source);
+        return lexer.scanTokens();
+    }
+};
+
+TEST_F(LexerTest, SingleCharTokens)
+{
+    auto tokens = scan("( ) { } ; + - * = ! > <");
 
     EXPECT_EQ(tokens[0].getType(),  TokenType::LEFT_PAREN);
     EXPECT_EQ(tokens[1].getType(),  TokenType::RIGHT_PAREN);
@@ -26,29 +35,26 @@ TEST(LexerTest, SingleCharTokens)
     EXPECT_EQ(tokens[12].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, SlashToken)
+TEST_F(LexerTest, SlashToken)
 {
-    Lexer lexer("/");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("/");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::SLASH);
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, CommentIsIgnored)
+TEST_F(LexerTest, CommentIsIgnored)
 {
-    Lexer lexer("// this is a comment\n+");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("// this is a comment\n+");
 
     EXPECT_EQ(tokens.size(), 2u);
     EXPECT_EQ(tokens[0].getType(), TokenType::PLUS);
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, WhitespaceIsIgnoredAndNewlineIncrementsLine)
+TEST_F(LexerTest, WhitespaceIsIgnoredAndNewlineIncrementsLine)
 {
-    Lexer lexer("  +  \t\n-  ");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("  +  \t\n-  ");
 
     EXPECT_EQ(tokens.size(), 3u);
     EXPECT_EQ(tokens[0].getType(), TokenType::PLUS);
@@ -57,28 +63,25 @@ TEST(LexerTest, WhitespaceIsIgnoredAndNewlineIncrementsLine)
     EXPECT_EQ(tokens[1].getLine(), 2);
 }
 
-TEST(LexerTest, EmptySourceReturnsOnlyEOF)
+TEST_F(LexerTest, EmptySourceReturnsOnlyEOF)
 {
-    Lexer lexer("");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("");
 
     EXPECT_EQ(tokens.size(), 1u);
     EXPECT_EQ(tokens[0].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, TokenMetaIsCorrect)
+TEST_F(LexerTest, TokenMetaIsCorrect)
 {
-    Lexer lexer("+");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("+");
 
     EXPECT_EQ(tokens[0].getLexeme(), "+");
     EXPECT_EQ(tokens[0].getLine(), 1);
 }
 
-TEST(LexerTest, MultiCharTokens)
+TEST_F(LexerTest, MultiCharTokens)
 {
-    Lexer lexer("== != <= >=");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("== != <= >=");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::EQUAL_EQUAL);
     EXPECT_EQ(tokens[1].getType(), TokenType::BANG_EQUAL);
@@ -87,18 +90,16 @@ TEST(LexerTest, MultiCharTokens)
     EXPECT_EQ(tokens[4].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, MultiCharTokenLexemeIsCorrect)
+TEST_F(LexerTest, MultiCharTokenLexemeIsCorrect)
 {
-    Lexer lexer("==");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("==");
 
     EXPECT_EQ(tokens[0].getLexeme(), "==");
 }
 
-TEST(LexerTest, SingleCharNotConsumedByMultiChar)
+TEST_F(LexerTest, SingleCharNotConsumedByMultiChar)
 {
-    Lexer lexer("= ! < >");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("= ! < >");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::EQUAL);
     EXPECT_EQ(tokens[1].getType(), TokenType::BANG);
@@ -107,48 +108,43 @@ TEST(LexerTest, SingleCharNotConsumedByMultiChar)
     EXPECT_EQ(tokens[4].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, StringLiteral)
+TEST_F(LexerTest, StringLiteral)
 {
-    Lexer lexer("\"hello\"");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("\"hello\"");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::STRING);
     EXPECT_EQ(std::get<string>(tokens[0].getLiteral()), "hello");
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, StringLiteralLexemeIncludesQuotes)
+TEST_F(LexerTest, StringLiteralLexemeIncludesQuotes)
 {
-    Lexer lexer("\"hi\"");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("\"hi\"");
 
     EXPECT_EQ(tokens[0].getLexeme(), "\"hi\"");
 }
 
-TEST(LexerTest, IntegerLiteral)
+TEST_F(LexerTest, IntegerLiteral)
 {
-    Lexer lexer("123");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("123");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
     EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 123.0);
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, FloatLiteral)
+TEST_F(LexerTest, FloatLiteral)
 {
-    Lexer lexer("3.14");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("3.14");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
     EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 3.14);
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexerTest, MultipleLiterals)
+TEST_F(LexerTest, MultipleLiterals)
 {
-    Lexer lexer("123 \"abc\" 4.5");
-    vector<Token> tokens = lexer.scanTokens();
+    auto tokens = scan("123 \"abc\" 4.5");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
     EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 123.0);
@@ -157,4 +153,56 @@ TEST(LexerTest, MultipleLiterals)
     EXPECT_EQ(tokens[2].getType(), TokenType::NUMBER);
     EXPECT_DOUBLE_EQ(std::get<double>(tokens[2].getLiteral()), 4.5);
     EXPECT_EQ(tokens[3].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTest, IdentifierToken)
+{
+    auto tokens = scan("abc");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[0].getLexeme(), "abc");
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTest, KeywordVar)
+{
+    auto tokens = scan("var");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::VAR);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTest, KeywordIf)
+{
+    auto tokens = scan("if");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IF);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTest, KeywordTrue)
+{
+    auto tokens = scan("true");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::TRUE);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTest, IdentifierStartsWithKeyword)
+{
+    auto tokens = scan("variable");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[0].getLexeme(), "variable");
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTest, VarDeclaration)
+{
+    auto tokens = scan("var a");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::VAR);
+    EXPECT_EQ(tokens[1].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[1].getLexeme(), "a");
+    EXPECT_EQ(tokens[2].getType(), TokenType::END_OF_FILE);
 }
