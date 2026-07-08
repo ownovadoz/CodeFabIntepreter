@@ -49,9 +49,25 @@ private:
 };
 
 class BinaryExpr : public Expression {
+public:
+	BinaryExpr(unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right)
+		: left{ move(left) }, op{ op }, right{ move(right) } {}
+
+	const Expression* getLeft() const {
+		return left.get();
+	}
+
+	const Token& getOperator() const {
+		return op;
+	}
+
+	const Expression* getRight() const {
+		return right.get();
+	}
+
 private:
-	unique_ptr<Expression> op;
 	unique_ptr<Expression> left;
+	Token op;
 	unique_ptr<Expression> right;
 };
 
@@ -85,8 +101,24 @@ private:
 };
 
 class LogicalExpr : public Expression {
+public:
+	LogicalExpr(unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right)
+		: left{ move(left) }, op{ op }, right{ move(right) } {}
+
+	const Expression* getLeft() const {
+		return left.get();
+	}
+
+	const Token& getOperator() const {
+		return op;
+	}
+
+	const Expression* getRight() const {
+		return right.get();
+	}
+
 private:
-	unique_ptr<Expression> expr;
 	unique_ptr<Expression> left;
+	Token op;
 	unique_ptr<Expression> right;
 };
