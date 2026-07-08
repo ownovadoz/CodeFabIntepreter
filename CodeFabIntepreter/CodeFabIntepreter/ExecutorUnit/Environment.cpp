@@ -10,7 +10,7 @@ void Environment::define(const string& name, const Value& value)
     values[name] = value;
 }
 
-optional<Value> Environment::get(const string& name) const
+Value Environment::get(const string& name) const
 {
     auto found = values.find(name);
     if (found != values.end()) return found->second;
