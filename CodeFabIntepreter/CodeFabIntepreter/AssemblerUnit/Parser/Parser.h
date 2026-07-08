@@ -12,7 +12,7 @@ using std::vector;
 class Parser
 {
 public:
-	unique_ptr<Statement> parse(const vector<Token>& tokens);
+	vector<unique_ptr<Statement>> parse(const vector<Token>& tokens);
 
 
 private:

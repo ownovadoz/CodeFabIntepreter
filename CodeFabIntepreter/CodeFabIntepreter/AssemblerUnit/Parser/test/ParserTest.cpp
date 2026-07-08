@@ -27,7 +27,7 @@ protected:
 		tokens.push_back({ TokenType::END_OF_FILE, "\n", "\n", 1 });
 
 		parsed = parser.parse(tokens);
-		return dynamic_cast<VarDeclareStmt*>(parsed.get());
+		return parsed.empty() ? nullptr : dynamic_cast<VarDeclareStmt*>(parsed[0].get());
 	}
 
 	void expectDeclaredName(VarDeclareStmt* stmt, const string& lexeme) {
@@ -117,13 +117,13 @@ protected:
 		EXPECT_EQ(logical->getOperator().getLexeme(), op_lexeme);
 	}
 
-	Statement* buildAndParseStatement(const vector<Token>& tokens) {
+	const vector<unique_ptr<Statement>>& buildAndParseProgram(const vector<Token>& tokens) {
 		parsed = parser.parse(tokens);
-		return parsed.get();
+		return parsed;
 	}
 
 	Parser parser;
-	unique_ptr<Statement> parsed;
+	vector<unique_ptr<Statement>> parsed;
 };
 
 TEST_F(ParserTestFixture, VarDeclareStmtSingleNumberPassed) {
@@ -540,7 +540,7 @@ TEST_F(ParserTestFixture, VarDeclareStmtDanglingMinusWithExtraSemicolonFailed) {
 
 TEST_F(ParserTestFixture, ExpressionStmtAssignmentPassed) {
 	// a = 10;
-	Statement* stmt = buildAndParseStatement({
+	const auto& program = buildAndParseProgram({
 		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::EQUAL, "=", "=", 1},
 		{TokenType::NUMBER, "10", 10.0, 1},
@@ -548,7 +548,8 @@ TEST_F(ParserTestFixture, ExpressionStmtAssignmentPassed) {
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 
-	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(stmt);
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
 	EXPECT_NE(expr_stmt, nullptr);
 }
 
@@ -564,14 +565,15 @@ TEST_F(ParserTestFixture, ExpressionStmtMissingSemicolonFailed) {
 
 TEST_F(ParserTestFixture, PrintStmtPassed) {
 	// print 10;
-	Statement* stmt = buildAndParseStatement({
+	const auto& program = buildAndParseProgram({
 		{TokenType::PRINT, "print", "print", 1},
 		{TokenType::NUMBER, "10", 10.0, 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 
-	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(stmt);
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
 	EXPECT_NE(print_stmt, nullptr);
 }
 
@@ -586,7 +588,7 @@ TEST_F(ParserTestFixture, PrintStmtMissingExpressionFailed) {
 
 TEST_F(ParserTestFixture, IfStmtWithElsePassed) {
 	// if (a) print b; else print c;
-	Statement* stmt = buildAndParseStatement({
+	const auto& program = buildAndParseProgram({
 		{TokenType::IF, "if", "if", 1},
 		{TokenType::LEFT_PAREN, "(", "(", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
@@ -601,13 +603,14 @@ TEST_F(ParserTestFixture, IfStmtWithElsePassed) {
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 
-	const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(stmt);
+	ASSERT_EQ(program.size(), 1);
+	const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(program[0].get());
 	EXPECT_NE(if_stmt, nullptr);
 }
 
 TEST_F(ParserTestFixture, IfStmtWithoutElsePassed) {
 	// if (a) print b;
-	Statement* stmt = buildAndParseStatement({
+	const auto& program = buildAndParseProgram({
 		{TokenType::IF, "if", "if", 1},
 		{TokenType::LEFT_PAREN, "(", "(", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
@@ -618,7 +621,8 @@ TEST_F(ParserTestFixture, IfStmtWithoutElsePassed) {
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 
-	const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(stmt);
+	ASSERT_EQ(program.size(), 1);
+	const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(program[0].get());
 	EXPECT_NE(if_stmt, nullptr);
 }
 
@@ -637,7 +641,7 @@ TEST_F(ParserTestFixture, IfStmtMissingParenFailed) {
 
 TEST_F(ParserTestFixture, ForStmtFullClausePassed) {
 	// for (var i = 0; i < 10; i = i + 1) print i;
-	Statement* stmt = buildAndParseStatement({
+	const auto& program = buildAndParseProgram({
 		{TokenType::FOR, "for", "for", 1},
 		{TokenType::LEFT_PAREN, "(", "(", 1},
 		{TokenType::VAR, "var", "var", 1},
@@ -661,7 +665,8 @@ TEST_F(ParserTestFixture, ForStmtFullClausePassed) {
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 
-	const ForStmt* for_stmt = dynamic_cast<const ForStmt*>(stmt);
+	ASSERT_EQ(program.size(), 1);
+	const ForStmt* for_stmt = dynamic_cast<const ForStmt*>(program[0].get());
 	EXPECT_NE(for_stmt, nullptr);
 }
 
@@ -684,7 +689,7 @@ TEST_F(ParserTestFixture, ForStmtMissingParenFailed) {
 
 TEST_F(ParserTestFixture, BlockStmtMultipleStatementsPassed) {
 	// { print a; print b; }
-	Statement* stmt = buildAndParseStatement({
+	const auto& program = buildAndParseProgram({
 		{TokenType::LEFT_BRACE, "{", "{", 1},
 		{TokenType::PRINT, "print", "print", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
@@ -696,7 +701,8 @@ TEST_F(ParserTestFixture, BlockStmtMultipleStatementsPassed) {
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 
-	const BlockStmt* block_stmt = dynamic_cast<const BlockStmt*>(stmt);
+	ASSERT_EQ(program.size(), 1);
+	const BlockStmt* block_stmt = dynamic_cast<const BlockStmt*>(program[0].get());
 	EXPECT_NE(block_stmt, nullptr);
 }
 
