@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../AssemblerUnit/Parser/Statement.h"
+#include "../Visitor.h"
 
 #include <set>
 #include <string>
@@ -10,7 +11,7 @@ using std::set;
 using std::string;
 using std::vector;
 
-class Checker
+class Checker : public StmtVisitor
 {
 public:
     class ScopeGuard
@@ -37,8 +38,20 @@ private:
     void checkStatement(Statement* stmt);
     void checkBlockStmt(BlockStmt* block);
     void checkVarDeclareStmt(VarDeclareStmt* var_decl);
+    void checkIfStmt(IfStmt* if_stmt);
 
     bool isDeclaredInCurrentScope(const string& name) const;
+
+    void visitExpressionStmt(ExpressionStmt& stmt) override;
+    void visitIfStmt(IfStmt& stmt) override;
+    void visitBlockStmt(BlockStmt& stmt) override;
+    void visitVarDeclareStmt(VarDeclareStmt& stmt) override;
+    void visitPrintStmt(PrintStmt& stmt) override;
+    void visitForStmt(ForStmt& stmt) override;
+    void visitFunctionDeclStmt(FunctionDeclStmt& stmt) override;
+    void visitReturnStmt(ReturnStmt& stmt) override;
+    void visitClassDeclStmt(ClassDeclStmt& stmt) override;
+    void visitImportStmt(ImportStmt& stmt) override;
 
     vector<set<string>> scope_stack;
 };

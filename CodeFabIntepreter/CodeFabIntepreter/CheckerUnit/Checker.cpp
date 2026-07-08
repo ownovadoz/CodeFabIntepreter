@@ -47,18 +47,19 @@ void Checker::checkStatement(Statement* stmt)
 {
     if (stmt == nullptr) return;
 
-    if (BlockStmt* block = dynamic_cast<BlockStmt*>(stmt))
-    {
-        checkBlockStmt(block);
-        return;
-    }
-
-    if (VarDeclareStmt* var_decl = dynamic_cast<VarDeclareStmt*>(stmt))
-    {
-        checkVarDeclareStmt(var_decl);
-        return;
-    }
+    stmt->accept(*this);
 }
+
+void Checker::visitBlockStmt(BlockStmt& stmt) { checkBlockStmt(&stmt); }
+void Checker::visitVarDeclareStmt(VarDeclareStmt& stmt) { checkVarDeclareStmt(&stmt); }
+void Checker::visitIfStmt(IfStmt& stmt) { checkIfStmt(&stmt); }
+void Checker::visitExpressionStmt(ExpressionStmt&) {}
+void Checker::visitPrintStmt(PrintStmt&) {}
+void Checker::visitForStmt(ForStmt&) {}
+void Checker::visitFunctionDeclStmt(FunctionDeclStmt&) {}
+void Checker::visitReturnStmt(ReturnStmt&) {}
+void Checker::visitClassDeclStmt(ClassDeclStmt&) {}
+void Checker::visitImportStmt(ImportStmt&) {}
 
 void Checker::checkBlockStmt(BlockStmt* block)
 {
@@ -71,4 +72,10 @@ void Checker::checkBlockStmt(BlockStmt* block)
 void Checker::checkVarDeclareStmt(VarDeclareStmt* var_decl)
 {
     declareVariable(var_decl->getName(), {});
+}
+
+void Checker::checkIfStmt(IfStmt* if_stmt)
+{
+    checkStatement(const_cast<Statement*>(if_stmt->getThenBranch()));
+    checkStatement(const_cast<Statement*>(if_stmt->getElseBranch()));
 }
