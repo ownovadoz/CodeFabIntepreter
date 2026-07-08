@@ -1,10 +1,8 @@
 #include "Interpreter.h"
 
-#include "../RuntimeError.h"
+#include "../CodeFabException.h"
 
 namespace {
-
-// 블록 실행 도중 예외가 발생해도 current_environment가 항상 이전 스코프로 복원되도록 보장한다.
 class EnvironmentGuard {
 public:
     EnvironmentGuard(Environment*& current, Environment* block_environment)
@@ -80,7 +78,7 @@ Value Interpreter::evaluate(const Expression* expr)
         return evaluateLiteralExpr(literal);
     }
 
-    throw RuntimeError("", "지원하지 않는 표현식입니다.");
+    throw CodeFabException(0, "지원하지 않는 표현식입니다.");
 }
 
 Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)

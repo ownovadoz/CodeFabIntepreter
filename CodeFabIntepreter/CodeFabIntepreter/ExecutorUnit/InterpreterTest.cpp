@@ -3,6 +3,7 @@
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Parser/Statement.h"
 #include "../AssemblerUnit/Tokenizer/Token.h"
+#include "../CodeFabException.h"
 #include "../RuntimeError.h"
 
 #include <gmock/gmock.h>
@@ -19,8 +20,6 @@ class InterpreterTestFixture : public testing::Test {
 public:
     Interpreter interpreter;
 };
-
-// Checker unit이 변수 중복 선언, 스코프 규칙을 이미 검증하므로 여기서는 실행 동작만 검증한다.
 
 TEST_F(InterpreterTestFixture, VarDeclareWithInitializerDefinesVariable)
 {
@@ -76,9 +75,9 @@ TEST_F(InterpreterTestFixture, EvaluateLiteralExprReturnsItsValue)
     EXPECT_EQ(get<string>(value), "hi");
 }
 
-TEST_F(InterpreterTestFixture, EvaluatingUnsupportedExpressionThrowsRuntimeError)
+TEST_F(InterpreterTestFixture, EvaluatingUnsupportedExpressionThrowsCodeFabException)
 {
     Expression unsupported;
 
-    EXPECT_THROW(interpreter.evaluate(&unsupported), RuntimeError);
+    EXPECT_THROW(interpreter.evaluate(&unsupported), CodeFabException);
 }
