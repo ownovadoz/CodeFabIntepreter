@@ -26,6 +26,12 @@ private:
 
 	unique_ptr<Expression> parseExpression();
 	unique_ptr<Expression> parseAssignExpr();
+	unique_ptr<Expression> parseLogicOr();
+	unique_ptr<Expression> parseLogicAnd();
+	unique_ptr<Expression> parseEquality();
+	unique_ptr<Expression> parseComparison();
+	unique_ptr<Expression> parseTerm();
+	unique_ptr<Expression> parseFactor();
 	unique_ptr<Expression> parseUnaryExpr();
 	unique_ptr<Expression> parsePrimaryExpr();
 
