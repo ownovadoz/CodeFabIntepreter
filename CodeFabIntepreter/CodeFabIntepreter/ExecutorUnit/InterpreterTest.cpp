@@ -60,8 +60,8 @@ TEST_F(InterpreterTestFixture, BlockScopedVariableIsNotVisibleOutsideBlock)
 
     EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
 
-    delete initializer;
     delete var_decl;
+    delete initializer;
 }
 
 TEST_F(InterpreterTestFixture, EvaluateLiteralExprReturnsItsValue)
