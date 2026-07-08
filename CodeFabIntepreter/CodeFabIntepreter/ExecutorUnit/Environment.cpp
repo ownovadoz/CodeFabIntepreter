@@ -21,6 +21,9 @@ optional<Value> Environment::get(const string& name) const
 void Environment::assign(const string& name, const Value& value)
 {
     auto found = values.find(name);
-    if (found != values.end()) found->second = value;
+    if (found != values.end()) {
+        found->second = value;
+        return;
+    }
     throw RuntimeError(name, "Undefined variable '" + name + "'.");
 }

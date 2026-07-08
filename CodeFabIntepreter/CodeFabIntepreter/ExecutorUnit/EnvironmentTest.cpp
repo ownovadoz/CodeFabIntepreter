@@ -18,6 +18,16 @@ TEST_F(EnvironmentTestFixture, DefinedVariableIsReadable)
     EXPECT_EQ(std::get<double>(*value), 3.0);
 }
 
+TEST_F(EnvironmentTestFixture, DefineAssignGet)
+{
+    env.define("a", 3.0);
+    env.assign("a", 2.0);
+    auto value = env.get("a");
+
+    ASSERT_TRUE(value.has_value());
+    EXPECT_EQ(std::get<double>(*value), 2.0);
+}
+
 TEST_F(EnvironmentTestFixture, UndefinedVariableThrowException)
 {
     EXPECT_THROW(env.get("x"), RuntimeError);

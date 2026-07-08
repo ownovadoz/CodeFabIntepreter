@@ -1,14 +1,21 @@
 #pragma once
 
-#include "./AssemblerUnit//Tokenizer/Token.h"
-
 #include <stdexcept>
 #include <string>
 
-class RuntimeError : public std::runtime_error {
-    public:
-        RuntimeError(std::string var_name, const std::string& message)
-            : std::runtime_error(message), var_name(std::move(var_name)) {
+using std::string;
+using std::runtime_error;
+using std::move;
+
+class RuntimeError : public runtime_error {
+public:
+        RuntimeError(string var_name, const string& message)
+            : runtime_error(message), var_name(move(var_name)) {
+        }
+
+        string getVarName()
+        {
+            return var_name;
         }
 private:
         std::string var_name;
