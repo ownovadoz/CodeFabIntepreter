@@ -10,6 +10,11 @@
 #include <string>
 #include <variant>
 
+using std::monostate;
+using std::string;
+using std::get;
+using std::holds_alternative;
+
 class InterpreterTestFixture : public testing::Test {
 public:
     Interpreter interpreter;
@@ -19,7 +24,7 @@ public:
 
 TEST_F(InterpreterTestFixture, VarDeclareWithInitializerDefinesVariable)
 {
-    Token name_token(TokenType::IDENTIFIER, "a", std::monostate{}, 1);
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
     Token literal_token(TokenType::NUMBER, "3", 3.0, 1);
 
     VarDeclareStmt var_decl(name_token);
@@ -28,22 +33,22 @@ TEST_F(InterpreterTestFixture, VarDeclareWithInitializerDefinesVariable)
 
     interpreter.interpret(&var_decl);
 
-    EXPECT_EQ(std::get<double>(interpreter.getVariableValue("a")), 3.0);
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 3.0);
 }
 
 TEST_F(InterpreterTestFixture, VarDeclareWithoutInitializerDefinesNil)
 {
-    Token name_token(TokenType::IDENTIFIER, "a", std::monostate{}, 1);
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
     VarDeclareStmt var_decl(name_token);
 
     interpreter.interpret(&var_decl);
 
-    EXPECT_TRUE(std::holds_alternative<std::monostate>(interpreter.getVariableValue("a")));
+    EXPECT_TRUE(holds_alternative<monostate>(interpreter.getVariableValue("a")));
 }
 
 TEST_F(InterpreterTestFixture, BlockScopedVariableIsNotVisibleOutsideBlock)
 {
-    Token name_token(TokenType::IDENTIFIER, "a", std::monostate{}, 1);
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
     Token literal_token(TokenType::NUMBER, "3", 3.0, 1);
 
     VarDeclareStmt* var_decl = new VarDeclareStmt(name_token);
@@ -63,12 +68,12 @@ TEST_F(InterpreterTestFixture, BlockScopedVariableIsNotVisibleOutsideBlock)
 
 TEST_F(InterpreterTestFixture, EvaluateLiteralExprReturnsItsValue)
 {
-    Token literal_token(TokenType::STRING, "hi", std::string("hi"), 1);
+    Token literal_token(TokenType::STRING, "hi", string("hi"), 1);
     LiteralExpr literal(literal_token);
 
     Value value = interpreter.evaluate(&literal);
 
-    EXPECT_EQ(std::get<std::string>(value), "hi");
+    EXPECT_EQ(get<string>(value), "hi");
 }
 
 TEST_F(InterpreterTestFixture, EvaluatingUnsupportedExpressionThrowsRuntimeError)
