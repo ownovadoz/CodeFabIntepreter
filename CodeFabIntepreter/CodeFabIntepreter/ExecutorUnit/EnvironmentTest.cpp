@@ -71,6 +71,15 @@ TEST_F(NestedEnvironmentTestFixture, AssignUpdatesVariableInEnclosingScope)
     EXPECT_EQ(std::get<double>(outer.get("a")), 5.0);
 }
 
+TEST_F(NestedEnvironmentTestFixture, DefineShadowsVariableInEnclosingScope)
+{
+    outer.define("a", 3.0);
+
+    inner.define("a", 5.0);
+
+    EXPECT_EQ(std::get<double>(inner.get("a")), 5.0);
+}
+
 TEST_F(NestedEnvironmentTestFixture, GetUndefinedVariableThrowsThroughChain)
 {
     EXPECT_THROW(inner.get("x"), RuntimeError);
