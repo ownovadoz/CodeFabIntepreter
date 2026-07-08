@@ -64,8 +64,8 @@ void Checker::checkBlockStmt(BlockStmt* block)
 {
     ScopeGuard guard(*this);
 
-    for (Statement* stmt : block->getStatements())
-        checkStatement(stmt);
+    for (const auto& stmt : block->getStatements())
+        checkStatement(stmt.get());
 }
 
 void Checker::checkVarDeclareStmt(VarDeclareStmt* var_decl)

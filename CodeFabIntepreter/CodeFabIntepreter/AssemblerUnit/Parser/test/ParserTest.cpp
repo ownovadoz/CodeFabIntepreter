@@ -5,19 +5,17 @@
 #include "../../../CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <memory>
 #include <string>
 #include <vector>
 
 using std::string;
+using std::unique_ptr;
 using std::vector;
 using namespace testing;
 
 class ParserTestFixture : public Test {
 protected:
-	void TearDown() override {
-		delete stmt;
-	}
-
 	VarDeclareStmt* buildAndParseVarDeclareStmt(const vector<Token>& initializer_tokens) {
 		vector<Token> tokens = {
 			{TokenType::VAR, "var", "var", 1},
@@ -28,8 +26,8 @@ protected:
 		tokens.push_back({ TokenType::SEMICOLON, ";", ";", 1 });
 		tokens.push_back({ TokenType::END_OF_FILE, "\n", "\n", 1 });
 
-		stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
-		return stmt;
+		parsed = parser.parse(tokens);
+		return dynamic_cast<VarDeclareStmt*>(parsed.get());
 	}
 
 	void expectDeclaredName(VarDeclareStmt* stmt, const string& lexeme) {
@@ -71,7 +69,7 @@ protected:
 	}
 
 	Parser parser;
-	VarDeclareStmt* stmt = nullptr;
+	unique_ptr<Statement> parsed;
 };
 
 TEST_F(ParserTestFixture, VarDeclareStmtSingleNumberPassed) {

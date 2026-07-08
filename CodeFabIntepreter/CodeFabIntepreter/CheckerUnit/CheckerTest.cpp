@@ -6,9 +6,12 @@
 #include "../CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <memory>
 #include <optional>
 #include <vector>
 
+using std::make_unique;
+using std::move;
 using std::vector;
 
 namespace {
@@ -72,63 +75,44 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 	};
 
 	Parser parser;
-	Statement* root = parser.parse(tokens);
+	auto root = parser.parse(tokens);
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(root));
-
-	delete root;
+	EXPECT_NO_THROW(checker.check(root.get()));
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
-	LiteralExpr* first_value = new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} };
-	VarDeclareStmt* first = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	first->setExpression(first_value);
+	auto first = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	first->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
 
-	LiteralExpr* second_value = new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} };
-	VarDeclareStmt* second = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	second->setExpression(second_value);
+	auto second = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	second->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
 
-	BlockStmt* block = new BlockStmt();
-	block->addStatement(first);
-	block->addStatement(second);
+	auto block = make_unique<BlockStmt>();
+	block->addStatement(move(first));
+	block->addStatement(move(second));
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(block), CodeFabException);
-
-	delete block;
-	delete first;
-	delete second;
-	delete first_value;
-	delete second_value;
+	EXPECT_THROW(checker.check(block.get()), CodeFabException);
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
-	LiteralExpr* inner_value = new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} };
-	VarDeclareStmt* inner_var = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	inner_var->setExpression(inner_value);
+	auto inner_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	inner_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
 
-	BlockStmt* inner = new BlockStmt();
-	inner->addStatement(inner_var);
+	auto inner = make_unique<BlockStmt>();
+	inner->addStatement(move(inner_var));
 
-	LiteralExpr* outer_value = new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} };
-	VarDeclareStmt* outer_var = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	outer_var->setExpression(outer_value);
+	auto outer_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	outer_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
 
-	BlockStmt* outer = new BlockStmt();
-	outer->addStatement(outer_var);
-	outer->addStatement(inner);
+	auto outer = make_unique<BlockStmt>();
+	outer->addStatement(move(outer_var));
+	outer->addStatement(move(inner));
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(outer));
-
-	delete outer;
-	delete inner;
-	delete outer_var;
-	delete inner_var;
-	delete outer_value;
-	delete inner_value;
+	EXPECT_NO_THROW(checker.check(outer.get()));
 }

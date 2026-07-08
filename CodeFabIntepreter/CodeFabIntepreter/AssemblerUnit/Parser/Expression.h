@@ -1,7 +1,13 @@
-﻿#pragma once
+#pragma once
 
 #include "Node.h"
 #include "../Tokenizer/Token.h"
+
+#include <memory>
+#include <utility>
+
+using std::move;
+using std::unique_ptr;
 
 class LiteralExpr : public Expression {
 public:
@@ -21,46 +27,42 @@ private:
 class AssignExpr : public Expression {
 private:
 	Token identifier;
-	Expression* assign_expr;
-	Expression* expr;
+	unique_ptr<Expression> assign_expr;
+	unique_ptr<Expression> expr;
 };
 
 class BinaryExpr : public Expression {
 private:
-	Expression* op;
-	Expression* left;
-	Expression* right;
+	unique_ptr<Expression> op;
+	unique_ptr<Expression> left;
+	unique_ptr<Expression> right;
 };
 
 class UnaryExpr : public Expression {
 public:
-	explicit UnaryExpr(const Token& op, Expression* expr) : op{ op }, expr{ expr } {}
-
-	~UnaryExpr() override {
-		delete expr;
-	}
+	UnaryExpr(const Token& op, unique_ptr<Expression> expr) : op{ op }, expr{ move(expr) } {}
 
 	const Token& getOperator() const {
 		return op;
 	}
 
 	const Expression* getExpr() const {
-		return expr;
+		return expr.get();
 	}
 
 private:
 	Token op;
-	Expression* expr;
+	unique_ptr<Expression> expr;
 };
 
 class GroupingExpr : public Expression {
 private:
-	Expression* expr;	// TODO: is it right?
+	unique_ptr<Expression> expr;	// TODO: is it right?
 };
 
 class LogicalExpr : public Expression {
 private:
-	Expression* expr;
-	Expression* left;
-	Expression* right;
+	unique_ptr<Expression> expr;
+	unique_ptr<Expression> left;
+	unique_ptr<Expression> right;
 };
