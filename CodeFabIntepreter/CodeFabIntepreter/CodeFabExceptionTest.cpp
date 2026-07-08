@@ -30,3 +30,11 @@ TEST(CodeFabExceptionTest, TokenConstructorFormatsMessageWithLexeme) {
 	EXPECT_EQ(error.getMessage(), "expected expression");
 	EXPECT_STREQ(error.what(), "[line 12] Type : SEMICOLON, Lexeme : ;, literal : nil, message : expected expression");
 }
+
+TEST(CodeFabExceptionTest, TokenConstructorFormatsMessageDifferentlyAtEndOfFile) {
+	Token token(TokenType::END_OF_FILE, "", std::monostate{}, 20);
+	CodeFabException error(token, "unexpected end of input");
+
+	EXPECT_EQ(error.getLine(), 20);
+	EXPECT_STREQ(error.what(), "[line 20] Error at end: unexpected end of input");
+}

@@ -24,6 +24,8 @@ private:
         return "[line " + std::to_string(line) + "] Error: " + message;
     }
     static string formatMessage(const Token& token, const string& message) {
+        if (token.getType() == TokenType::END_OF_FILE)
+            return "[line " + std::to_string(token.getLine()) + "] Error at end: " + message;
         return "[line " + std::to_string(token.getLine()) + "] Type : " + tokenTypeToString(token.getType()) + ", Lexeme : " + token.getLexeme() + ", literal : " + stringify(token.getLiteral()) + ", message : " + message;
     }
     int line;
