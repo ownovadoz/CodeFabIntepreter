@@ -83,8 +83,6 @@ unique_ptr<Statement> Parser::parseVarDeclareStmt() {
 
 	unique_ptr<Expression> expr = parseExpression();
 
-	if (expr == nullptr) throw CodeFabException(peek(), "Expect expression.");
-
 	Token after_expr_token = advance();
 	if (after_expr_token.getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
 		throw CodeFabException(after_expr_token, "Expect ';' after variable declaration.");
@@ -108,18 +106,7 @@ unique_ptr<Statement> Parser::parseExpressionStmt() {
 }
 
 unique_ptr<Expression> Parser::parseExpression() {
-	switch (peek().getType()) {
-	case TokenType::NUMBER:
-	case TokenType::STRING:
-	case TokenType::TRUE:
-	case TokenType::FALSE:
-	case TokenType::MINUS:
-	case TokenType::BANG:
-	case TokenType::LEFT_PAREN:
-		return parseUnaryExpr();
-	default:
-		return nullptr;
-	}
+	return parseUnaryExpr();
 }
 
 unique_ptr<Expression> Parser::parseUnaryExpr() {
@@ -142,7 +129,6 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	case TokenType::LEFT_PAREN: {
 		advance();
 		unique_ptr<Expression> expr = parseExpression();
-		if (expr == nullptr) throw CodeFabException(peek(), "Expect expression.");
 
 		Token close_paren = advance();
 		if (close_paren.getType() != TokenType::RIGHT_PAREN) throw CodeFabException(close_paren, "Expect ')' after expression.");
