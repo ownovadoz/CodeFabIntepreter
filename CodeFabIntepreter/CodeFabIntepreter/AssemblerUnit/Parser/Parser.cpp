@@ -210,48 +210,27 @@ unique_ptr<Expression> Parser::parseLogicAnd() {
 }
 
 unique_ptr<Expression> Parser::parseEquality() {
-	unique_ptr<Expression> expr = parseComparison();
-
-	while (peek().getType() == TokenType::BANG_EQUAL || peek().getType() == TokenType::EQUAL_EQUAL) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseComparison();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseBinaryExpr(&Parser::parseComparison, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL });
 }
 
 unique_ptr<Expression> Parser::parseComparison() {
-	unique_ptr<Expression> expr = parseTerm();
-
-	while (peek().getType() == TokenType::GREATER || peek().getType() == TokenType::GREATER_EQUAL
-		|| peek().getType() == TokenType::LESS || peek().getType() == TokenType::LESS_EQUAL) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseTerm();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseBinaryExpr(&Parser::parseTerm, { TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL });
 }
 
 unique_ptr<Expression> Parser::parseTerm() {
-	unique_ptr<Expression> expr = parseFactor();
-
-	while (peek().getType() == TokenType::PLUS || peek().getType() == TokenType::MINUS) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseFactor();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseBinaryExpr(&Parser::parseFactor, { TokenType::PLUS, TokenType::MINUS });
 }
 
 unique_ptr<Expression> Parser::parseFactor() {
-	unique_ptr<Expression> expr = parseUnaryExpr();
+	return parseBinaryExpr(&Parser::parseUnaryExpr, { TokenType::STAR, TokenType::SLASH });
+}
 
-	while (peek().getType() == TokenType::STAR || peek().getType() == TokenType::SLASH) {
+unique_ptr<Expression> Parser::parseBinaryExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators) {
+	unique_ptr<Expression> expr = (this->*parseOperand)();
+
+	while (checkAny(operators)) {
 		Token op = advance();
-		unique_ptr<Expression> right = parseUnaryExpr();
+		unique_ptr<Expression> right = (this->*parseOperand)();
 		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
 	}
 
