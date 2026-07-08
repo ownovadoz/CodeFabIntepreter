@@ -12,5 +12,5 @@ Statement* AssemblerUnit::assemble(const string& code_line) {
 	vector<Token> tokens = lexer.scanTokens();
 
 	Parser parser;
-	return parser.parse(tokens);
+	return parser.parse(tokens).release();
 }
