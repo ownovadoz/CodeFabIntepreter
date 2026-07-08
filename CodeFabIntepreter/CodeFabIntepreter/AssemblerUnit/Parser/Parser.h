@@ -4,8 +4,10 @@
 #include "../Tokenizer/Token.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
+using std::string;
 using std::unique_ptr;
 using std::vector;
 
@@ -54,6 +56,13 @@ private:
 	bool isAtEnd() const {
 		return current_token_it == tokens.end() || current_token_it->getType() == TokenType::END_OF_FILE;
 	}
+
+	bool check(TokenType type) const {
+		if (isAtEnd()) return false;
+		return peek().getType() == type;
+	}
+
+	Token consume(TokenType type, const string& message);
 
 	vector<Token> tokens;
 	vector<Token>::const_iterator current_token_it;
