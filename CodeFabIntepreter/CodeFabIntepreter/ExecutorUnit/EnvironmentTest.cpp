@@ -37,3 +37,41 @@ TEST_F(EnvironmentTestFixture, AssignToUndefinedThrowException)
 {
     EXPECT_THROW(env.assign("x", 1.0), RuntimeError);
 }
+
+TEST_F(EnvironmentTestFixture, AssignToExistingVariableUpdatesValue)
+{
+    env.define("a", 1.0);
+
+    env.assign("a", 2.0);
+
+    EXPECT_EQ(std::get<double>(env.get("a")), 2.0);
+}
+
+class NestedEnvironmentTestFixture : public testing::Test {
+public:
+    Environment outer;
+    Environment inner{ &outer };
+};
+
+TEST_F(NestedEnvironmentTestFixture, GetFindsVariableInEnclosingScope)
+{
+    outer.define("a", 3.0);
+
+    auto value = inner.get("a");
+
+    EXPECT_EQ(std::get<double>(value), 3.0);
+}
+
+TEST_F(NestedEnvironmentTestFixture, AssignUpdatesVariableInEnclosingScope)
+{
+    outer.define("a", 3.0);
+
+    inner.assign("a", 5.0);
+
+    EXPECT_EQ(std::get<double>(outer.get("a")), 5.0);
+}
+
+TEST_F(NestedEnvironmentTestFixture, GetUndefinedVariableThrowsThroughChain)
+{
+    EXPECT_THROW(inner.get("x"), RuntimeError);
+}
