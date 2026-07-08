@@ -7,10 +7,13 @@
 
 #include <gmock/gmock.h>
 
+#include <memory>
 #include <string>
 #include <variant>
 
+using std::make_unique;
 using std::monostate;
+using std::move;
 using std::string;
 using std::get;
 using std::holds_alternative;
@@ -26,8 +29,7 @@ TEST_F(InterpreterTestFixture, VarDeclareWithInitializerDefinesVariable)
     Token literal_token(TokenType::NUMBER, "3", 3.0, 1);
 
     VarDeclareStmt var_decl(name_token);
-    LiteralExpr initializer(literal_token);
-    var_decl.setExpression(&initializer);
+    var_decl.setExpression(make_unique<LiteralExpr>(literal_token));
 
     interpreter.interpret(&var_decl);
 
@@ -49,19 +51,15 @@ TEST_F(InterpreterTestFixture, BlockScopedVariableIsNotVisibleOutsideBlock)
     Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
     Token literal_token(TokenType::NUMBER, "3", 3.0, 1);
 
-    VarDeclareStmt* var_decl = new VarDeclareStmt(name_token);
-    LiteralExpr* initializer = new LiteralExpr(literal_token);
-    var_decl->setExpression(initializer);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<LiteralExpr>(literal_token));
 
     BlockStmt block;
-    block.addStatement(var_decl);
+    block.addStatement(move(var_decl));
 
     interpreter.interpret(&block);
 
     EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
-
-    delete var_decl;
-    delete initializer;
 }
 
 TEST_F(InterpreterTestFixture, EvaluateLiteralExprReturnsItsValue)

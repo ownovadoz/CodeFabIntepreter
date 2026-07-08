@@ -57,8 +57,8 @@ void Interpreter::executeBlockStmt(BlockStmt* block)
     Environment block_environment(current_environment);
     EnvironmentGuard guard(current_environment, &block_environment);
 
-    for (Statement* stmt : block->getStatements()) {
-        execute(stmt);
+    for (const auto& stmt : block->getStatements()) {
+        execute(stmt.get());
     }
 }
 
