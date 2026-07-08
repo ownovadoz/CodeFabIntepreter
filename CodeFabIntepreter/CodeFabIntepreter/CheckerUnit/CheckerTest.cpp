@@ -3,52 +3,65 @@
 #include "../AssemblerUnit/Parser/Parser.h"
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Tokenizer/Token.h"
+#include "../CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <memory>
+#include <optional>
 #include <vector>
 
+using std::make_unique;
+using std::move;
 using std::vector;
+
+namespace {
+	Token makeIdentifier(const string& name) {
+		return Token(TokenType::IDENTIFIER, name, name, 1);
+	}
+}
 
 class CheckerTest : public ::testing::Test {
 protected:
-    void SetUp() override { checker.enterScope(); }
+    void SetUp() override { guard.emplace(checker); }
 
     Checker checker;
+    std::optional<Checker::ScopeGuard> guard;
 };
 
 TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }
 
 TEST_F(CheckerTest, DuplicateDeclarationInSameScopeFails) {
-    checker.declareVariable("a", {});
+    checker.declareVariable(makeIdentifier("a"), {});
 
-    EXPECT_TRUE(checker.declareVariable("a", {}).hasError());
+    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), {}), CodeFabException);
 }
 
 TEST_F(CheckerTest, SameNameInNestedScopeSucceeds) {
-    checker.declareVariable("a", {});
-    checker.enterScope();
+    checker.declareVariable(makeIdentifier("a"), {});
+    Checker::ScopeGuard inner(checker);
 
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }
 
 TEST_F(CheckerTest, RedeclaringAfterScopeExitSucceeds) {
-    checker.enterScope();
-    checker.declareVariable("a", {});
-    checker.exitScope();
+    {
+        Checker::ScopeGuard inner(checker);
+        checker.declareVariable(makeIdentifier("a"), {});
+    }
 
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }
 
 TEST_F(CheckerTest, SelfReferenceInInitializerFails) {
-    EXPECT_TRUE(checker.declareVariable("a", { "a" }).hasError());
+    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), { "a" }), CodeFabException);
 }
 
 TEST_F(CheckerTest, ReferencingOtherVariableInInitializerSucceeds) {
-    checker.declareVariable("b", {});
+    checker.declareVariable(makeIdentifier("b"), {});
 
-    EXPECT_FALSE(checker.declareVariable("a", { "b" }).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), { "b" }));
 }
 
 TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
@@ -62,63 +75,44 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 	};
 
 	Parser parser;
-	Statement* root = parser.parse(tokens);
+	auto root = parser.parse(tokens);
 
 	Checker checker;
 
-	EXPECT_FALSE(checker.check(root).hasError());
-
-	delete root;
+	EXPECT_NO_THROW(checker.check(root.get()));
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
-	LiteralExpr* first_value = new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} };
-	VarDeclareStmt* first = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	first->setExpression(first_value);
+	auto first = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	first->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
 
-	LiteralExpr* second_value = new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} };
-	VarDeclareStmt* second = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	second->setExpression(second_value);
+	auto second = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	second->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
 
-	BlockStmt* block = new BlockStmt();
-	block->addStatement(first);
-	block->addStatement(second);
+	auto block = make_unique<BlockStmt>();
+	block->addStatement(move(first));
+	block->addStatement(move(second));
 
 	Checker checker;
 
-	EXPECT_TRUE(checker.check(block).hasError());
-
-	delete block;
-	delete first;
-	delete second;
-	delete first_value;
-	delete second_value;
+	EXPECT_THROW(checker.check(block.get()), CodeFabException);
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
-	LiteralExpr* inner_value = new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} };
-	VarDeclareStmt* inner_var = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	inner_var->setExpression(inner_value);
+	auto inner_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	inner_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
 
-	BlockStmt* inner = new BlockStmt();
-	inner->addStatement(inner_var);
+	auto inner = make_unique<BlockStmt>();
+	inner->addStatement(move(inner_var));
 
-	LiteralExpr* outer_value = new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} };
-	VarDeclareStmt* outer_var = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	outer_var->setExpression(outer_value);
+	auto outer_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	outer_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
 
-	BlockStmt* outer = new BlockStmt();
-	outer->addStatement(outer_var);
-	outer->addStatement(inner);
+	auto outer = make_unique<BlockStmt>();
+	outer->addStatement(move(outer_var));
+	outer->addStatement(move(inner));
 
 	Checker checker;
 
-	EXPECT_FALSE(checker.check(outer).hasError());
-
-	delete outer;
-	delete inner;
-	delete outer_var;
-	delete inner_var;
-	delete outer_value;
-	delete inner_value;
+	EXPECT_NO_THROW(checker.check(outer.get()));
 }

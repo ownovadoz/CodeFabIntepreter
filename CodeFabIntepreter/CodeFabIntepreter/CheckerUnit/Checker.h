@@ -10,35 +10,33 @@ using std::set;
 using std::string;
 using std::vector;
 
-class CheckResult
-{
-public:
-    static CheckResult ok();
-    static CheckResult checkerUnitHasError(string message);
-
-    bool hasError() const { return has_error; }
-    const string& message() const { return error_message; }
-
-private:
-    CheckResult(bool has_error, string message) : has_error(has_error), error_message(std::move(message)) {}
-
-    bool has_error = false;
-    string error_message;
-};
-
 class Checker
 {
 public:
-    void enterScope();
-    void exitScope();
-    CheckResult declareVariable(const string& name, const vector<string>& initializer_references);
+    class ScopeGuard
+    {
+    public:
+        explicit ScopeGuard(Checker& checker) : checker(checker) { checker.enterScope(); }
+        ~ScopeGuard() { checker.exitScope(); }
 
-    CheckResult check(Statement* root);
+        ScopeGuard(const ScopeGuard&) = delete;
+        ScopeGuard& operator=(const ScopeGuard&) = delete;
+
+    private:
+        Checker& checker;
+    };
+
+    void declareVariable(const Token& name, const vector<string>& initializer_references);
+
+    void check(Statement* root);
 
 private:
-    CheckResult checkStatement(Statement* stmt);
-    CheckResult checkBlockStmt(BlockStmt* block);
-    CheckResult checkVarDeclareStmt(VarDeclareStmt* var_decl);
+    void enterScope();
+    void exitScope();
+
+    void checkStatement(Statement* stmt);
+    void checkBlockStmt(BlockStmt* block);
+    void checkVarDeclareStmt(VarDeclareStmt* var_decl);
 
     bool isDeclaredInCurrentScope(const string& name) const;
 

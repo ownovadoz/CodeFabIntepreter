@@ -54,6 +54,12 @@
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,6 +99,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InterfaceForCodeFabTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AssemblerUnit\AssemblerUnit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AssemblerUnit\Tokenizer\Lexer.h">
