@@ -145,6 +145,13 @@ protected:
 		return index_set_expr;
 	}
 
+	const CallExpr* expectCall(const Expression* expr) {
+		const CallExpr* call_expr = dynamic_cast<const CallExpr*>(expr);
+
+		EXPECT_NE(call_expr, nullptr);
+		return call_expr;
+	}
+
 	Parser parser;
 	vector<unique_ptr<Statement>> parsed;
 };
@@ -1062,4 +1069,430 @@ TEST_F(ParserTestFixture, IndexSetExprMissingValueFailed) {
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtNoParamsPassed) {
+	// Func greet() { return; }
+	const auto& program = buildAndParseProgram({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "greet", "greet", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const FunctionDeclStmt* fn = dynamic_cast<const FunctionDeclStmt*>(program[0].get());
+	ASSERT_NE(fn, nullptr);
+	EXPECT_EQ(fn->getName().getLexeme(), "greet");
+	EXPECT_EQ(fn->getParameters().size(), 0u);
+
+	ASSERT_EQ(fn->getBody()->getStatements().size(), 1u);
+	const ReturnStmt* return_stmt = dynamic_cast<const ReturnStmt*>(fn->getBody()->getStatements()[0].get());
+	ASSERT_NE(return_stmt, nullptr);
+	EXPECT_EQ(return_stmt->getValue(), nullptr);
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtSingleParamPassed) {
+	// Func square(x) { return x; }
+	const auto& program = buildAndParseProgram({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "square", "square", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "x", "x", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "x", "x", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const FunctionDeclStmt* fn = dynamic_cast<const FunctionDeclStmt*>(program[0].get());
+	ASSERT_NE(fn, nullptr);
+	ASSERT_EQ(fn->getParameters().size(), 1u);
+	EXPECT_EQ(fn->getParameters()[0].getLexeme(), "x");
+
+	ASSERT_EQ(fn->getBody()->getStatements().size(), 1u);
+	const ReturnStmt* return_stmt = dynamic_cast<const ReturnStmt*>(fn->getBody()->getStatements()[0].get());
+	ASSERT_NE(return_stmt, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(return_stmt->getValue(), "x"));
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtMultipleParamsPassed) {
+	// Func add(a, b) { return a + b; }
+	const auto& program = buildAndParseProgram({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const FunctionDeclStmt* fn = dynamic_cast<const FunctionDeclStmt*>(program[0].get());
+	ASSERT_NE(fn, nullptr);
+	ASSERT_EQ(fn->getParameters().size(), 2u);
+	EXPECT_EQ(fn->getParameters()[0].getLexeme(), "a");
+	EXPECT_EQ(fn->getParameters()[1].getLexeme(), "b");
+
+	ASSERT_EQ(fn->getBody()->getStatements().size(), 1u);
+	const ReturnStmt* return_stmt = dynamic_cast<const ReturnStmt*>(fn->getBody()->getStatements()[0].get());
+	ASSERT_NE(return_stmt, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectBinary(return_stmt->getValue(), TokenType::PLUS, "+"));
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtMissingNameFailed) {
+	// Func (a) { return a; }
+	expectParseThrows({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtMissingLeftParenFailed) {
+	// Func add a, b) { return a+b; }
+	expectParseThrows({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtMissingRightParenFailed) {
+	// Func add(a, b { return a+b; }
+	expectParseThrows({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtMissingBodyBraceFailed) {
+	// Func add(a, b) return a+b;
+	expectParseThrows({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, FunctionDeclStmtMissingCommaBetweenParamsFailed) {
+	// Func add(a b) { return a+b; }
+	expectParseThrows({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ReturnStmtOutsideFunctionFailed) {
+	// return 1;
+	expectParseThrows({
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ReturnStmtAfterFunctionDeclEndsOutsideFunctionFailed) {
+	// Func f() { return 1; } return 2;
+	expectParseThrows({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "f", "f", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ReturnStmtInsideNestedBlockInsideFunctionPassed) {
+	// Func f() { { return 1; } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "f", "f", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const FunctionDeclStmt* fn = dynamic_cast<const FunctionDeclStmt*>(program[0].get());
+	ASSERT_NE(fn, nullptr);
+
+	ASSERT_EQ(fn->getBody()->getStatements().size(), 1u);
+	const BlockStmt* nested_block = dynamic_cast<const BlockStmt*>(fn->getBody()->getStatements()[0].get());
+	ASSERT_NE(nested_block, nullptr);
+	ASSERT_EQ(nested_block->getStatements().size(), 1u);
+	EXPECT_NE(dynamic_cast<const ReturnStmt*>(nested_block->getStatements()[0].get()), nullptr);
+}
+
+TEST_F(ParserTestFixture, CallExprNoArgsPassed) {
+	// add();
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const CallExpr* call_expr = expectCall(expr_stmt->getExpr());
+	ASSERT_NE(call_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(call_expr->getCallee(), "add"));
+	EXPECT_EQ(call_expr->getArguments().size(), 0u);
+}
+
+TEST_F(ParserTestFixture, CallExprSingleArgPassed) {
+	// add(1);
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const CallExpr* call_expr = expectCall(expr_stmt->getExpr());
+	ASSERT_NE(call_expr, nullptr);
+	ASSERT_EQ(call_expr->getArguments().size(), 1u);
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(call_expr->getArguments()[0].get(), TokenType::NUMBER, "1"));
+}
+
+TEST_F(ParserTestFixture, CallExprMultipleArgsPassed) {
+	// add(1, 2, 3);
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::NUMBER, "3", 3.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const CallExpr* call_expr = expectCall(expr_stmt->getExpr());
+	ASSERT_NE(call_expr, nullptr);
+	ASSERT_EQ(call_expr->getArguments().size(), 3u);
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(call_expr->getArguments()[0].get(), TokenType::NUMBER, "1"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(call_expr->getArguments()[1].get(), TokenType::NUMBER, "2"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(call_expr->getArguments()[2].get(), TokenType::NUMBER, "3"));
+}
+
+TEST_F(ParserTestFixture, CallExprChainedPassed) {
+	// f()();
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "f", "f", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const CallExpr* outer = expectCall(expr_stmt->getExpr());
+	ASSERT_NE(outer, nullptr);
+	EXPECT_EQ(outer->getArguments().size(), 0u);
+
+	const CallExpr* inner = expectCall(outer->getCallee());
+	ASSERT_NE(inner, nullptr);
+	EXPECT_EQ(inner->getArguments().size(), 0u);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(inner->getCallee(), "f"));
+}
+
+TEST_F(ParserTestFixture, CallExprAssignedToVariablePassed) {
+	// var ret = add(1, 2);
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	const CallExpr* call_expr = expectCall(stmt->getInitializer());
+	ASSERT_NE(call_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(call_expr->getCallee(), "add"));
+	EXPECT_EQ(call_expr->getArguments().size(), 2u);
+}
+
+TEST_F(ParserTestFixture, CallExprMissingClosingParenFailed) {
+	// add(1, 2;
+	expectParseThrows({
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, CallExprMissingCommaFailed) {
+	// add(1 2);
+	expectParseThrows({
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, CallExprTrailingCommaFailed) {
+	// add(1,);
+	expectParseThrows({
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, RecursiveCallInsideFunctionBodyPassed) {
+	// Func fact(n) { return fact(n - 1); }
+	const auto& program = buildAndParseProgram({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "fact", "fact", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "n", "n", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::IDENTIFIER, "fact", "fact", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "n", "n", 1},
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const FunctionDeclStmt* fn = dynamic_cast<const FunctionDeclStmt*>(program[0].get());
+	ASSERT_NE(fn, nullptr);
+
+	ASSERT_EQ(fn->getBody()->getStatements().size(), 1u);
+	const ReturnStmt* return_stmt = dynamic_cast<const ReturnStmt*>(fn->getBody()->getStatements()[0].get());
+	ASSERT_NE(return_stmt, nullptr);
+
+	const CallExpr* call_expr = expectCall(return_stmt->getValue());
+	ASSERT_NE(call_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(call_expr->getCallee(), "fact"));
+	ASSERT_EQ(call_expr->getArguments().size(), 1u);
+	ASSERT_NO_FATAL_FAILURE(expectBinary(call_expr->getArguments()[0].get(), TokenType::MINUS, "-"));
 }

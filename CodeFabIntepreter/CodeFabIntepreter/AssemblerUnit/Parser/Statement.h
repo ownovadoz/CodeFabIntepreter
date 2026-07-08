@@ -137,3 +137,42 @@ private:
 	unique_ptr<Expression> increment;
 	unique_ptr<Statement> body;
 };
+
+class FunctionDeclStmt : public Statement {
+public:
+	FunctionDeclStmt(const Token& name, vector<Token> parameters, unique_ptr<BlockStmt> body)
+		: name{ name }, parameters{ move(parameters) }, body{ move(body) } {}
+
+	const Token& getName() const {
+		return name;
+	}
+
+	const vector<Token>& getParameters() const {
+		return parameters;
+	}
+
+	const BlockStmt* getBody() const {
+		return body.get();
+	}
+
+	void accept(StmtVisitor& visitor) override;
+
+private:
+	Token name;
+	vector<Token> parameters;
+	unique_ptr<BlockStmt> body;
+};
+
+class ReturnStmt : public Statement {
+public:
+	explicit ReturnStmt(unique_ptr<Expression> value) : value{ move(value) } {}
+
+	const Expression* getValue() const {
+		return value.get();
+	}
+
+	void accept(StmtVisitor& visitor) override;
+
+private:
+	unique_ptr<Expression> value;
+};
