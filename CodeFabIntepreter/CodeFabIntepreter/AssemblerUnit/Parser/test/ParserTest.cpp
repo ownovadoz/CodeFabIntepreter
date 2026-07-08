@@ -4,9 +4,11 @@
 #include "../../Tokenizer/Token.h"
 
 #include <gmock/gmock.h>
+#include <exception>
 #include <string>
 #include <vector>
 
+using std::exception;
 using std::string;
 using std::vector;
 using namespace testing;
@@ -58,6 +60,10 @@ protected:
 		EXPECT_EQ(op.getLexeme(), opLexeme);
 
 		ASSERT_NO_FATAL_FAILURE(expectLiteral(unary->getExpr(), operandType, operandLexeme));
+	}
+
+	void expectParseThrows(const vector<Token>& tokens) {
+		EXPECT_THROW(parser.parse(tokens), exception);
 	}
 
 	Parser parser;
@@ -119,4 +125,96 @@ TEST_F(ParserTest, VarDeclareStmtNegatedFalsePassed) {
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::BANG, "!", TokenType::FALSE, "false"));
+}
+
+TEST_F(ParserTest, VarDeclareStmtMissingIdentifierFailed) {
+	// var = 10;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTest, VarDeclareStmtMissingEqualFailed) {
+	// var a 10;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTest, VarDeclareStmtNoInitializerFailed) {
+	// var a; — initializer-less var declarations are not supported yet
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTest, VarDeclareStmtMissingInitializerFailed) {
+	// var a = ;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTest, VarDeclareStmtMissingSemicolonFailed) {
+	// var a = 10
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTest, VarDeclareStmtDanglingMinusFailed) {
+	// var a = -;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTest, VarDeclareStmtDanglingBangFailed) {
+	// var a = !;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::BANG, "!", "!", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTest, VarDeclareStmtDanglingMinusWithExtraSemicolonFailed) {
+	// var a = -;; — an extra SEMICOLON must not let a missing operand slip through
+	// as if it were the statement's real terminator.
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
 }

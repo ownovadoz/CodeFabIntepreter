@@ -131,5 +131,13 @@ Expression* Parser::parseUnaryExpr() {
 }
 
 Expression* Parser::parsePrimaryExpr() {
-	return new LiteralExpr(advance());
+	switch (peek().getType()) {
+	case TokenType::NUMBER:
+	case TokenType::STRING:
+	case TokenType::TRUE:
+	case TokenType::FALSE:
+		return new LiteralExpr(advance());
+	default:
+		throw exception();
+	}
 }
