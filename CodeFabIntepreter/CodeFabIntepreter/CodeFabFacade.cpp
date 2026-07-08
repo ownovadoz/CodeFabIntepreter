@@ -25,8 +25,8 @@ void CodeFabFacade::execute(const string& code_line) {
         checker->check(statement.get());
         executor->run();
     }
-    catch (const CodeFabException& e) {
-        std::cerr << e.what() << std::endl;
+    catch (const CodeFabException& exception) {
+        std::cerr << exception.what() << std::endl;
     }
 }
 
@@ -38,8 +38,8 @@ void CodeFabFacade::execute(const string& code_line) {
         checker.check(statement.get());
         executor.run();
     }
-    catch (const CodeFabException& e) {
-        std::cerr << e.what() << std::endl;
+    catch (const CodeFabException& exception) {
+        std::cerr << exception.what() << std::endl;
     }
 }
 
