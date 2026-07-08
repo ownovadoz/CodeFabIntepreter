@@ -16,6 +16,7 @@ public:
 	virtual void visitArrayExpr(const ArrayExpr& expr) = 0;
 	virtual void visitIndexExpr(const IndexExpr& expr) = 0;
 	virtual void visitIndexSetExpr(const IndexSetExpr& expr) = 0;
+	virtual void visitCallExpr(const CallExpr& expr) = 0;
 };
 
 class StmtVisitor {
@@ -27,4 +28,6 @@ public:
 	virtual void visitVarDeclareStmt(VarDeclareStmt& stmt) = 0;
 	virtual void visitPrintStmt(PrintStmt& stmt) = 0;
 	virtual void visitForStmt(ForStmt& stmt) = 0;
+	virtual void visitFunctionDeclStmt(FunctionDeclStmt& stmt) = 0;
+	virtual void visitReturnStmt(ReturnStmt& stmt) = 0;
 };

@@ -197,6 +197,38 @@ TEST_F(LexerTestFixture, IdentifierStartsWithArrayIsNotKeyword)
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
+TEST_F(LexerTestFixture, KeywordFunc)
+{
+    auto tokens = scan("Func");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::FUNC);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, IdentifierStartsWithFuncIsNotKeyword)
+{
+    auto tokens = scan("Function");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordReturn)
+{
+    auto tokens = scan("return");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::RETURN);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, CommaToken)
+{
+    auto tokens = scan(",");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::COMMA);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
 TEST_F(LexerTestFixture, KeywordIf)
 {
     auto tokens = scan("if");

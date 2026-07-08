@@ -41,6 +41,10 @@ unique_ptr<Statement> Parser::parseStatement() {
 		return parsePrintStmt();
 	case TokenType::FOR:
 		return parseForStmt();
+	case TokenType::FUNC:
+		return parseFunctionDeclStmt();
+	case TokenType::RETURN:
+		return parseReturnStmt();
 	case TokenType::LEFT_PAREN:
 	case TokenType::BANG:
 	case TokenType::IDENTIFIER:
@@ -73,6 +77,7 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::ELSE:
 	case TokenType::LEFT_BRACKET:
 	case TokenType::RIGHT_BRACKET:
+	case TokenType::COMMA:
 		throw CodeFabException(token, "Unexpected token.");
 	}
 	return nullptr;
@@ -156,6 +161,50 @@ unique_ptr<Statement> Parser::parseForStmt() {
 	unique_ptr<Statement> body = parseStatement();
 
 	return make_unique<ForStmt>(move(init), move(condition), move(increment), move(body));
+}
+
+unique_ptr<Statement> Parser::parseFunctionDeclStmt() {
+	advance();
+
+	Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
+
+	consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
+
+	vector<Token> parameters;
+	if (!check(TokenType::RIGHT_PAREN)) {
+		parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+		while (check(TokenType::COMMA)) {
+			advance();
+			parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+		}
+	}
+
+	consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+
+	if (!check(TokenType::LEFT_BRACE)) throw CodeFabException(peek(), "Expect '{' before function body.");
+
+	function_depth++;
+	unique_ptr<Statement> raw_body = parseBlockStmt();
+	function_depth--;
+
+	unique_ptr<BlockStmt> body(static_cast<BlockStmt*>(raw_body.release()));
+
+	return make_unique<FunctionDeclStmt>(name, move(parameters), move(body));
+}
+
+unique_ptr<Statement> Parser::parseReturnStmt() {
+	Token return_token = advance();
+
+	if (function_depth == 0) throw CodeFabException(return_token, "Cannot return from outside a function.");
+
+	unique_ptr<Expression> value = nullptr;
+	if (!check(TokenType::SEMICOLON)) {
+		value = parseExpression();
+	}
+
+	consume(TokenType::SEMICOLON, "Expect ';' after return statement.");
+
+	return make_unique<ReturnStmt>(move(value));
 }
 
 unique_ptr<Statement> Parser::parseExpressionStmt() {
@@ -254,22 +303,45 @@ unique_ptr<Expression> Parser::parseUnaryExpr() {
 unique_ptr<Expression> Parser::parsePostfixExpr() {
 	unique_ptr<Expression> expr = parsePrimaryExpr();
 
-	while (check(TokenType::LEFT_BRACKET)) {
-		advance();
+	while (true) {
+		if (check(TokenType::LEFT_BRACKET)) {
+			advance();
 
-		unique_ptr<Expression> index = parseExpression();
+			unique_ptr<Expression> index = parseExpression();
 
-		const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(index.get());
-		if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
-			throw CodeFabException(literal->getToken(), "Array index must be a number.");
+			const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(index.get());
+			if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
+				throw CodeFabException(literal->getToken(), "Array index must be a number.");
+			}
+
+			consume(TokenType::RIGHT_BRACKET, "Expect ']' after index.");
+
+			expr = make_unique<IndexExpr>(move(expr), move(index));
+		} else if (check(TokenType::LEFT_PAREN)) {
+			advance();
+			expr = finishCall(move(expr));
+		} else {
+			break;
 		}
-
-		consume(TokenType::RIGHT_BRACKET, "Expect ']' after index.");
-
-		expr = make_unique<IndexExpr>(move(expr), move(index));
 	}
 
 	return expr;
+}
+
+unique_ptr<Expression> Parser::finishCall(unique_ptr<Expression> callee) {
+	vector<unique_ptr<Expression>> arguments;
+
+	if (!check(TokenType::RIGHT_PAREN)) {
+		arguments.push_back(parseExpression());
+		while (check(TokenType::COMMA)) {
+			advance();
+			arguments.push_back(parseExpression());
+		}
+	}
+
+	consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
+
+	return make_unique<CallExpr>(move(callee), move(arguments));
 }
 
 unique_ptr<Expression> Parser::parsePrimaryExpr() {

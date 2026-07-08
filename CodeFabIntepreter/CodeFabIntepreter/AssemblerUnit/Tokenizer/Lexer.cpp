@@ -37,6 +37,7 @@ void Lexer::scanToken()
         case ';': addToken(TokenType::SEMICOLON);   break;
         case '[': addToken(TokenType::LEFT_BRACKET);  break;
         case ']': addToken(TokenType::RIGHT_BRACKET); break;
+        case ',': addToken(TokenType::COMMA);         break;
         case '+': addToken(TokenType::PLUS);        break;
         case '-': addToken(TokenType::MINUS);       break;
         case '*': addToken(TokenType::STAR);        break;
@@ -142,9 +143,11 @@ void Lexer::scanIdentifier()
         {"else",  TokenType::ELSE},
         {"false", TokenType::FALSE},
         {"for",   TokenType::FOR},
+        {"Func",  TokenType::FUNC},
         {"if",    TokenType::IF},
         {"or",    TokenType::OR},
         {"print", TokenType::PRINT},
+        {"return", TokenType::RETURN},
         {"true",  TokenType::TRUE},
         {"var",   TokenType::VAR},
     };

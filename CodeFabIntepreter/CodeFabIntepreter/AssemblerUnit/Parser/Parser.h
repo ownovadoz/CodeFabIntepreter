@@ -27,6 +27,8 @@ private:
 	unique_ptr<Statement> parsePrintStmt();
 	unique_ptr<Statement> parseForStmt();
 	unique_ptr<Statement> parseExpressionStmt();
+	unique_ptr<Statement> parseFunctionDeclStmt();
+	unique_ptr<Statement> parseReturnStmt();
 
 	unique_ptr<Expression> parseExpression();
 	unique_ptr<Expression> parseAssignExpr();
@@ -40,6 +42,7 @@ private:
 	unique_ptr<Expression> parsePostfixExpr();
 	unique_ptr<Expression> parsePrimaryExpr();
 	unique_ptr<Expression> parseArrayExpr();
+	unique_ptr<Expression> finishCall(unique_ptr<Expression> callee);
 
 	using ExprFactory = unique_ptr<Expression> (*)(unique_ptr<Expression>, const Token&, unique_ptr<Expression>);
 
@@ -48,6 +51,7 @@ private:
 	void init(const vector<Token>& tokens) {
 		this->tokens = tokens;
 		current_token_it = this->tokens.begin();
+		function_depth = 0;
 	}
 
 	const Token& peek() const {
@@ -81,4 +85,5 @@ private:
 
 	vector<Token> tokens;
 	vector<Token>::const_iterator current_token_it;
+	int function_depth = 0;
 };

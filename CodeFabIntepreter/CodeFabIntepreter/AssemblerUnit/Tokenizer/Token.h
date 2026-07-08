@@ -18,7 +18,7 @@ enum class TokenType
 {
     // 구분자 / 그룹핑
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, SEMICOLON,
-    LEFT_BRACKET, RIGHT_BRACKET,
+    LEFT_BRACKET, RIGHT_BRACKET, COMMA,
 
     // 연산자
     PLUS, MINUS, STAR, SLASH,
@@ -31,7 +31,7 @@ enum class TokenType
     IDENTIFIER, STRING, NUMBER,
 
     // 키워드
-    AND, ARRAY, ELSE, FALSE, FOR, IF, OR, PRINT, TRUE, VAR,
+    AND, ARRAY, ELSE, FALSE, FOR, FUNC, IF, OR, PRINT, RETURN, TRUE, VAR,
 
     END_OF_FILE
 };
@@ -47,6 +47,7 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::SEMICOLON:    return "SEMICOLON";
     case TokenType::LEFT_BRACKET:  return "LEFT_BRACKET";
     case TokenType::RIGHT_BRACKET: return "RIGHT_BRACKET";
+    case TokenType::COMMA:         return "COMMA";
     case TokenType::PLUS:         return "PLUS";
     case TokenType::MINUS:        return "MINUS";
     case TokenType::STAR:         return "STAR";
@@ -67,9 +68,11 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::ELSE:         return "ELSE";
     case TokenType::FALSE:        return "FALSE";
     case TokenType::FOR:          return "FOR";
+    case TokenType::FUNC:         return "FUNC";
     case TokenType::IF:           return "IF";
     case TokenType::OR:           return "OR";
     case TokenType::PRINT:        return "PRINT";
+    case TokenType::RETURN:       return "RETURN";
     case TokenType::TRUE:         return "TRUE";
     case TokenType::VAR:          return "VAR";
     case TokenType::END_OF_FILE:  return "EOF";

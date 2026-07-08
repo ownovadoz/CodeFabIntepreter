@@ -5,9 +5,11 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 using std::move;
 using std::unique_ptr;
+using std::vector;
 
 class LiteralExpr : public Expression {
 public:
@@ -201,4 +203,24 @@ private:
 	unique_ptr<Expression> array;
 	unique_ptr<Expression> index;
 	unique_ptr<Expression> value;
+};
+
+class CallExpr : public Expression {
+public:
+	CallExpr(unique_ptr<Expression> callee, vector<unique_ptr<Expression>> arguments)
+		: callee{ move(callee) }, arguments{ move(arguments) } {}
+
+	const Expression* getCallee() const {
+		return callee.get();
+	}
+
+	const vector<unique_ptr<Expression>>& getArguments() const {
+		return arguments;
+	}
+
+	void accept(ExprVisitor& visitor) const override;
+
+private:
+	unique_ptr<Expression> callee;
+	vector<unique_ptr<Expression>> arguments;
 };
