@@ -3,10 +3,12 @@
 #include "Statement.h"
 #include "../Tokenizer/Token.h"
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
 
+using std::initializer_list;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -37,6 +39,8 @@ private:
 	unique_ptr<Expression> parseUnaryExpr();
 	unique_ptr<Expression> parsePrimaryExpr();
 
+	unique_ptr<Expression> parseBinaryExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators);
+
 	void init(const vector<Token>& tokens) {
 		this->tokens = tokens;
 		current_token_it = this->tokens.begin();
@@ -60,6 +64,13 @@ private:
 	bool check(TokenType type) const {
 		if (isAtEnd()) return false;
 		return peek().getType() == type;
+	}
+
+	bool checkAny(initializer_list<TokenType> types) const {
+		for (TokenType type : types) {
+			if (check(type)) return true;
+		}
+		return false;
 	}
 
 	Token consume(TokenType type, const string& message);
