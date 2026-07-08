@@ -41,16 +41,19 @@ void Interpreter::execute(Statement* stmt)
 {
     if (stmt == nullptr) return;
 
-    if (BlockStmt* block = dynamic_cast<BlockStmt*>(stmt)) {
-        executeBlockStmt(block);
-        return;
-    }
-
-    if (VarDeclareStmt* var_decl = dynamic_cast<VarDeclareStmt*>(stmt)) {
-        executeVarDeclareStmt(var_decl);
-        return;
-    }
+    stmt->accept(*this);
 }
+
+void Interpreter::visitBlockStmt(BlockStmt& stmt) { executeBlockStmt(&stmt); }
+void Interpreter::visitVarDeclareStmt(VarDeclareStmt& stmt) { executeVarDeclareStmt(&stmt); }
+void Interpreter::visitExpressionStmt(ExpressionStmt&) {}
+void Interpreter::visitIfStmt(IfStmt&) {}
+void Interpreter::visitPrintStmt(PrintStmt&) {}
+void Interpreter::visitForStmt(ForStmt&) {}
+void Interpreter::visitFunctionDeclStmt(FunctionDeclStmt&) {}
+void Interpreter::visitReturnStmt(ReturnStmt&) {}
+void Interpreter::visitClassDeclStmt(ClassDeclStmt&) {}
+void Interpreter::visitImportStmt(ImportStmt&) {}
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
 {
@@ -74,12 +77,35 @@ void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
 
 Value Interpreter::evaluate(const Expression* expr)
 {
-    if (const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(expr)) {
-        return evaluateLiteralExpr(literal);
-    }
+    has_evaluation_result = false;
+    expr->accept(*this);
 
-    throw CodeFabException(0, "지원하지 않는 표현식입니다.");
+    if (!has_evaluation_result) throw CodeFabException(0, "지원하지 않는 표현식입니다.");
+
+    return evaluation_result;
 }
+
+void Interpreter::visitLiteralExpr(const LiteralExpr& expr)
+{
+    evaluation_result = evaluateLiteralExpr(&expr);
+    has_evaluation_result = true;
+}
+
+void Interpreter::visitVariableExpr(const VariableExpr&) {}
+void Interpreter::visitAssignExpr(const AssignExpr&) {}
+void Interpreter::visitBinaryExpr(const BinaryExpr&) {}
+void Interpreter::visitUnaryExpr(const UnaryExpr&) {}
+void Interpreter::visitGroupingExpr(const GroupingExpr&) {}
+void Interpreter::visitLogicalExpr(const LogicalExpr&) {}
+void Interpreter::visitArrayExpr(const ArrayExpr&) {}
+void Interpreter::visitIndexExpr(const IndexExpr&) {}
+void Interpreter::visitIndexSetExpr(const IndexSetExpr&) {}
+void Interpreter::visitCallExpr(const CallExpr&) {}
+void Interpreter::visitGetExpr(const GetExpr&) {}
+void Interpreter::visitSetExpr(const SetExpr&) {}
+void Interpreter::visitThisExpr(const ThisExpr&) {}
+void Interpreter::visitSuperExpr(const SuperExpr&) {}
+void Interpreter::visitInstanceOfExpr(const InstanceOfExpr&) {}
 
 Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)
 {
