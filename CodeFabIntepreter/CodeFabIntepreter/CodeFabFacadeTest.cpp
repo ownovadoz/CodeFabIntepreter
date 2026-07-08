@@ -83,4 +83,10 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteDoesNotThrowWithRealDependencie
 	CodeFabFacade facade;
 	EXPECT_NO_THROW(facade.execute(""));
 }
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCodeFabExceptionFromInvalidSyntax) {
+	// "var a = ;" 는 실제 Parser가 초기화식 누락으로 CodeFabException을 던지는 입력이다.
+	CodeFabFacade facade;
+	EXPECT_NO_THROW(facade.execute("var a = ;"));
+}
 #endif
