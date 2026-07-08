@@ -8,14 +8,24 @@ public:
     Environment env;
 };
 
+// 동일 var 이름이 중복 들어오는 것은 checker unit에서 error 처리하므로 실제 발생 확률 없음.
+
 TEST_F(EnvironmentTestFixture, DefinedVariableIsReadable)
 {
     env.define("a", 3.0);
 
     auto value = env.get("a");
 
-    ASSERT_TRUE(value.has_value());
-    EXPECT_EQ(std::get<double>(*value), 3.0);
+    EXPECT_EQ(std::get<double>(value), 3.0);
+}
+
+TEST_F(EnvironmentTestFixture, DefineAssignGet)
+{
+    env.define("a", 3.0);
+    env.assign("a", 2.0);
+    auto value = env.get("a");
+
+    EXPECT_EQ(std::get<double>(value), 2.0);
 }
 
 TEST_F(EnvironmentTestFixture, UndefinedVariableThrowException)
@@ -34,7 +44,7 @@ TEST_F(EnvironmentTestFixture, AssignToExistingVariableUpdatesValue)
 
     env.assign("a", 2.0);
 
-    EXPECT_EQ(std::get<double>(*env.get("a")), 2.0);
+    EXPECT_EQ(std::get<double>(env.get("a")), 2.0);
 }
 
 class NestedEnvironmentTestFixture : public testing::Test {
@@ -49,8 +59,7 @@ TEST_F(NestedEnvironmentTestFixture, GetFindsVariableInEnclosingScope)
 
     auto value = inner.get("a");
 
-    ASSERT_TRUE(value.has_value());
-    EXPECT_EQ(std::get<double>(*value), 3.0);
+    EXPECT_EQ(std::get<double>(value), 3.0);
 }
 
 TEST_F(NestedEnvironmentTestFixture, AssignUpdatesVariableInEnclosingScope)
@@ -59,7 +68,7 @@ TEST_F(NestedEnvironmentTestFixture, AssignUpdatesVariableInEnclosingScope)
 
     inner.assign("a", 5.0);
 
-    EXPECT_EQ(std::get<double>(*outer.get("a")), 5.0);
+    EXPECT_EQ(std::get<double>(outer.get("a")), 5.0);
 }
 
 TEST_F(NestedEnvironmentTestFixture, GetUndefinedVariableThrowsThroughChain)

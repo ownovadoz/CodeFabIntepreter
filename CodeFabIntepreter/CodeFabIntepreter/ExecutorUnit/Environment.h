@@ -2,11 +2,9 @@
 
 #include "../AssemblerUnit/Tokenizer/Value.h"
 
-#include <optional>
 #include <string>
 #include <unordered_map>
 
-using std::optional;
 using std::string;
 using std::unordered_map;
 
@@ -15,7 +13,7 @@ public:
     explicit Environment(Environment* enclosing = nullptr);
 
     void define(const string& name, const Value& value);
-    optional<Value> get(const string& name) const;
+    Value get(const string& name) const;
     void assign(const string& name, const Value& value);
 
 private:
