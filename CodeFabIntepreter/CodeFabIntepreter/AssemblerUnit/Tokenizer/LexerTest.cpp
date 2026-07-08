@@ -35,6 +35,15 @@ TEST_F(LexerTestFixture, SingleCharTokens)
     EXPECT_EQ(tokens[12].getType(), TokenType::END_OF_FILE);
 }
 
+TEST_F(LexerTestFixture, BracketTokens)
+{
+    auto tokens = scan("[ ]");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::LEFT_BRACKET);
+    EXPECT_EQ(tokens[1].getType(), TokenType::RIGHT_BRACKET);
+    EXPECT_EQ(tokens[2].getType(), TokenType::END_OF_FILE);
+}
+
 TEST_F(LexerTestFixture, SlashToken)
 {
     auto tokens = scan("/");
@@ -169,6 +178,22 @@ TEST_F(LexerTestFixture, KeywordVar)
     auto tokens = scan("var");
 
     EXPECT_EQ(tokens[0].getType(), TokenType::VAR);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordArray)
+{
+    auto tokens = scan("Array");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::ARRAY);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, IdentifierStartsWithArrayIsNotKeyword)
+{
+    auto tokens = scan("ArrayList");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IDENTIFIER);
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
