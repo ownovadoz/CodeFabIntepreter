@@ -8,8 +8,8 @@ using std::string;
 class PromptShell {
 public:
 	void runPrompt();
-	const string& getLine() const { return line; }
+	const string& getLine() const { return code_line; }
 private:
-	string line;
+	string code_line;
 	CodeFabFacade code_fab_facade;
 };
