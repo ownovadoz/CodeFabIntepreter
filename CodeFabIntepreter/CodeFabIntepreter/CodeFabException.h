@@ -5,6 +5,7 @@
 #include <string>
 
 using std::string;
+using std::runtime_error;
 
 class CodeFabException : public std::runtime_error {
 public:
