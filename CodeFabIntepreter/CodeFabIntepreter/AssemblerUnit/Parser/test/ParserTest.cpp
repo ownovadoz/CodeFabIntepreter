@@ -122,6 +122,29 @@ protected:
 		return parsed;
 	}
 
+	const Expression* expectArrayAndGetSize(const Expression* expr) {
+		const ArrayExpr* array_expr = dynamic_cast<const ArrayExpr*>(expr);
+
+		EXPECT_NE(array_expr, nullptr);
+		if (array_expr == nullptr) return nullptr;
+
+		return array_expr->getSize();
+	}
+
+	const IndexExpr* expectIndex(const Expression* expr) {
+		const IndexExpr* index_expr = dynamic_cast<const IndexExpr*>(expr);
+
+		EXPECT_NE(index_expr, nullptr);
+		return index_expr;
+	}
+
+	const IndexSetExpr* expectIndexSet(const Expression* expr) {
+		const IndexSetExpr* index_set_expr = dynamic_cast<const IndexSetExpr*>(expr);
+
+		EXPECT_NE(index_set_expr, nullptr);
+		return index_set_expr;
+	}
+
 	Parser parser;
 	vector<unique_ptr<Statement>> parsed;
 };
@@ -735,6 +758,307 @@ TEST_F(ParserTestFixture, BlockStmtMissingClosingBraceFailed) {
 		{TokenType::LEFT_BRACE, "{", "{", 1},
 		{TokenType::PRINT, "print", "print", 1},
 		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtArraySizeNumberLiteralPassed) {
+	// var arr = Array(3);
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::ARRAY, "Array", "Array", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "3", 3.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	const Expression* size = expectArrayAndGetSize(stmt->getInitializer());
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(size, TokenType::NUMBER, "3"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtArraySizeVariablePassed) {
+	// var arr = Array(n);
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::ARRAY, "Array", "Array", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "n", "n", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	const Expression* size = expectArrayAndGetSize(stmt->getInitializer());
+	ASSERT_NO_FATAL_FAILURE(expectVariable(size, "n"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtArraySizeStringLiteralFailed) {
+	// var a = Array("three");
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::ARRAY, "Array", "Array", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::STRING, "\"three\"", "three", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtArraySizeBooleanLiteralFailed) {
+	// var a = Array(true);
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::ARRAY, "Array", "Array", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::TRUE, "true", true, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtArrayMissingLeftParenFailed) {
+	// var a = Array 3);
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::ARRAY, "Array", "Array", 1},
+		{TokenType::NUMBER, "3", 3.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtArrayMissingRightParenFailed) {
+	// var a = Array(3;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::ARRAY, "Array", "Array", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "3", 3.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, PrintStmtIndexExprNumberLiteralPassed) {
+	// print arr[0];
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+
+	const IndexExpr* index_expr = expectIndex(print_stmt->getExpr());
+	ASSERT_NE(index_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(index_expr->getArray(), "arr"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(index_expr->getIndex(), TokenType::NUMBER, "0"));
+}
+
+TEST_F(ParserTestFixture, PrintStmtIndexExprBinaryIndexPassed) {
+	// print arr[i - 2];
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+
+	const IndexExpr* index_expr = expectIndex(print_stmt->getExpr());
+	ASSERT_NE(index_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(index_expr->getArray(), "arr"));
+	ASSERT_NO_FATAL_FAILURE(expectBinary(index_expr->getIndex(), TokenType::MINUS, "-"));
+}
+
+TEST_F(ParserTestFixture, IndexExprChainedPassed) {
+	// print arr[0][1];
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+
+	const IndexExpr* outer = expectIndex(print_stmt->getExpr());
+	ASSERT_NE(outer, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(outer->getIndex(), TokenType::NUMBER, "1"));
+
+	const IndexExpr* inner = expectIndex(outer->getArray());
+	ASSERT_NE(inner, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(inner->getArray(), "arr"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(inner->getIndex(), TokenType::NUMBER, "0"));
+}
+
+TEST_F(ParserTestFixture, IndexExprOfArrayCreationPassed) {
+	// print Array(3)[0];
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::ARRAY, "Array", "Array", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "3", 3.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+
+	const IndexExpr* index_expr = expectIndex(print_stmt->getExpr());
+	ASSERT_NE(index_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(index_expr->getIndex(), TokenType::NUMBER, "0"));
+
+	const Expression* size = expectArrayAndGetSize(index_expr->getArray());
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(size, TokenType::NUMBER, "3"));
+}
+
+TEST_F(ParserTestFixture, IndexExprStringLiteralFailed) {
+	// print arr["x"];
+	expectParseThrows({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::STRING, "\"x\"", "x", 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, IndexExprBooleanLiteralFailed) {
+	// print arr[true];
+	expectParseThrows({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::TRUE, "true", true, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, IndexExprMissingClosingBracketFailed) {
+	// print arr[0;
+	expectParseThrows({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, IndexExprEmptyBracketsFailed) {
+	// print arr[];
+	expectParseThrows({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, IndexSetExprNumberLiteralPassed) {
+	// arr[0] = 10;
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const IndexSetExpr* index_set = expectIndexSet(expr_stmt->getExpr());
+	ASSERT_NE(index_set, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(index_set->getArray(), "arr"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(index_set->getIndex(), TokenType::NUMBER, "0"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(index_set->getValue(), TokenType::NUMBER, "10"));
+}
+
+TEST_F(ParserTestFixture, IndexSetExprBinaryIndexPassed) {
+	// arr[i - 2] = 7;
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "7", 7.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const IndexSetExpr* index_set = expectIndexSet(expr_stmt->getExpr());
+	ASSERT_NE(index_set, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(index_set->getArray(), "arr"));
+	ASSERT_NO_FATAL_FAILURE(expectBinary(index_set->getIndex(), TokenType::MINUS, "-"));
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(index_set->getValue(), TokenType::NUMBER, "7"));
+}
+
+TEST_F(ParserTestFixture, IndexSetExprMissingValueFailed) {
+	// arr[0] = ;
+	expectParseThrows({
+		{TokenType::IDENTIFIER, "arr", "arr", 1},
+		{TokenType::LEFT_BRACKET, "[", "[", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::RIGHT_BRACKET, "]", "]", 1},
+		{TokenType::EQUAL, "=", "=", 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});

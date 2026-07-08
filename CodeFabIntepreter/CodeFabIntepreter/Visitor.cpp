@@ -7,6 +7,9 @@ void BinaryExpr::accept(ExprVisitor& visitor) const { visitor.visitBinaryExpr(*t
 void UnaryExpr::accept(ExprVisitor& visitor) const { visitor.visitUnaryExpr(*this); }
 void GroupingExpr::accept(ExprVisitor& visitor) const { visitor.visitGroupingExpr(*this); }
 void LogicalExpr::accept(ExprVisitor& visitor) const { visitor.visitLogicalExpr(*this); }
+void ArrayExpr::accept(ExprVisitor& visitor) const { visitor.visitArrayExpr(*this); }
+void IndexExpr::accept(ExprVisitor& visitor) const { visitor.visitIndexExpr(*this); }
+void IndexSetExpr::accept(ExprVisitor& visitor) const { visitor.visitIndexSetExpr(*this); }
 
 void ExpressionStmt::accept(StmtVisitor& visitor) { visitor.visitExpressionStmt(*this); }
 void IfStmt::accept(StmtVisitor& visitor) { visitor.visitIfStmt(*this); }

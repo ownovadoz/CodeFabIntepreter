@@ -37,7 +37,9 @@ private:
 	unique_ptr<Expression> parseTerm();
 	unique_ptr<Expression> parseFactor();
 	unique_ptr<Expression> parseUnaryExpr();
+	unique_ptr<Expression> parsePostfixExpr();
 	unique_ptr<Expression> parsePrimaryExpr();
+	unique_ptr<Expression> parseArrayExpr();
 
 	using ExprFactory = unique_ptr<Expression> (*)(unique_ptr<Expression>, const Token&, unique_ptr<Expression>);
 
