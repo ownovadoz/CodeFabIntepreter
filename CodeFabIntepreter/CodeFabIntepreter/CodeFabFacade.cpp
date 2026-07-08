@@ -4,7 +4,7 @@
 
 CodeFabFacade::CodeFabFacade()
     : owned_tokenizer(std::make_unique<Tokenizer>()),
-    owned_checker(std::make_unique<Checker>()),
+    owned_checker(std::make_unique<NoOpChecker>()),
     owned_executor(std::make_unique<Executor>()),
     tokenizer(owned_tokenizer.get()),
     checker(owned_checker.get()),

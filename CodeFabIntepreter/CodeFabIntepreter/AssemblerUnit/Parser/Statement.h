@@ -24,8 +24,17 @@ private:
 };
 
 class BlockStmt : public Statement {
+public:
+	void addStatement(Statement* stmt) {
+		statements.push_back(stmt);
+	}
+
+	const vector<Statement*>& getStatements() const {
+		return statements;
+	}
+
 private:
-	vector<Statement*> exprs;
+	vector<Statement*> statements;
 };
 
 class VarDeclareStmt : public Statement {
