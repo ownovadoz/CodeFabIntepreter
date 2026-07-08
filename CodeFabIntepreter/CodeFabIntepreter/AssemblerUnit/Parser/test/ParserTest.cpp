@@ -18,7 +18,7 @@ protected:
 		delete stmt;
 	}
 
-	VarDeclareStmt* parseVarDeclareStmt(const vector<Token>& initializer_tokens) {
+	VarDeclareStmt* buildAndParseVarDeclareStmt(const vector<Token>& initializer_tokens) {
 		vector<Token> tokens = {
 			{TokenType::VAR, "var", "var", 1},
 			{TokenType::IDENTIFIER, "a", "a", 1},
@@ -75,35 +75,35 @@ protected:
 };
 
 TEST_F(ParserTestFixture, VarDeclareStmtSingleNumberPassed) {
-	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::NUMBER, "10", 10.0, 1} });
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::NUMBER, "10", 10.0, 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::NUMBER, "10"));
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtSingleStringPassed) {
-	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::STRING, "\"text\"", "text", 1} });
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::STRING, "\"text\"", "text", 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::STRING, "\"text\""));
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtSingleTruePassed) {
-	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::TRUE, "true", true, 1} });
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::TRUE, "true", true, 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::TRUE, "true"));
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtSingleFalsePassed) {
-	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::FALSE, "false", false, 1} });
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::FALSE, "false", false, 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::FALSE, "false"));
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtNegativeNumberPassed) {
-	VarDeclareStmt* stmt = parseVarDeclareStmt({
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
 		{TokenType::MINUS, "-", "-", 1},
 		{TokenType::NUMBER, "10", 10.0, 1}
 	});
@@ -113,7 +113,7 @@ TEST_F(ParserTestFixture, VarDeclareStmtNegativeNumberPassed) {
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtNegatedTruePassed) {
-	VarDeclareStmt* stmt = parseVarDeclareStmt({
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
 		{TokenType::BANG, "!", "!", 1},
 		{TokenType::TRUE, "true", true, 1}
 	});
@@ -123,7 +123,7 @@ TEST_F(ParserTestFixture, VarDeclareStmtNegatedTruePassed) {
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtNegatedFalsePassed) {
-	VarDeclareStmt* stmt = parseVarDeclareStmt({
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
 		{TokenType::BANG, "!", "!", 1},
 		{TokenType::FALSE, "false", false, 1}
 	});
