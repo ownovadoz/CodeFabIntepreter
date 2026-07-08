@@ -97,6 +97,31 @@ protected:
 		return assign->getValue();
 	}
 
+	void expectBinary(const Expression* expr, TokenType op_type, const string& op_lexeme) {
+		const BinaryExpr* binary = dynamic_cast<const BinaryExpr*>(expr);
+
+		EXPECT_NE(binary, nullptr);
+		if (binary == nullptr) return;
+
+		EXPECT_EQ(binary->getOperator().getType(), op_type);
+		EXPECT_EQ(binary->getOperator().getLexeme(), op_lexeme);
+	}
+
+	void expectLogical(const Expression* expr, TokenType op_type, const string& op_lexeme) {
+		const LogicalExpr* logical = dynamic_cast<const LogicalExpr*>(expr);
+
+		EXPECT_NE(logical, nullptr);
+		if (logical == nullptr) return;
+
+		EXPECT_EQ(logical->getOperator().getType(), op_type);
+		EXPECT_EQ(logical->getOperator().getLexeme(), op_lexeme);
+	}
+
+	Statement* buildAndParseStatement(const vector<Token>& tokens) {
+		parsed = parser.parse(tokens);
+		return parsed.get();
+	}
+
 	Parser parser;
 	unique_ptr<Statement> parsed;
 };
@@ -337,6 +362,90 @@ TEST_F(ParserTestFixture, VarDeclareStmtAssignMissingValueFailed) {
 	});
 }
 
+TEST_F(ParserTestFixture, VarDeclareStmtBinaryAdditionPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "2", 2.0, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectBinary(stmt->getInitializer(), TokenType::PLUS, "+"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtBinaryMultiplicationPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::STAR, "*", "*", 1},
+		{TokenType::NUMBER, "2", 2.0, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectBinary(stmt->getInitializer(), TokenType::STAR, "*"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtBinaryPrecedencePassed) {
+	// 1 + 2 * 3 should parse as PLUS(1, STAR(2, 3)) once precedence climbing exists
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::STAR, "*", "*", 1},
+		{TokenType::NUMBER, "3", 3.0, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectBinary(stmt->getInitializer(), TokenType::PLUS, "+"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtBinaryMissingRightOperandFailed) {
+	// var a = 1 + ;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtLogicalAndPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::TRUE, "true", true, 1},
+		{TokenType::AND, "&&", "&&", 1},
+		{TokenType::FALSE, "false", false, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectLogical(stmt->getInitializer(), TokenType::AND, "&&"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtLogicalOrPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::TRUE, "true", true, 1},
+		{TokenType::OR, "||", "||", 1},
+		{TokenType::FALSE, "false", false, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectLogical(stmt->getInitializer(), TokenType::OR, "||"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtLogicalMissingRightOperandFailed) {
+	// var a = true && ;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::TRUE, "true", true, 1},
+		{TokenType::AND, "&&", "&&", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
 TEST_F(ParserTestFixture, VarDeclareStmtMissingIdentifierFailed) {
 	// var = 10;
 	expectParseThrows({
@@ -424,6 +533,179 @@ TEST_F(ParserTestFixture, VarDeclareStmtDanglingMinusWithExtraSemicolonFailed) {
 		{TokenType::EQUAL, "=", "=", 1},
 		{TokenType::MINUS, "-", "-", 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ExpressionStmtAssignmentPassed) {
+	// a = 10;
+	Statement* stmt = buildAndParseStatement({
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(stmt);
+	EXPECT_NE(expr_stmt, nullptr);
+}
+
+TEST_F(ParserTestFixture, ExpressionStmtMissingSemicolonFailed) {
+	// a = 10
+	expectParseThrows({
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, PrintStmtPassed) {
+	// print 10;
+	Statement* stmt = buildAndParseStatement({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(stmt);
+	EXPECT_NE(print_stmt, nullptr);
+}
+
+TEST_F(ParserTestFixture, PrintStmtMissingExpressionFailed) {
+	// print;
+	expectParseThrows({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, IfStmtWithElsePassed) {
+	// if (a) print b; else print c;
+	Statement* stmt = buildAndParseStatement({
+		{TokenType::IF, "if", "if", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::ELSE, "else", "else", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "c", "c", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(stmt);
+	EXPECT_NE(if_stmt, nullptr);
+}
+
+TEST_F(ParserTestFixture, IfStmtWithoutElsePassed) {
+	// if (a) print b;
+	Statement* stmt = buildAndParseStatement({
+		{TokenType::IF, "if", "if", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(stmt);
+	EXPECT_NE(if_stmt, nullptr);
+}
+
+TEST_F(ParserTestFixture, IfStmtMissingParenFailed) {
+	// if a) print b;
+	expectParseThrows({
+		{TokenType::IF, "if", "if", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ForStmtFullClausePassed) {
+	// for (var i = 0; i < 10; i = i + 1) print i;
+	Statement* stmt = buildAndParseStatement({
+		{TokenType::FOR, "for", "for", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::LESS, "<", "<", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	const ForStmt* for_stmt = dynamic_cast<const ForStmt*>(stmt);
+	EXPECT_NE(for_stmt, nullptr);
+}
+
+TEST_F(ParserTestFixture, ForStmtMissingParenFailed) {
+	// for var i = 0; ; print i;
+	expectParseThrows({
+		{TokenType::FOR, "for", "for", 1},
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, BlockStmtMultipleStatementsPassed) {
+	// { print a; print b; }
+	Statement* stmt = buildAndParseStatement({
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	const BlockStmt* block_stmt = dynamic_cast<const BlockStmt*>(stmt);
+	EXPECT_NE(block_stmt, nullptr);
+}
+
+TEST_F(ParserTestFixture, BlockStmtMissingClosingBraceFailed) {
+	// { print a;
+	expectParseThrows({
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
