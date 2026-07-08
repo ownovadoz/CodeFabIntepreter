@@ -66,6 +66,12 @@
     <ClCompile Include="ExecutorUnit\EnvironmentTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExecutorUnit\Interpreter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExecutorUnit\InterpreterTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp">
       <Filter>Header Files\Parser\test</Filter>
     </ClCompile>
@@ -108,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExecutorUnit\Environment.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecutorUnit\Interpreter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RuntimeError.h">
