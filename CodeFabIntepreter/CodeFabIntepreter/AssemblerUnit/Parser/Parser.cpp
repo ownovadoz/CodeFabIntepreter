@@ -85,6 +85,7 @@ Statement* Parser::parseVarDeclareStmt() {
 
 	if (advance().getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
 		delete stmt;
+		delete expr;
 		throw exception();
 	}
 
