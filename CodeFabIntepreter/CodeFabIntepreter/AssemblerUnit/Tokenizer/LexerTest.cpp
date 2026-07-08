@@ -206,3 +206,21 @@ TEST_F(LexerTest, VarDeclaration)
     EXPECT_EQ(tokens[1].getLexeme(), "a");
     EXPECT_EQ(tokens[2].getType(), TokenType::END_OF_FILE);
 }
+
+TEST_F(LexerTest, TrueLiteralHasBoolValue)
+{
+    auto tokens = scan("true");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::TRUE);
+    EXPECT_EQ(std::get<bool>(tokens[0].getLiteral()), true);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTest, FalseLiteralHasBoolValue)
+{
+    auto tokens = scan("false");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::FALSE);
+    EXPECT_EQ(std::get<bool>(tokens[0].getLiteral()), false);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
