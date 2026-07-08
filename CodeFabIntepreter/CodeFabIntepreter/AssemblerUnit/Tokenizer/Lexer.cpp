@@ -1,6 +1,7 @@
 #include "Lexer.h"
 
 #include <stdexcept>
+#include <unordered_map>
 
 Lexer::Lexer(string source) : source(std::move(source))
 {
@@ -59,7 +60,10 @@ void Lexer::scanToken()
         case '"': scanString(); break;
 
         default:
-            if (std::isdigit(static_cast<unsigned char>(c))) scanNumber();
+            if (std::isdigit(static_cast<unsigned char>(c)))
+                scanNumber();
+            else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_')
+                scanIdentifier();
             break;
     }
 }
@@ -116,6 +120,29 @@ void Lexer::scanString()
 
     string value = source.substr(start + 1, current - start - 2);
     addToken(TokenType::STRING, value);
+}
+
+void Lexer::scanIdentifier()
+{
+    while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_')
+        advance();
+
+    static const std::unordered_map<string, TokenType> keywords = {
+        {"and",   TokenType::AND},
+        {"else",  TokenType::ELSE},
+        {"false", TokenType::FALSE},
+        {"for",   TokenType::FOR},
+        {"if",    TokenType::IF},
+        {"or",    TokenType::OR},
+        {"print", TokenType::PRINT},
+        {"true",  TokenType::TRUE},
+        {"var",   TokenType::VAR},
+    };
+
+    string text = source.substr(start, current - start);
+    auto it = keywords.find(text);
+    TokenType type = (it != keywords.end()) ? it->second : TokenType::IDENTIFIER;
+    addToken(type);
 }
 
 void Lexer::scanNumber()

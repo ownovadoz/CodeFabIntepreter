@@ -158,3 +158,61 @@ TEST(LexerTest, MultipleLiterals)
     EXPECT_DOUBLE_EQ(std::get<double>(tokens[2].getLiteral()), 4.5);
     EXPECT_EQ(tokens[3].getType(), TokenType::END_OF_FILE);
 }
+
+TEST(LexerTest, IdentifierToken)
+{
+    Lexer lexer("abc");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[0].getLexeme(), "abc");
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, KeywordVar)
+{
+    Lexer lexer("var");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::VAR);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, KeywordIf)
+{
+    Lexer lexer("if");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IF);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, KeywordTrue)
+{
+    Lexer lexer("true");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::TRUE);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, IdentifierStartsWithKeyword)
+{
+    Lexer lexer("variable");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[0].getLexeme(), "variable");
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, VarDeclaration)
+{
+    Lexer lexer("var a");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::VAR);
+    EXPECT_EQ(tokens[1].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[1].getLexeme(), "a");
+    EXPECT_EQ(tokens[2].getType(), TokenType::END_OF_FILE);
+}
