@@ -115,6 +115,7 @@ unique_ptr<Expression> Parser::parseExpression() {
 	case TokenType::FALSE:
 	case TokenType::MINUS:
 	case TokenType::BANG:
+	case TokenType::LEFT_PAREN:
 		return parseUnaryExpr();
 	default:
 		return nullptr;
@@ -138,6 +139,16 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	case TokenType::TRUE:
 	case TokenType::FALSE:
 		return make_unique<LiteralExpr>(advance());
+	case TokenType::LEFT_PAREN: {
+		advance();
+		unique_ptr<Expression> expr = parseExpression();
+		if (expr == nullptr) throw CodeFabException(peek(), "Expect expression.");
+
+		Token close_paren = advance();
+		if (close_paren.getType() != TokenType::RIGHT_PAREN) throw CodeFabException(close_paren, "Expect ')' after expression.");
+
+		return make_unique<GroupingExpr>(move(expr));
+	}
 	default:
 		throw CodeFabException(peek(), "Expect expression.");
 	}
