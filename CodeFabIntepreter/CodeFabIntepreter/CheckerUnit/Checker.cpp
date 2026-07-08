@@ -4,6 +4,18 @@
 
 #include <algorithm>
 
+namespace {
+    class ScopeGuard
+    {
+    public:
+        explicit ScopeGuard(Checker& checker) : checker(checker) { checker.enterScope(); }
+        ~ScopeGuard() { checker.exitScope(); }
+
+    private:
+        Checker& checker;
+    };
+}
+
 void Checker::enterScope()
 {
     scope_stack.emplace_back();
@@ -39,7 +51,7 @@ bool Checker::isDeclaredInCurrentScope(const string& name) const
 
 void Checker::check(Statement* root)
 {
-    enterScope();
+    ScopeGuard guard(*this);
     checkStatement(root);
 }
 
@@ -62,20 +74,10 @@ void Checker::checkStatement(Statement* stmt)
 
 void Checker::checkBlockStmt(BlockStmt* block)
 {
-    enterScope();
+    ScopeGuard guard(*this);
 
-    try
-    {
-        for (Statement* stmt : block->getStatements())
-            checkStatement(stmt);
-    }
-    catch (...)
-    {
-        exitScope();
-        throw;
-    }
-
-    exitScope();
+    for (Statement* stmt : block->getStatements())
+        checkStatement(stmt);
 }
 
 void Checker::checkVarDeclareStmt(VarDeclareStmt* var_decl)
