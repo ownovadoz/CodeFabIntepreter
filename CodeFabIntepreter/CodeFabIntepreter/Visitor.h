@@ -13,6 +13,9 @@ public:
 	virtual void visitUnaryExpr(const UnaryExpr& expr) = 0;
 	virtual void visitGroupingExpr(const GroupingExpr& expr) = 0;
 	virtual void visitLogicalExpr(const LogicalExpr& expr) = 0;
+	virtual void visitArrayExpr(const ArrayExpr& expr) = 0;
+	virtual void visitIndexExpr(const IndexExpr& expr) = 0;
+	virtual void visitIndexSetExpr(const IndexSetExpr& expr) = 0;
 };
 
 class StmtVisitor {

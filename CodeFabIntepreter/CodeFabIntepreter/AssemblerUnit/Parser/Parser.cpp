@@ -48,6 +48,7 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::NUMBER:
 	case TokenType::FALSE:
 	case TokenType::TRUE:
+	case TokenType::ARRAY:
 		return parseExpressionStmt();
 	case TokenType::SEMICOLON:
 		advance();
@@ -70,6 +71,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::AND:
 	case TokenType::OR:
 	case TokenType::ELSE:
+	case TokenType::LEFT_BRACKET:
+	case TokenType::RIGHT_BRACKET:
 		throw CodeFabException(token, "Unexpected token.");
 	}
 	return nullptr;
@@ -174,12 +177,17 @@ unique_ptr<Expression> Parser::parseAssignExpr() {
 		Token equals = advance();
 
 		VariableExpr* variable = dynamic_cast<VariableExpr*>(left.get());
-		if (variable == nullptr) throw CodeFabException(equals, "Invalid assignment target.");
+		IndexExpr* index_expr = (variable != nullptr) ? nullptr : dynamic_cast<IndexExpr*>(left.get());
 
-		Token identifier = variable->getToken();
+		if (variable == nullptr && index_expr == nullptr) throw CodeFabException(equals, "Invalid assignment target.");
+
 		unique_ptr<Expression> value = parseAssignExpr();
 
-		return make_unique<AssignExpr>(identifier, move(value));
+		if (variable != nullptr) {
+			return make_unique<AssignExpr>(variable->getToken(), move(value));
+		}
+
+		return make_unique<IndexSetExpr>(index_expr->releaseArray(), index_expr->releaseIndex(), move(value));
 	}
 
 	return left;
@@ -240,7 +248,28 @@ unique_ptr<Expression> Parser::parseUnaryExpr() {
 		unique_ptr<Expression> operand = parseUnaryExpr();
 		return make_unique<UnaryExpr>(op, move(operand));
 	}
-	return parsePrimaryExpr();
+	return parsePostfixExpr();
+}
+
+unique_ptr<Expression> Parser::parsePostfixExpr() {
+	unique_ptr<Expression> expr = parsePrimaryExpr();
+
+	while (check(TokenType::LEFT_BRACKET)) {
+		advance();
+
+		unique_ptr<Expression> index = parseExpression();
+
+		const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(index.get());
+		if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
+			throw CodeFabException(literal->getToken(), "Array index must be a number.");
+		}
+
+		consume(TokenType::RIGHT_BRACKET, "Expect ']' after index.");
+
+		expr = make_unique<IndexExpr>(move(expr), move(index));
+	}
+
+	return expr;
 }
 
 unique_ptr<Expression> Parser::parsePrimaryExpr() {
@@ -252,6 +281,8 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 		return make_unique<LiteralExpr>(advance());
 	case TokenType::IDENTIFIER:
 		return make_unique<VariableExpr>(advance());
+	case TokenType::ARRAY:
+		return parseArrayExpr();
 	case TokenType::LEFT_PAREN: {
 		advance();
 		unique_ptr<Expression> expr = parseExpression();
@@ -263,4 +294,21 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	default:
 		throw CodeFabException(peek(), "Expect expression.");
 	}
+}
+
+unique_ptr<Expression> Parser::parseArrayExpr() {
+	advance();
+
+	consume(TokenType::LEFT_PAREN, "Expect '(' after 'Array'.");
+
+	unique_ptr<Expression> size = parseExpression();
+
+	const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(size.get());
+	if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
+		throw CodeFabException(literal->getToken(), "Array size must be a number.");
+	}
+
+	consume(TokenType::RIGHT_PAREN, "Expect ')' after array size.");
+
+	return make_unique<ArrayExpr>(move(size));
 }
