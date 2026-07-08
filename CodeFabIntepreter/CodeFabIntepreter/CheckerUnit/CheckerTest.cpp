@@ -3,52 +3,62 @@
 #include "../AssemblerUnit/Parser/Parser.h"
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Tokenizer/Token.h"
+#include "../CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <optional>
 #include <vector>
 
 using std::vector;
 
+namespace {
+	Token makeIdentifier(const string& name) {
+		return Token(TokenType::IDENTIFIER, name, name, 1);
+	}
+}
+
 class CheckerTest : public ::testing::Test {
 protected:
-    void SetUp() override { checker.enterScope(); }
+    void SetUp() override { guard.emplace(checker); }
 
     Checker checker;
+    std::optional<Checker::ScopeGuard> guard;
 };
 
 TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }
 
 TEST_F(CheckerTest, DuplicateDeclarationInSameScopeFails) {
-    checker.declareVariable("a", {});
+    checker.declareVariable(makeIdentifier("a"), {});
 
-    EXPECT_TRUE(checker.declareVariable("a", {}).hasError());
+    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), {}), CodeFabException);
 }
 
 TEST_F(CheckerTest, SameNameInNestedScopeSucceeds) {
-    checker.declareVariable("a", {});
-    checker.enterScope();
+    checker.declareVariable(makeIdentifier("a"), {});
+    Checker::ScopeGuard inner(checker);
 
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }
 
 TEST_F(CheckerTest, RedeclaringAfterScopeExitSucceeds) {
-    checker.enterScope();
-    checker.declareVariable("a", {});
-    checker.exitScope();
+    {
+        Checker::ScopeGuard inner(checker);
+        checker.declareVariable(makeIdentifier("a"), {});
+    }
 
-    EXPECT_FALSE(checker.declareVariable("a", {}).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
 }
 
 TEST_F(CheckerTest, SelfReferenceInInitializerFails) {
-    EXPECT_TRUE(checker.declareVariable("a", { "a" }).hasError());
+    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), { "a" }), CodeFabException);
 }
 
 TEST_F(CheckerTest, ReferencingOtherVariableInInitializerSucceeds) {
-    checker.declareVariable("b", {});
+    checker.declareVariable(makeIdentifier("b"), {});
 
-    EXPECT_FALSE(checker.declareVariable("a", { "b" }).hasError());
+    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), { "b" }));
 }
 
 TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
@@ -66,7 +76,7 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 
 	Checker checker;
 
-	EXPECT_FALSE(checker.check(root).hasError());
+	EXPECT_NO_THROW(checker.check(root));
 
 	delete root;
 }
@@ -86,7 +96,7 @@ TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
 
 	Checker checker;
 
-	EXPECT_TRUE(checker.check(block).hasError());
+	EXPECT_THROW(checker.check(block), CodeFabException);
 
 	delete block;
 	delete first;
@@ -113,7 +123,7 @@ TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
 
 	Checker checker;
 
-	EXPECT_FALSE(checker.check(outer).hasError());
+	EXPECT_NO_THROW(checker.check(outer));
 
 	delete outer;
 	delete inner;
