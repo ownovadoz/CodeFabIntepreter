@@ -25,7 +25,23 @@ private:
 
 class IfStmt : public Statement {
 public:
+	IfStmt(unique_ptr<BinaryExpr> condition, unique_ptr<Statement> then_branch, unique_ptr<Statement> else_branch)
+		: condition{ move(condition) }, then_branch{ move(then_branch) }, else_branch{ move(else_branch) } {}
+
+	const BinaryExpr* getCondition() const {
+		return condition.get();
+	}
+
+	Statement* getThenBranch() const {
+		return then_branch.get();
+	}
+
+	Statement* getElseBranch() const {
+		return else_branch.get();
+	}
+
 	void accept(StmtVisitor& visitor) override;
+
 private:
 	unique_ptr<BinaryExpr> condition;	// Enforce binary expressions only.
 	unique_ptr<Statement> then_branch;
