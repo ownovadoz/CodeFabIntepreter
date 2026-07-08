@@ -143,6 +143,8 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp" />
+    <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp" />
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
     <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp" />
     <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp" />
@@ -162,6 +164,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AssemblerUnit\AssemblerUnit.h" />
     <ClInclude Include="AssemblerUnit\Tokenizer\Lexer.h" />
     <ClInclude Include="AssemblerUnit\Tokenizer\Token.h" />
     <ClInclude Include="AssemblerUnit\Tokenizer\Value.h" />
