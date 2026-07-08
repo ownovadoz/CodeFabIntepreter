@@ -20,6 +20,13 @@ private:
 };
 
 class VariableExpr : public Expression {
+public:
+	explicit VariableExpr(const Token& token) : token{ token } {}
+
+	const Token& getToken() const {
+		return token;
+	}
+
 private:
 	Token token;
 };

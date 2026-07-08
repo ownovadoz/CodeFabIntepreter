@@ -126,6 +126,8 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	case TokenType::TRUE:
 	case TokenType::FALSE:
 		return make_unique<LiteralExpr>(advance());
+	case TokenType::IDENTIFIER:
+		return make_unique<VariableExpr>(advance());
 	case TokenType::LEFT_PAREN: {
 		advance();
 		unique_ptr<Expression> expr = parseExpression();
