@@ -170,12 +170,14 @@ unique_ptr<Statement> Parser::parseForStmt() {
 
 	consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
 
+	loop_depth++;
 	unique_ptr<Statement> body = parseStatement();
+	loop_depth--;
 
 	return make_unique<ForStmt>(move(init), move(condition), move(increment), move(body));
 }
 
-unique_ptr<FunctionDeclStmt> Parser::parseFunctionBody(const Token& name) {
+unique_ptr<FunctionDeclStmt> Parser::parseFunctionBody(const Token& name, bool is_method) {
 	consume(TokenType::LEFT_PAREN, "Expect '(' after name.");
 
 	vector<Token> parameters;
@@ -192,7 +194,9 @@ unique_ptr<FunctionDeclStmt> Parser::parseFunctionBody(const Token& name) {
 	if (!check(TokenType::LEFT_BRACE)) throw CodeFabException(peek(), "Expect '{' before body.");
 
 	function_depth++;
+	if (is_method) method_depth++;
 	unique_ptr<Statement> raw_body = parseBlockStmt();
+	if (is_method) method_depth--;
 	function_depth--;
 
 	unique_ptr<BlockStmt> body(static_cast<BlockStmt*>(raw_body.release()));
@@ -211,7 +215,7 @@ unique_ptr<Statement> Parser::parseFunctionDeclStmt() {
 unique_ptr<FunctionDeclStmt> Parser::parseMethodDecl() {
 	Token name = consume(TokenType::IDENTIFIER, "Expect method name.");
 
-	return parseFunctionBody(name);
+	return parseFunctionBody(name, true);
 }
 
 unique_ptr<Statement> Parser::parseClassDeclStmt() {
@@ -238,7 +242,9 @@ unique_ptr<Statement> Parser::parseClassDeclStmt() {
 }
 
 unique_ptr<Statement> Parser::parseImportStmt() {
-	advance();
+	Token import_token = advance();
+
+	if (loop_depth > 0) throw CodeFabException(import_token, "Cannot import inside a loop.");
 
 	Token path = consume(TokenType::STRING, "Expect file path after 'import'.");
 
@@ -436,8 +442,10 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	case TokenType::ARRAY:
 		return parseArrayExpr();
 	case TokenType::THIS:
+		if (method_depth == 0) throw CodeFabException(peek(), "Cannot use 'this' outside of a method.");
 		return make_unique<ThisExpr>(advance());
 	case TokenType::SUPER: {
+		if (method_depth == 0) throw CodeFabException(peek(), "Cannot use 'Super' outside of a method.");
 		Token keyword = advance();
 		consume(TokenType::DOT, "Expect '.' after 'Super'.");
 		Token method = consume(TokenType::IDENTIFIER, "Expect superclass member name.");

@@ -2121,3 +2121,177 @@ TEST_F(ParserTestFixture, ImportedModuleMemberCallPassed) {
 	EXPECT_EQ(get_expr->getName().getLexeme(), "add");
 	ASSERT_EQ(call_expr->getArguments().size(), 2u);
 }
+
+TEST_F(ParserTestFixture, ThisExprOutsideMethodFailed) {
+	// this;
+	expectParseThrows({
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, SuperOutsideMethodFailed) {
+	// Super.speak();
+	expectParseThrows({
+		{TokenType::SUPER, "Super", "Super", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "speak", "speak", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ThisExprInsidePlainFuncFailed) {
+	// Func f() { return this; }
+	expectParseThrows({
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "f", "f", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RETURN, "return", "return", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportInsideForLoopFailed) {
+	// for (var i = 0; i < 1; i = i + 1) { import "x" alias y; }
+	expectParseThrows({
+		{TokenType::FOR, "for", "for", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::LESS, "<", "<", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"x\"", "x", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "y", "y", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportInsideNestedBlockInsideForLoopFailed) {
+	// for (var i = 0; i < 1; i = i + 1) { { import "x" alias y; } }
+	expectParseThrows({
+		{TokenType::FOR, "for", "for", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::LESS, "<", "<", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"x\"", "x", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "y", "y", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportInsideFuncInsideForLoopFailed) {
+	// for (var i = 0; i < 1; i = i + 1) { Func f() { import "x" alias y; } }
+	expectParseThrows({
+		{TokenType::FOR, "for", "for", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::LESS, "<", "<", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::FUNC, "Func", "Func", 1},
+		{TokenType::IDENTIFIER, "f", "f", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"x\"", "x", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "y", "y", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportAfterForLoopEndsPassed) {
+	// for (var i = 0; i < 1; i = i + 1) { } import "x" alias y;
+	const auto& program = buildAndParseProgram({
+		{TokenType::FOR, "for", "for", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "0", 0.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::LESS, "<", "<", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "i", "i", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"x\"", "x", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "y", "y", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 2);
+	EXPECT_NE(dynamic_cast<const ForStmt*>(program[0].get()), nullptr);
+	EXPECT_NE(dynamic_cast<const ImportStmt*>(program[1].get()), nullptr);
+}
