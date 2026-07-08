@@ -149,6 +149,8 @@
     <ClCompile Include="AssemblerUnit\Tokenizer\LexerTest.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp" />
     <ClCompile Include="CheckerUnit\VariableScopeCheckerTest.cpp" />
+    <ClCompile Include="ExecutorUnit\Environment.cpp" />
+    <ClCompile Include="ExecutorUnit\EnvironmentTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
     <ClCompile Include="main.cpp" />
@@ -166,10 +168,12 @@
     <ClInclude Include="AssemblerUnit\Parser\Statement.h" />
     <ClInclude Include="AssemblerUnit\Parser\Parser.h" />
     <ClInclude Include="CheckerUnit\VariableScopeChecker.h" />
+    <ClInclude Include="ExecutorUnit\Environment.h" />
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />
     <ClInclude Include="AssemblerUnit\Parser\Node.h" />
     <ClInclude Include="PromptShell.h" />
+    <ClInclude Include="RuntimeError.h" />
     <ClInclude Include="Visitor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
