@@ -1,20 +1,24 @@
-﻿#include "Parser.h"
+#include "Parser.h"
 #include "Statement.h"
 #include "Expression.h"
 #include "../../CodeFabException.h"
 
+#include <memory>
 #include <vector>
 
+using std::make_unique;
+using std::move;
+using std::unique_ptr;
 using std::vector;
 
 // TODO: can I change return type as const Statement*?
-Statement* Parser::parse(const vector<Token>& tokens) {
+unique_ptr<Statement> Parser::parse(const vector<Token>& tokens) {
 	if (tokens.empty()) return nullptr;
 	init(tokens);
 	return parseStatement();
 }
 
-Statement* Parser::parseStatement() {
+unique_ptr<Statement> Parser::parseStatement() {
 	const Token& token = peek();
 	switch (token.getType()) {
 	case TokenType::IF:
@@ -59,57 +63,51 @@ Statement* Parser::parseStatement() {
 	return nullptr;
 }
 
-Statement* Parser::parseIfStmt() {
+unique_ptr<Statement> Parser::parseIfStmt() {
 	return nullptr;
 }
 
-Statement* Parser::parseBlockStmt() {
+unique_ptr<Statement> Parser::parseBlockStmt() {
 	return nullptr;
 }
 
-Statement* Parser::parseVarDeclareStmt() {
+unique_ptr<Statement> Parser::parseVarDeclareStmt() {
 	Token var_token = advance();
 	if (var_token.getType() != TokenType::VAR) throw CodeFabException(var_token, "Expect 'var'.");
 	if (peek().getType() != TokenType::IDENTIFIER) throw CodeFabException(peek(), "Expect variable name.");
 
-	VarDeclareStmt* stmt = new VarDeclareStmt{ advance() };
+	auto stmt = make_unique<VarDeclareStmt>(advance());
 
-	try {
-		Token equal_token = advance();
-		if (equal_token.getType() != TokenType::EQUAL) throw CodeFabException(equal_token, "Expect '=' after variable name.");
+	Token equal_token = advance();
+	if (equal_token.getType() != TokenType::EQUAL) throw CodeFabException(equal_token, "Expect '=' after variable name.");
 
-		Expression* expr = parseExpression();
+	unique_ptr<Expression> expr = parseExpression();
 
-		if (expr == nullptr) throw CodeFabException(peek(), "Expect expression.");
+	if (expr == nullptr) throw CodeFabException(peek(), "Expect expression.");
 
-		Token after_expr_token = advance();
-		if (after_expr_token.getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
-			delete expr;
-			throw CodeFabException(after_expr_token, "Expect ';' after variable declaration.");
-		}
-
-		stmt->setExpression(expr);
-	} catch (...) {
-		delete stmt;
-		throw;
+	Token after_expr_token = advance();
+	if (after_expr_token.getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
+		throw CodeFabException(after_expr_token, "Expect ';' after variable declaration.");
 	}
+
+	stmt->setExpression(move(expr));
 
 	return stmt;
 }
 
-Statement* Parser::parsePrintStmt() {
+unique_ptr<Statement> Parser::parsePrintStmt() {
 	return nullptr;
 }
 
-Statement* Parser::parseForStmt() {
+unique_ptr<Statement> Parser::parseForStmt() {
 	return nullptr;
 }
 
-Statement* Parser::parseExpressionStmt() {
+unique_ptr<Statement> Parser::parseExpressionStmt() {
 	return nullptr;
 }
 
-Expression* Parser::parseExpression() {
+unique_ptr<Expression> Parser::parseExpression() {
 	switch (peek().getType()) {
 	case TokenType::NUMBER:
 	case TokenType::STRING:
@@ -123,23 +121,23 @@ Expression* Parser::parseExpression() {
 	}
 }
 
-Expression* Parser::parseUnaryExpr() {
+unique_ptr<Expression> Parser::parseUnaryExpr() {
 	TokenType type = peek().getType();
 	if (type == TokenType::MINUS || type == TokenType::BANG) {
 		Token op = advance();
-		Expression* operand = parseUnaryExpr();
-		return new UnaryExpr(op, operand);
+		unique_ptr<Expression> operand = parseUnaryExpr();
+		return make_unique<UnaryExpr>(op, move(operand));
 	}
 	return parsePrimaryExpr();
 }
 
-Expression* Parser::parsePrimaryExpr() {
+unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	switch (peek().getType()) {
 	case TokenType::NUMBER:
 	case TokenType::STRING:
 	case TokenType::TRUE:
 	case TokenType::FALSE:
-		return new LiteralExpr(advance());
+		return make_unique<LiteralExpr>(advance());
 	default:
 		throw CodeFabException(peek(), "Expect expression.");
 	}

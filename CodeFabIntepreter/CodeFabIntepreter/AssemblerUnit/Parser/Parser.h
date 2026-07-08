@@ -1,30 +1,32 @@
-﻿#pragma once
+#pragma once
 
 #include "Statement.h"
 #include "../Tokenizer/Token.h"
 
+#include <memory>
 #include <vector>
 
+using std::unique_ptr;
 using std::vector;
 
 class Parser
 {
 public:
-	Statement* parse(const vector<Token>& tokens);
+	unique_ptr<Statement> parse(const vector<Token>& tokens);
 
 
 private:
-	Statement* parseStatement();
-	Statement* parseIfStmt();
-	Statement* parseBlockStmt();
-	Statement* parseVarDeclareStmt();
-	Statement* parsePrintStmt();
-	Statement* parseForStmt();
-	Statement* parseExpressionStmt();
+	unique_ptr<Statement> parseStatement();
+	unique_ptr<Statement> parseIfStmt();
+	unique_ptr<Statement> parseBlockStmt();
+	unique_ptr<Statement> parseVarDeclareStmt();
+	unique_ptr<Statement> parsePrintStmt();
+	unique_ptr<Statement> parseForStmt();
+	unique_ptr<Statement> parseExpressionStmt();
 
-	Expression* parseExpression();
-	Expression* parseUnaryExpr();
-	Expression* parsePrimaryExpr();
+	unique_ptr<Expression> parseExpression();
+	unique_ptr<Expression> parseUnaryExpr();
+	unique_ptr<Expression> parsePrimaryExpr();
 
 	void init(const vector<Token>& tokens) {
 		this->tokens = tokens;

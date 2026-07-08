@@ -1,11 +1,14 @@
-﻿#pragma once
+#pragma once
 
 #include "Node.h"
 #include "Expression.h"
 #include "../Tokenizer/Token.h"
 
+#include <memory>
 #include <vector>
 
+using std::move;
+using std::unique_ptr;
 using std::vector;
 
 class Statement : public StatementOrExpression {
@@ -13,40 +16,36 @@ class Statement : public StatementOrExpression {
 
 class ExpressionStmt : public Statement {
 private:
-	Expression* expr = nullptr;
+	unique_ptr<Expression> expr;
 };
 
 class IfStmt : public Statement {
 private:
-	BinaryExpr* condition = nullptr;	// Enforce binary expressions only.
-	Statement* then_branch = nullptr;
-	Statement* else_branch = nullptr;
+	unique_ptr<BinaryExpr> condition;	// Enforce binary expressions only.
+	unique_ptr<Statement> then_branch;
+	unique_ptr<Statement> else_branch;
 };
 
 class BlockStmt : public Statement {
 public:
-	void addStatement(Statement* stmt) {
-		statements.push_back(stmt);
+	void addStatement(unique_ptr<Statement> stmt) {
+		statements.push_back(move(stmt));
 	}
 
-	const vector<Statement*>& getStatements() const {
+	const vector<unique_ptr<Statement>>& getStatements() const {
 		return statements;
 	}
 
 private:
-	vector<Statement*> statements;
+	vector<unique_ptr<Statement>> statements;
 };
 
 class VarDeclareStmt : public Statement {
 public:
-	explicit VarDeclareStmt(const Token& token) : name{ token }, initializer{ nullptr } {}
+	explicit VarDeclareStmt(const Token& token) : name{ token } {}
 
-	~VarDeclareStmt() override {
-		delete initializer;
-	}
-
-	void setExpression(Expression* expr) {
-		initializer = expr;
+	void setExpression(unique_ptr<Expression> expr) {
+		initializer = move(expr);
 	}
 
 	const Token& getName() {
@@ -54,23 +53,23 @@ public:
 	}
 
 	const Expression* getInitializer() {
-		return initializer;
+		return initializer.get();
 	}
 
 private:
 	Token name;
-	Expression* initializer = nullptr;
+	unique_ptr<Expression> initializer;
 };
 
 class PrintStmt : public Statement {
 private:
-	Expression* expr = nullptr;
+	unique_ptr<Expression> expr;
 };
 
 class ForStmt : public Statement {
 private:
-	VarDeclareStmt* init = nullptr;
-	BinaryExpr* condition = nullptr;
-	Expression* increment = nullptr;
-	Statement* body = nullptr;
+	unique_ptr<VarDeclareStmt> init;
+	unique_ptr<BinaryExpr> condition;
+	unique_ptr<Expression> increment;
+	unique_ptr<Statement> body;
 };
