@@ -30,7 +30,11 @@ private:
         const int token_line = token.getLine();
         if (token.getType() == TokenType::END_OF_FILE) return linePrefix(token_line) + "Error at end: " + message;
 
-        return linePrefix(token_line) + "Type : " + tokenTypeToString(token.getType()) + ", Lexeme : " + token.getLexeme() + ", literal : " + stringify(token.getLiteral()) + ", message : " + message;
+        return linePrefix(token_line)
+            + "Type : " + tokenTypeToString(token.getType())
+            + ", Lexeme : " + token.getLexeme()
+            + ", literal : " + stringify(token.getLiteral())
+            + ", message : " + message;
     }
     int line;
     string message;
