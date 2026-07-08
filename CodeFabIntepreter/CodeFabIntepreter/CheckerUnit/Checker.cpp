@@ -67,6 +67,8 @@ void Checker::visitExpressionStmt(ExpressionStmt& stmt)
 
 void Checker::visitIfStmt(IfStmt& stmt)
 {
+    checkStatement(stmt.getThenBranch());
+    checkStatement(stmt.getElseBranch());
 }
 
 void Checker::visitPrintStmt(PrintStmt& stmt)
