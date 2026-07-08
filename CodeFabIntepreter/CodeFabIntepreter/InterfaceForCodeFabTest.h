@@ -29,7 +29,7 @@ public:
 	}
 };
 
-class Checker : public IChecker {
+class NoOpChecker : public IChecker {
 public:
 	void run() override {
 
@@ -50,7 +50,7 @@ public:
 	}
 };
 
-class Checker {
+class NoOpChecker {
 public:
 	void run() {
 

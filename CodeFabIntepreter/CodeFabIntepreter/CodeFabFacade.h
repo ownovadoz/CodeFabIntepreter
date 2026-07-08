@@ -28,7 +28,7 @@ private:
     IExecutor* executor;
 #else
     Tokenizer tokenizer;
-    Checker checker;
+    NoOpChecker checker;
     Executor executor;
 #endif
 };
