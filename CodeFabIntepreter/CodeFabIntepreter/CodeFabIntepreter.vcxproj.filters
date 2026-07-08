@@ -39,16 +39,10 @@
     <ClCompile Include="PromptShellTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CheckerUnit\VariableScopeCheckerTest.cpp">
+    <ClCompile Include="CheckerUnit\CheckerTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CheckerUnit\VariableScopeChecker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CheckerUnit\SemanticCheckerTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CheckerUnit\SemanticChecker.cpp">
+    <ClCompile Include="CheckerUnit\Checker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CodeFabFacade.cpp">
@@ -77,10 +71,7 @@
     <ClInclude Include="PromptShell.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="CheckerUnit\VariableScopeChecker.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CheckerUnit\SemanticChecker.h">
+    <ClInclude Include="CheckerUnit\Checker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CodeFabFacade.h">
