@@ -31,7 +31,7 @@ private:
 	unique_ptr<Statement> parseReturnStmt();
 	unique_ptr<Statement> parseClassDeclStmt();
 	unique_ptr<FunctionDeclStmt> parseMethodDecl();
-	unique_ptr<FunctionDeclStmt> parseFunctionBody(const Token& name);
+	unique_ptr<FunctionDeclStmt> parseFunctionBody(const Token& name, bool is_method = false);
 	unique_ptr<Statement> parseImportStmt();
 
 	unique_ptr<Expression> parseExpression();
@@ -57,6 +57,8 @@ private:
 		this->tokens = tokens;
 		current_token_it = this->tokens.begin();
 		function_depth = 0;
+		method_depth = 0;
+		loop_depth = 0;
 	}
 
 	const Token& peek() const {
@@ -91,4 +93,6 @@ private:
 	vector<Token> tokens;
 	vector<Token>::const_iterator current_token_it;
 	int function_depth = 0;
+	int method_depth = 0;
+	int loop_depth = 0;
 };
