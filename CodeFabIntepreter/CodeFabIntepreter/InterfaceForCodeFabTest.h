@@ -1,13 +1,15 @@
 #pragma once
+#include "AssemblerUnit/Parser/Statement.h"
+
 #include <string>
 
 using std::string;
 
 #ifdef _DEBUG
-class ITokenizer {
+class IAssemblerUnit {
 public:
-	virtual ~ITokenizer() = default;
-	virtual void run(const string& code_line) = 0;
+	virtual ~IAssemblerUnit() = default;
+	virtual Statement* assemble(const string& code_line) = 0;
 };
 
 class IChecker {
@@ -20,13 +22,6 @@ class IExecutor {
 public:
 	virtual ~IExecutor() = default;
 	virtual void run() = 0;
-};
-
-class Tokenizer : public ITokenizer {
-public:
-	void run(const string& code_line) override {
-
-	}
 };
 
 class NoOpChecker : public IChecker {
@@ -43,13 +38,6 @@ public:
 	}
 };
 #else
-class Tokenizer {
-public:
-	void run(const string& code_line) {
-
-	}
-};
-
 class NoOpChecker {
 public:
 	void run() {
