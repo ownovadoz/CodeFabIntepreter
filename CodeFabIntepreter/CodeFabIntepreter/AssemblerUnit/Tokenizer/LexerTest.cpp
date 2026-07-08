@@ -106,3 +106,55 @@ TEST(LexerTest, SingleCharNotConsumedByMultiChar)
     EXPECT_EQ(tokens[3].getType(), TokenType::GREATER);
     EXPECT_EQ(tokens[4].getType(), TokenType::END_OF_FILE);
 }
+
+TEST(LexerTest, StringLiteral)
+{
+    Lexer lexer("\"hello\"");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::STRING);
+    EXPECT_EQ(std::get<string>(tokens[0].getLiteral()), "hello");
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, StringLiteralLexemeIncludesQuotes)
+{
+    Lexer lexer("\"hi\"");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getLexeme(), "\"hi\"");
+}
+
+TEST(LexerTest, IntegerLiteral)
+{
+    Lexer lexer("123");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
+    EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 123.0);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, FloatLiteral)
+{
+    Lexer lexer("3.14");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
+    EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 3.14);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexerTest, MultipleLiterals)
+{
+    Lexer lexer("123 \"abc\" 4.5");
+    vector<Token> tokens = lexer.scanTokens();
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
+    EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 123.0);
+    EXPECT_EQ(tokens[1].getType(), TokenType::STRING);
+    EXPECT_EQ(std::get<string>(tokens[1].getLiteral()), "abc");
+    EXPECT_EQ(tokens[2].getType(), TokenType::NUMBER);
+    EXPECT_DOUBLE_EQ(std::get<double>(tokens[2].getLiteral()), 4.5);
+    EXPECT_EQ(tokens[3].getType(), TokenType::END_OF_FILE);
+}
