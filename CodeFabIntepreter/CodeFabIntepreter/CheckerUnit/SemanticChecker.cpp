@@ -23,18 +23,15 @@ CheckResult SemanticChecker::checkBlockStmt(BlockStmt* block)
 {
     scope_checker.enterScope();
 
+    CheckResult result = CheckResult::isOK();
     for (Statement* stmt : block->getStatements())
     {
-        CheckResult result = checkStatement(stmt);
-        if (result.hasError)
-        {
-            scope_checker.exitScope();
-            return result;
-        }
+        result = checkStatement(stmt);
+        if (result.hasError) break;
     }
 
     scope_checker.exitScope();
-    return CheckResult::isOK();
+    return result;
 }
 
 CheckResult SemanticChecker::checkVarDeclareStmt(VarDeclareStmt* var_decl)
