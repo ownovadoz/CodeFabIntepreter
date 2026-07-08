@@ -59,7 +59,7 @@ void Lexer::scanToken()
         case '"': scanString(); break;
 
         default:
-            if (std::isdigit(c)) scanNumber();
+            if (std::isdigit(static_cast<unsigned char>(c))) scanNumber();
             break;
     }
 }
@@ -120,12 +120,12 @@ void Lexer::scanString()
 
 void Lexer::scanNumber()
 {
-    while (std::isdigit(peek())) advance();
+    while (std::isdigit(static_cast<unsigned char>(peek()))) advance();
 
-    if (peek() == '.' && std::isdigit(peekNext()))
+    if (peek() == '.' && std::isdigit(static_cast<unsigned char>(peekNext())))
     {
         advance(); // .
-        while (std::isdigit(peek())) advance();
+        while (std::isdigit(static_cast<unsigned char>(peek()))) advance();
     }
 
     double value = std::stod(source.substr(start, current - start));
