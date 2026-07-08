@@ -11,11 +11,15 @@ using std::move;
 using std::unique_ptr;
 using std::vector;
 
-// TODO: can I change return type as const Statement*?
-unique_ptr<Statement> Parser::parse(const vector<Token>& tokens) {
-	if (tokens.empty()) return nullptr;
+vector<unique_ptr<Statement>> Parser::parse(const vector<Token>& tokens) {
+	if (tokens.empty()) return {};
 	init(tokens);
-	return parseStatement();
+
+	vector<unique_ptr<Statement>> program;
+	while (!isAtEnd()) {
+		program.push_back(parseStatement());
+	}
+	return program;
 }
 
 unique_ptr<Statement> Parser::parseStatement() {
@@ -40,8 +44,10 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::TRUE:
 		return parseExpressionStmt();
 	case TokenType::SEMICOLON:
+		advance();
+		return nullptr;
 	case TokenType::END_OF_FILE:
-		break;	// TODO: what should I return?
+		return nullptr;
 	case TokenType::RIGHT_PAREN:
 	case TokenType::RIGHT_BRACE:
 	case TokenType::PLUS:
@@ -64,11 +70,21 @@ unique_ptr<Statement> Parser::parseStatement() {
 }
 
 unique_ptr<Statement> Parser::parseIfStmt() {
-	return nullptr;
+	throw CodeFabException(peek(), "'if' statements are not implemented yet.");
 }
 
 unique_ptr<Statement> Parser::parseBlockStmt() {
-	return nullptr;
+	advance();
+
+	auto block = make_unique<BlockStmt>();
+	while (!isAtEnd() && peek().getType() != TokenType::RIGHT_BRACE) {
+		block->addStatement(parseStatement());
+	}
+
+	if (peek().getType() != TokenType::RIGHT_BRACE) throw CodeFabException(peek(), "Expect '}' after block.");
+	advance();
+
+	return block;
 }
 
 unique_ptr<Statement> Parser::parseVarDeclareStmt() {
@@ -84,7 +100,7 @@ unique_ptr<Statement> Parser::parseVarDeclareStmt() {
 	unique_ptr<Expression> expr = parseExpression();
 
 	Token after_expr_token = advance();
-	if (after_expr_token.getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
+	if (after_expr_token.getType() != TokenType::SEMICOLON) {
 		throw CodeFabException(after_expr_token, "Expect ';' after variable declaration.");
 	}
 
@@ -94,15 +110,15 @@ unique_ptr<Statement> Parser::parseVarDeclareStmt() {
 }
 
 unique_ptr<Statement> Parser::parsePrintStmt() {
-	return nullptr;
+	throw CodeFabException(peek(), "'print' statements are not implemented yet.");
 }
 
 unique_ptr<Statement> Parser::parseForStmt() {
-	return nullptr;
+	throw CodeFabException(peek(), "'for' statements are not implemented yet.");
 }
 
 unique_ptr<Statement> Parser::parseExpressionStmt() {
-	return nullptr;
+	throw CodeFabException(peek(), "Expression statements are not implemented yet.");
 }
 
 unique_ptr<Expression> Parser::parseExpression() {

@@ -3,8 +3,10 @@
 #include "Parser/Parser.h"
 #include "Tokenizer/Lexer.h"
 
+#include <memory>
 #include <vector>
 
+using std::unique_ptr;
 using std::vector;
 
 Statement* AssemblerUnit::assemble(const string& code_line) {
@@ -12,5 +14,8 @@ Statement* AssemblerUnit::assemble(const string& code_line) {
 	vector<Token> tokens = lexer.scanTokens();
 
 	Parser parser;
-	return parser.parse(tokens).release();
+	vector<unique_ptr<Statement>> program = parser.parse(tokens);
+	if (program.empty()) return nullptr;
+
+	return program[0].release();
 }
