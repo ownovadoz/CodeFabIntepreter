@@ -101,16 +101,22 @@ Statement* Parser::parseExpressionStmt() {
 }
 
 Expression* Parser::parseExpression() {
-	// now, only support single number case
-	if (peek().getType() == TokenType::NUMBER) {
-		Expression* expr = parseNumberExpr();
+	switch (peek().getType()) {
+	case TokenType::NUMBER:
+	case TokenType::STRING:
+	case TokenType::TRUE:
+	case TokenType::FALSE: {
+		Expression* expr = parsePrimaryExpr();
 		if (advance().getType() == TokenType::SEMICOLON && peek().getType() == TokenType::END_OF_FILE) {
 			return expr;
 		}
+		return nullptr;
 	}
-	return nullptr;
+	default:
+		return nullptr;
+	}
 }
 
-Expression* Parser::parseNumberExpr() {
+Expression* Parser::parsePrimaryExpr() {
 	return new LiteralExpr(advance());
 }
