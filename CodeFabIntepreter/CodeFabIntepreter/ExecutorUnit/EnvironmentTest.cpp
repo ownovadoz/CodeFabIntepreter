@@ -1,5 +1,5 @@
 #include "Environment.h"
-#include "../RuntimeError.h"
+#include "../CodeFabException.h"
 
 #include <gmock/gmock.h>
 
@@ -7,8 +7,6 @@ class EnvironmentTestFixture : public testing::Test {
 public:
     Environment env;
 };
-
-// 동일 var 이름이 중복 들어오는 것은 checker unit에서 error 처리하므로 실제 발생 확률 없음.
 
 TEST_F(EnvironmentTestFixture, DefinedVariableIsReadable)
 {
@@ -30,12 +28,12 @@ TEST_F(EnvironmentTestFixture, DefineAssignGet)
 
 TEST_F(EnvironmentTestFixture, UndefinedVariableThrowException)
 {
-    EXPECT_THROW(env.get("x"), RuntimeError);
+    EXPECT_THROW(env.get("x"), CodeFabException);
 }
 
 TEST_F(EnvironmentTestFixture, AssignToUndefinedThrowException)
 {
-    EXPECT_THROW(env.assign("x", 1.0), RuntimeError);
+    EXPECT_THROW(env.assign("x", 1.0), CodeFabException);
 }
 
 TEST_F(EnvironmentTestFixture, AssignToExistingVariableUpdatesValue)
@@ -82,10 +80,10 @@ TEST_F(NestedEnvironmentTestFixture, DefineShadowsVariableInEnclosingScope)
 
 TEST_F(NestedEnvironmentTestFixture, GetUndefinedVariableThrowsThroughChain)
 {
-    EXPECT_THROW(inner.get("x"), RuntimeError);
+    EXPECT_THROW(inner.get("x"), CodeFabException);
 }
 
 TEST_F(NestedEnvironmentTestFixture, AssignUndefinedVariableThrowsThroughChain)
 {
-    EXPECT_THROW(inner.assign("x", 1.0), RuntimeError);
+    EXPECT_THROW(inner.assign("x", 1.0), CodeFabException);
 }
