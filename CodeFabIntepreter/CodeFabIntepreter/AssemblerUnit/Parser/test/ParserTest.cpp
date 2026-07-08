@@ -156,7 +156,21 @@ TEST(ParserTest, VarDecalreStmt_NegativeNumber_Passed) {
 
 	const UnaryExpr* expr = dynamic_cast<const UnaryExpr*>(stmt->getInitializer());
 
-	EXPECT_NE(expr, nullptr);
+	ASSERT_NE(expr, nullptr);
+
+	const Token& op = expr->getOperator();
+
+	EXPECT_EQ(op.getType(), TokenType::MINUS);
+	EXPECT_EQ(op.getLexeme(), "-");
+
+	const LiteralExpr* operand = dynamic_cast<const LiteralExpr*>(expr->getExpr());
+
+	ASSERT_NE(operand, nullptr);
+
+	const Token& operandToken = operand->getToken();
+
+	EXPECT_EQ(operandToken.getType(), TokenType::NUMBER);
+	EXPECT_EQ(operandToken.getLexeme(), "10");
 }
 
 TEST(ParserTest, VarDecalreStmt_NegatedTrue_Passed) {
@@ -182,7 +196,21 @@ TEST(ParserTest, VarDecalreStmt_NegatedTrue_Passed) {
 
 	const UnaryExpr* expr = dynamic_cast<const UnaryExpr*>(stmt->getInitializer());
 
-	EXPECT_NE(expr, nullptr);
+	ASSERT_NE(expr, nullptr);
+
+	const Token& op = expr->getOperator();
+
+	EXPECT_EQ(op.getType(), TokenType::BANG);
+	EXPECT_EQ(op.getLexeme(), "!");
+
+	const LiteralExpr* operand = dynamic_cast<const LiteralExpr*>(expr->getExpr());
+
+	ASSERT_NE(operand, nullptr);
+
+	const Token& operandToken = operand->getToken();
+
+	EXPECT_EQ(operandToken.getType(), TokenType::TRUE);
+	EXPECT_EQ(operandToken.getLexeme(), "true");
 }
 
 TEST(ParserTest, VarDecalreStmt_NegatedFalse_Passed) {
@@ -208,5 +236,19 @@ TEST(ParserTest, VarDecalreStmt_NegatedFalse_Passed) {
 
 	const UnaryExpr* expr = dynamic_cast<const UnaryExpr*>(stmt->getInitializer());
 
-	EXPECT_NE(expr, nullptr);
+	ASSERT_NE(expr, nullptr);
+
+	const Token& op = expr->getOperator();
+
+	EXPECT_EQ(op.getType(), TokenType::BANG);
+	EXPECT_EQ(op.getLexeme(), "!");
+
+	const LiteralExpr* operand = dynamic_cast<const LiteralExpr*>(expr->getExpr());
+
+	ASSERT_NE(operand, nullptr);
+
+	const Token& operandToken = operand->getToken();
+
+	EXPECT_EQ(operandToken.getType(), TokenType::FALSE);
+	EXPECT_EQ(operandToken.getLexeme(), "false");
 }
