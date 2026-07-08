@@ -106,7 +106,25 @@ unique_ptr<Statement> Parser::parseExpressionStmt() {
 }
 
 unique_ptr<Expression> Parser::parseExpression() {
-	return parseUnaryExpr();
+	return parseAssignExpr();
+}
+
+unique_ptr<Expression> Parser::parseAssignExpr() {
+	unique_ptr<Expression> left = parseUnaryExpr();
+
+	if (peek().getType() == TokenType::EQUAL) {
+		Token equals = advance();
+
+		VariableExpr* variable = dynamic_cast<VariableExpr*>(left.get());
+		if (variable == nullptr) throw CodeFabException(equals, "Invalid assignment target.");
+
+		Token identifier = variable->getToken();
+		unique_ptr<Expression> value = parseAssignExpr();
+
+		return make_unique<AssignExpr>(identifier, move(value));
+	}
+
+	return left;
 }
 
 unique_ptr<Expression> Parser::parseUnaryExpr() {
