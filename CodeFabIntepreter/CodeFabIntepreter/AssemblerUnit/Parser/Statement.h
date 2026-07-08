@@ -40,7 +40,11 @@ private:
 class VarDeclareStmt : public Statement {
 public:
 	explicit VarDeclareStmt(const Token& token) : name{ token }, initializer{ nullptr } {}
-	
+
+	~VarDeclareStmt() override {
+		delete initializer;
+	}
+
 	void setExpression(Expression* expr) {
 		initializer = expr;
 	}

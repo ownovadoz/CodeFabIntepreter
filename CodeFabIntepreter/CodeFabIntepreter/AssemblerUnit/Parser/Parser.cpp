@@ -74,22 +74,23 @@ Statement* Parser::parseVarDeclareStmt() {
 
 	VarDeclareStmt* stmt = new VarDeclareStmt{ advance() };
 
-	if (advance().getType() != TokenType::EQUAL) throw exception();
+	try {
+		if (advance().getType() != TokenType::EQUAL) throw exception();
 
-	Expression* expr = parseExpression();
+		Expression* expr = parseExpression();
 
-	if (expr == nullptr) {
+		if (expr == nullptr) throw exception();
+
+		if (advance().getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
+			delete expr;
+			throw exception();
+		}
+
+		stmt->setExpression(expr);
+	} catch (...) {
 		delete stmt;
-		throw exception();
+		throw;
 	}
-
-	if (advance().getType() != TokenType::SEMICOLON || peek().getType() != TokenType::END_OF_FILE) {
-		delete stmt;
-		delete expr;
-		throw exception();
-	}
-
-	stmt->setExpression(expr);
 
 	return stmt;
 }

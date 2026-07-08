@@ -15,6 +15,10 @@ using namespace testing;
 
 class ParserTest : public Test {
 protected:
+	void TearDown() override {
+		delete stmt;
+	}
+
 	VarDeclareStmt* parseVarDeclareStmt(const vector<Token>& initializerTokens) {
 		vector<Token> tokens = {
 			{TokenType::VAR, "var", "var", 1},
@@ -25,7 +29,8 @@ protected:
 		tokens.push_back({ TokenType::SEMICOLON, ";", ";", 1 });
 		tokens.push_back({ TokenType::END_OF_FILE, "\n", "\n", 1 });
 
-		return dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
+		stmt = dynamic_cast<VarDeclareStmt*>(parser.parse(tokens));
+		return stmt;
 	}
 
 	void expectDeclaredName(VarDeclareStmt* stmt, const string& lexeme) {
@@ -67,6 +72,7 @@ protected:
 	}
 
 	Parser parser;
+	VarDeclareStmt* stmt = nullptr;
 };
 
 TEST_F(ParserTest, VarDeclareStmtSingleNumberPassed) {
