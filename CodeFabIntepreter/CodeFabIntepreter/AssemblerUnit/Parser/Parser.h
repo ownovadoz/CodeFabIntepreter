@@ -39,7 +39,9 @@ private:
 	unique_ptr<Expression> parseUnaryExpr();
 	unique_ptr<Expression> parsePrimaryExpr();
 
-	unique_ptr<Expression> parseBinaryExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators);
+	using ExprFactory = unique_ptr<Expression> (*)(unique_ptr<Expression>, const Token&, unique_ptr<Expression>);
+
+	unique_ptr<Expression> parseLeftAssocExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators, ExprFactory makeExpr);
 
 	void init(const vector<Token>& tokens) {
 		this->tokens = tokens;

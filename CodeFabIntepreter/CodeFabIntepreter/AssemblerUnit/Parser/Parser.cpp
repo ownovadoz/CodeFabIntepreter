@@ -186,52 +186,48 @@ unique_ptr<Expression> Parser::parseAssignExpr() {
 }
 
 unique_ptr<Expression> Parser::parseLogicOr() {
-	unique_ptr<Expression> expr = parseLogicAnd();
-
-	while (peek().getType() == TokenType::OR) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseLogicAnd();
-		expr = make_unique<LogicalExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseLeftAssocExpr(&Parser::parseLogicAnd, { TokenType::OR }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<LogicalExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseLogicAnd() {
-	unique_ptr<Expression> expr = parseEquality();
-
-	while (peek().getType() == TokenType::AND) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseEquality();
-		expr = make_unique<LogicalExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseLeftAssocExpr(&Parser::parseEquality, { TokenType::AND }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<LogicalExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseEquality() {
-	return parseBinaryExpr(&Parser::parseComparison, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL });
+	return parseLeftAssocExpr(&Parser::parseComparison, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseComparison() {
-	return parseBinaryExpr(&Parser::parseTerm, { TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL });
+	return parseLeftAssocExpr(&Parser::parseTerm, { TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseTerm() {
-	return parseBinaryExpr(&Parser::parseFactor, { TokenType::PLUS, TokenType::MINUS });
+	return parseLeftAssocExpr(&Parser::parseFactor, { TokenType::PLUS, TokenType::MINUS }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseFactor() {
-	return parseBinaryExpr(&Parser::parseUnaryExpr, { TokenType::STAR, TokenType::SLASH });
+	return parseLeftAssocExpr(&Parser::parseUnaryExpr, { TokenType::STAR, TokenType::SLASH }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
 }
 
-unique_ptr<Expression> Parser::parseBinaryExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators) {
+unique_ptr<Expression> Parser::parseLeftAssocExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators, ExprFactory makeExpr) {
 	unique_ptr<Expression> expr = (this->*parseOperand)();
 
 	while (checkAny(operators)) {
 		Token op = advance();
 		unique_ptr<Expression> right = (this->*parseOperand)();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
+		expr = makeExpr(move(expr), op, move(right));
 	}
 
 	return expr;
