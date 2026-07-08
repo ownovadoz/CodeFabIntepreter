@@ -7,14 +7,14 @@
 using std::string;
 using std::runtime_error;
 
-class CodeFabException : public std::runtime_error {
+class CodeFabException : public runtime_error {
 public:
     explicit CodeFabException(int line, const string& message)
-        : std::runtime_error(formatMessage(line, message)), line(line), message(message) {
+        : runtime_error(formatMessage(line, message)), line(line), message(message) {
     }
 
     CodeFabException(const Token& token, const string& message)
-        : std::runtime_error(formatMessage(token, message)), line(token.getLine()), message(message) {
+        : runtime_error(formatMessage(token, message)), line(token.getLine()), message(message) {
     }
 
     int getLine() const { return line; }
