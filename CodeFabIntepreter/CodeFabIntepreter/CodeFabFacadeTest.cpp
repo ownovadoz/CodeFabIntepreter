@@ -16,7 +16,7 @@ public:
 
 class MockChecker : public IChecker {
 public:
-	MOCK_METHOD(void, run, (), (override));
+	MOCK_METHOD(void, check, (Statement* root), (override));
 };
 
 class MockExecutor : public IExecutor {
@@ -37,7 +37,7 @@ TEST_F(CodeFabFacadeTestFixture, SequenceTest) {
 
 	::testing::InSequence seq;
 	EXPECT_CALL(mock_assembler_unit, assemble(string("var x = 10;"))).Times(1);
-	EXPECT_CALL(mock_checker, run()).Times(1);
+	EXPECT_CALL(mock_checker, check(::testing::_)).Times(1);
 	EXPECT_CALL(mock_executor, run()).Times(1);
 
 	facade.execute("var x = 10;");
@@ -45,7 +45,7 @@ TEST_F(CodeFabFacadeTestFixture, SequenceTest) {
 
 TEST_F(CodeFabFacadeTestFixture, ExecuteCalledMultipleTimesInvokesEachDependencyPerCall) {
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_)).Times(2);
-	EXPECT_CALL(mock_checker, run()).Times(2);
+	EXPECT_CALL(mock_checker, check(::testing::_)).Times(2);
 	EXPECT_CALL(mock_executor, run()).Times(2);
 
 	facade.execute("var x = 10;");
@@ -55,7 +55,7 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCalledMultipleTimesInvokesEachDependency
 TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionAndSkipsRemainingSteps) {
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
-	EXPECT_CALL(mock_checker, run()).Times(0);
+	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
 	EXPECT_CALL(mock_executor, run()).Times(0);
 
 	EXPECT_NO_THROW(facade.execute("var x = 10;"));

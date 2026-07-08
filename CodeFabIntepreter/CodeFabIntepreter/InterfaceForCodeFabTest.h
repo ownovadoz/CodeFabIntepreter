@@ -17,7 +17,7 @@ public:
 class IChecker {
 public:
 	virtual ~IChecker() = default;
-	virtual void run() = 0;
+	virtual void check(Statement* root) = 0;
 };
 
 class IExecutor {
@@ -28,7 +28,7 @@ public:
 
 class NoOpChecker : public IChecker {
 public:
-	void run() override {
+	void check(Statement* root) override {
 
 	}
 };
@@ -42,7 +42,7 @@ public:
 #else
 class NoOpChecker {
 public:
-	void run() {
+	void check(Statement* root) {
 
 	}
 };
