@@ -84,3 +84,8 @@ TEST_F(NestedEnvironmentTestFixture, GetUndefinedVariableThrowsThroughChain)
 {
     EXPECT_THROW(inner.get("x"), RuntimeError);
 }
+
+TEST_F(NestedEnvironmentTestFixture, AssignUndefinedVariableThrowsThroughChain)
+{
+    EXPECT_THROW(inner.assign("x", 1.0), RuntimeError);
+}
