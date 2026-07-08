@@ -105,8 +105,10 @@ Expression* Parser::parseExpression() {
 	case TokenType::NUMBER:
 	case TokenType::STRING:
 	case TokenType::TRUE:
-	case TokenType::FALSE: {
-		Expression* expr = parsePrimaryExpr();
+	case TokenType::FALSE:
+	case TokenType::MINUS:
+	case TokenType::BANG: {
+		Expression* expr = parseUnaryExpr();
 		if (advance().getType() == TokenType::SEMICOLON && peek().getType() == TokenType::END_OF_FILE) {
 			return expr;
 		}
@@ -115,6 +117,16 @@ Expression* Parser::parseExpression() {
 	default:
 		return nullptr;
 	}
+}
+
+Expression* Parser::parseUnaryExpr() {
+	TokenType type = peek().getType();
+	if (type == TokenType::MINUS || type == TokenType::BANG) {
+		Token op = advance();
+		Expression* operand = parseUnaryExpr();
+		return new UnaryExpr(op, operand);
+	}
+	return parsePrimaryExpr();
 }
 
 Expression* Parser::parsePrimaryExpr() {
