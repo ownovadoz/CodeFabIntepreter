@@ -1,8 +1,0 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/CodeFabIntepreter/CodeFabIntepreter/CodeFabIntepreter.vcxproj.user
-
-# 참고용 자료 (버전관리 대상 아님)
-*.pdf
