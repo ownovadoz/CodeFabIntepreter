@@ -2,30 +2,29 @@
 #include "../Expression.h"
 #include "../Parser.h"
 #include "../../Tokenizer/Token.h"
+#include "../../../CodeFabException.h"
 
 #include <gmock/gmock.h>
-#include <exception>
 #include <string>
 #include <vector>
 
-using std::exception;
 using std::string;
 using std::vector;
 using namespace testing;
 
-class ParserTest : public Test {
+class ParserTestFixture : public Test {
 protected:
 	void TearDown() override {
 		delete stmt;
 	}
 
-	VarDeclareStmt* parseVarDeclareStmt(const vector<Token>& initializerTokens) {
+	VarDeclareStmt* parseVarDeclareStmt(const vector<Token>& initializer_tokens) {
 		vector<Token> tokens = {
 			{TokenType::VAR, "var", "var", 1},
 			{TokenType::IDENTIFIER, "a", "a", 1},
 			{TokenType::EQUAL, "=", "=", 1},
 		};
-		tokens.insert(tokens.end(), initializerTokens.begin(), initializerTokens.end());
+		tokens.insert(tokens.end(), initializer_tokens.begin(), initializer_tokens.end());
 		tokens.push_back({ TokenType::SEMICOLON, ";", ";", 1 });
 		tokens.push_back({ TokenType::END_OF_FILE, "\n", "\n", 1 });
 
@@ -54,56 +53,56 @@ protected:
 		EXPECT_EQ(token.getLine(), 1);
 	}
 
-	void expectUnary(const Expression* expr, TokenType opType, const string& opLexeme, TokenType operandType, const string& operandLexeme) {
+	void expectUnary(const Expression* expr, TokenType op_type, const string& op_lexeme, TokenType operand_type, const string& operand_lexeme) {
 		const UnaryExpr* unary = dynamic_cast<const UnaryExpr*>(expr);
 
 		ASSERT_NE(unary, nullptr);
 
 		const Token& op = unary->getOperator();
 
-		EXPECT_EQ(op.getType(), opType);
-		EXPECT_EQ(op.getLexeme(), opLexeme);
+		EXPECT_EQ(op.getType(), op_type);
+		EXPECT_EQ(op.getLexeme(), op_lexeme);
 
-		ASSERT_NO_FATAL_FAILURE(expectLiteral(unary->getExpr(), operandType, operandLexeme));
+		ASSERT_NO_FATAL_FAILURE(expectLiteral(unary->getExpr(), operand_type, operand_lexeme));
 	}
 
 	void expectParseThrows(const vector<Token>& tokens) {
-		EXPECT_THROW(parser.parse(tokens), exception);
+		EXPECT_THROW(parser.parse(tokens), CodeFabException);
 	}
 
 	Parser parser;
 	VarDeclareStmt* stmt = nullptr;
 };
 
-TEST_F(ParserTest, VarDeclareStmtSingleNumberPassed) {
+TEST_F(ParserTestFixture, VarDeclareStmtSingleNumberPassed) {
 	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::NUMBER, "10", 10.0, 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::NUMBER, "10"));
 }
 
-TEST_F(ParserTest, VarDeclareStmtSingleStringPassed) {
+TEST_F(ParserTestFixture, VarDeclareStmtSingleStringPassed) {
 	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::STRING, "\"text\"", "text", 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::STRING, "\"text\""));
 }
 
-TEST_F(ParserTest, VarDeclareStmtSingleTruePassed) {
+TEST_F(ParserTestFixture, VarDeclareStmtSingleTruePassed) {
 	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::TRUE, "true", true, 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::TRUE, "true"));
 }
 
-TEST_F(ParserTest, VarDeclareStmtSingleFalsePassed) {
+TEST_F(ParserTestFixture, VarDeclareStmtSingleFalsePassed) {
 	VarDeclareStmt* stmt = parseVarDeclareStmt({ {TokenType::FALSE, "false", false, 1} });
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectLiteral(stmt->getInitializer(), TokenType::FALSE, "false"));
 }
 
-TEST_F(ParserTest, VarDeclareStmtNegativeNumberPassed) {
+TEST_F(ParserTestFixture, VarDeclareStmtNegativeNumberPassed) {
 	VarDeclareStmt* stmt = parseVarDeclareStmt({
 		{TokenType::MINUS, "-", "-", 1},
 		{TokenType::NUMBER, "10", 10.0, 1}
@@ -113,7 +112,7 @@ TEST_F(ParserTest, VarDeclareStmtNegativeNumberPassed) {
 	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::MINUS, "-", TokenType::NUMBER, "10"));
 }
 
-TEST_F(ParserTest, VarDeclareStmtNegatedTruePassed) {
+TEST_F(ParserTestFixture, VarDeclareStmtNegatedTruePassed) {
 	VarDeclareStmt* stmt = parseVarDeclareStmt({
 		{TokenType::BANG, "!", "!", 1},
 		{TokenType::TRUE, "true", true, 1}
@@ -123,7 +122,7 @@ TEST_F(ParserTest, VarDeclareStmtNegatedTruePassed) {
 	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::BANG, "!", TokenType::TRUE, "true"));
 }
 
-TEST_F(ParserTest, VarDeclareStmtNegatedFalsePassed) {
+TEST_F(ParserTestFixture, VarDeclareStmtNegatedFalsePassed) {
 	VarDeclareStmt* stmt = parseVarDeclareStmt({
 		{TokenType::BANG, "!", "!", 1},
 		{TokenType::FALSE, "false", false, 1}
@@ -133,7 +132,7 @@ TEST_F(ParserTest, VarDeclareStmtNegatedFalsePassed) {
 	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::BANG, "!", TokenType::FALSE, "false"));
 }
 
-TEST_F(ParserTest, VarDeclareStmtMissingIdentifierFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtMissingIdentifierFailed) {
 	// var = 10;
 	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
@@ -144,7 +143,7 @@ TEST_F(ParserTest, VarDeclareStmtMissingIdentifierFailed) {
 	});
 }
 
-TEST_F(ParserTest, VarDeclareStmtMissingEqualFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtMissingEqualFailed) {
 	// var a 10;
 	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
@@ -155,7 +154,7 @@ TEST_F(ParserTest, VarDeclareStmtMissingEqualFailed) {
 	});
 }
 
-TEST_F(ParserTest, VarDeclareStmtNoInitializerFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtNoInitializerFailed) {
 	// var a; — initializer-less var declarations are not supported yet
 	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
@@ -165,7 +164,7 @@ TEST_F(ParserTest, VarDeclareStmtNoInitializerFailed) {
 	});
 }
 
-TEST_F(ParserTest, VarDeclareStmtMissingInitializerFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtMissingInitializerFailed) {
 	// var a = ;
 	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
@@ -176,7 +175,7 @@ TEST_F(ParserTest, VarDeclareStmtMissingInitializerFailed) {
 	});
 }
 
-TEST_F(ParserTest, VarDeclareStmtMissingSemicolonFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtMissingSemicolonFailed) {
 	// var a = 10
 	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
@@ -187,7 +186,7 @@ TEST_F(ParserTest, VarDeclareStmtMissingSemicolonFailed) {
 	});
 }
 
-TEST_F(ParserTest, VarDeclareStmtDanglingMinusFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtDanglingMinusFailed) {
 	// var a = -;
 	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
@@ -199,7 +198,7 @@ TEST_F(ParserTest, VarDeclareStmtDanglingMinusFailed) {
 	});
 }
 
-TEST_F(ParserTest, VarDeclareStmtDanglingBangFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtDanglingBangFailed) {
 	// var a = !;
 	expectParseThrows({
 		{TokenType::VAR, "var", "var", 1},
@@ -211,7 +210,7 @@ TEST_F(ParserTest, VarDeclareStmtDanglingBangFailed) {
 	});
 }
 
-TEST_F(ParserTest, VarDeclareStmtDanglingMinusWithExtraSemicolonFailed) {
+TEST_F(ParserTestFixture, VarDeclareStmtDanglingMinusWithExtraSemicolonFailed) {
 	// var a = -;; — an extra SEMICOLON must not let a missing operand slip through
 	// as if it were the statement's real terminator.
 	expectParseThrows({
