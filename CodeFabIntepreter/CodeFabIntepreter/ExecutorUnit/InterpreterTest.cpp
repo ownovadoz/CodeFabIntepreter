@@ -4,7 +4,6 @@
 #include "../AssemblerUnit/Parser/Statement.h"
 #include "../AssemblerUnit/Tokenizer/Token.h"
 #include "../CodeFabException.h"
-#include "../RuntimeError.h"
 
 #include <gmock/gmock.h>
 
@@ -59,7 +58,7 @@ TEST_F(InterpreterTestFixture, BlockScopedVariableIsNotVisibleOutsideBlock)
 
     interpreter.interpret(&block);
 
-    EXPECT_THROW(interpreter.getVariableValue("a"), RuntimeError);
+    EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
 
     delete initializer;
     delete var_decl;

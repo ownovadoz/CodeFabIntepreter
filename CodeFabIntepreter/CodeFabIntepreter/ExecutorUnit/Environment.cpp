@@ -1,5 +1,5 @@
 #include "Environment.h"
-#include "../RuntimeError.h"
+#include "../CodeFabException.h"
 
 Environment::Environment(Environment* enclosing)
     : enclosing(enclosing)
@@ -15,7 +15,7 @@ Value Environment::get(const string& name) const
     auto found = values.find(name);
     if (found != values.end()) return found->second;
 
-    throw RuntimeError(name, "Undefined variable '" + name + "'.");
+    throw CodeFabException(0, "Undefined variable '" + name + "'.");
 }
 
 void Environment::assign(const string& name, const Value& value)
@@ -25,5 +25,5 @@ void Environment::assign(const string& name, const Value& value)
         found->second = value;
         return;
     }
-    throw RuntimeError(name, "Undefined variable '" + name + "'.");
+    throw CodeFabException(0, "Undefined variable '" + name + "'.");
 }

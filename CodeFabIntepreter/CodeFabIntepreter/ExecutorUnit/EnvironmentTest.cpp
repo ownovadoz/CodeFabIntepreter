@@ -1,5 +1,5 @@
 #include "Environment.h"
-#include "../RuntimeError.h"
+#include "../CodeFabException.h"
 
 #include <gmock/gmock.h>
 
@@ -30,10 +30,10 @@ TEST_F(EnvironmentTestFixture, DefineAssignGet)
 
 TEST_F(EnvironmentTestFixture, UndefinedVariableThrowException)
 {
-    EXPECT_THROW(env.get("x"), RuntimeError);
+    EXPECT_THROW(env.get("x"), CodeFabException);
 }
 
 TEST_F(EnvironmentTestFixture, AssignToUndefinedThrowException)
 {
-    EXPECT_THROW(env.assign("x", 1.0), RuntimeError);
+    EXPECT_THROW(env.assign("x", 1.0), CodeFabException);
 }
