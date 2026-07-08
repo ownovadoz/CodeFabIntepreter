@@ -142,6 +142,7 @@ TEST(LexerTest, FloatLiteral)
 
     EXPECT_EQ(tokens[0].getType(), TokenType::NUMBER);
     EXPECT_DOUBLE_EQ(std::get<double>(tokens[0].getLiteral()), 3.14);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
 TEST(LexerTest, MultipleLiterals)
