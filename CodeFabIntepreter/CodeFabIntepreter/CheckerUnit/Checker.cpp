@@ -45,30 +45,34 @@ void Checker::check(Statement* root)
 
 void Checker::checkStatement(Statement* stmt)
 {
-    if (stmt == nullptr) return;
-
-    if (BlockStmt* block = dynamic_cast<BlockStmt*>(stmt))
-    {
-        checkBlockStmt(block);
-        return;
-    }
-
-    if (VarDeclareStmt* var_decl = dynamic_cast<VarDeclareStmt*>(stmt))
-    {
-        checkVarDeclareStmt(var_decl);
-        return;
-    }
+    if (stmt) stmt->accept(*this);
 }
 
-void Checker::checkBlockStmt(BlockStmt* block)
+void Checker::visitBlockStmt(BlockStmt& stmt)
 {
     ScopeGuard guard(*this);
 
-    for (const auto& stmt : block->getStatements())
-        checkStatement(stmt.get());
+    for (const auto& child : stmt.getStatements())
+        checkStatement(child.get());
 }
 
-void Checker::checkVarDeclareStmt(VarDeclareStmt* var_decl)
+void Checker::visitVarDeclareStmt(VarDeclareStmt& stmt)
 {
-    declareVariable(var_decl->getName(), {});
+    declareVariable(stmt.getName(), {});
+}
+
+void Checker::visitExpressionStmt(ExpressionStmt& stmt)
+{
+}
+
+void Checker::visitIfStmt(IfStmt& stmt)
+{
+}
+
+void Checker::visitPrintStmt(PrintStmt& stmt)
+{
+}
+
+void Checker::visitForStmt(ForStmt& stmt)
+{
 }
