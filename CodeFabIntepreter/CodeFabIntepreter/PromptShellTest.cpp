@@ -43,7 +43,7 @@ TEST_F(PromptShellTestFixture, EmptyLineTest) {
 }
 
 TEST_F(PromptShellTestFixture, WithLineFeedTest) {
-	string input = "var x = 10;\n var y = 20;\n var z = 30;";
+	string input = "var x = 10;\\n var y = 20;\\n var z = 30;";
 	string expectedOutput = "var x = 10;";
 	EXPECT_EQ(expectedOutput, runPromptTest(input));
 }
