@@ -15,16 +15,21 @@ public:
 	const Token& getToken() const {
 		return token;
 	}
+	void accept(ExprVisitor& visitor) const override;
 private:
 	Token token;
 };
 
 class VariableExpr : public Expression {
+public:
+	void accept(ExprVisitor& visitor) const override;
 private:
 	Token token;
 };
 
 class AssignExpr : public Expression {
+public:
+	void accept(ExprVisitor& visitor) const override;
 private:
 	Token identifier;
 	unique_ptr<Expression> assign_expr;
@@ -32,6 +37,8 @@ private:
 };
 
 class BinaryExpr : public Expression {
+public:
+	void accept(ExprVisitor& visitor) const override;
 private:
 	unique_ptr<Expression> op;
 	unique_ptr<Expression> left;
@@ -50,17 +57,23 @@ public:
 		return expr.get();
 	}
 
+	void accept(ExprVisitor& visitor) const override;
+
 private:
 	Token op;
 	unique_ptr<Expression> expr;
 };
 
 class GroupingExpr : public Expression {
+public:
+	void accept(ExprVisitor& visitor) const override;
 private:
 	unique_ptr<Expression> expr;	// TODO: is it right?
 };
 
 class LogicalExpr : public Expression {
+public:
+	void accept(ExprVisitor& visitor) const override;
 private:
 	unique_ptr<Expression> expr;
 	unique_ptr<Expression> left;

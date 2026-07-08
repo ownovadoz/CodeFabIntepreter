@@ -12,14 +12,20 @@ using std::unique_ptr;
 using std::vector;
 
 class Statement : public StatementOrExpression {
+public:
+	virtual void accept(StmtVisitor& visitor) {}
 };
 
 class ExpressionStmt : public Statement {
+public:
+	void accept(StmtVisitor& visitor) override;
 private:
 	unique_ptr<Expression> expr;
 };
 
 class IfStmt : public Statement {
+public:
+	void accept(StmtVisitor& visitor) override;
 private:
 	unique_ptr<BinaryExpr> condition;	// Enforce binary expressions only.
 	unique_ptr<Statement> then_branch;
@@ -35,6 +41,8 @@ public:
 	const vector<unique_ptr<Statement>>& getStatements() const {
 		return statements;
 	}
+
+	void accept(StmtVisitor& visitor) override;
 
 private:
 	vector<unique_ptr<Statement>> statements;
@@ -56,17 +64,23 @@ public:
 		return initializer.get();
 	}
 
+	void accept(StmtVisitor& visitor) override;
+
 private:
 	Token name;
 	unique_ptr<Expression> initializer;
 };
 
 class PrintStmt : public Statement {
+public:
+	void accept(StmtVisitor& visitor) override;
 private:
 	unique_ptr<Expression> expr;
 };
 
 class ForStmt : public Statement {
+public:
+	void accept(StmtVisitor& visitor) override;
 private:
 	unique_ptr<VarDeclareStmt> init;
 	unique_ptr<BinaryExpr> condition;
