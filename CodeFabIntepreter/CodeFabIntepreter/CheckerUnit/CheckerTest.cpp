@@ -67,36 +67,58 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 	Checker checker;
 
 	EXPECT_FALSE(checker.check(root).hasError());
+
+	delete root;
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
-	BlockStmt* block = new BlockStmt();
+	LiteralExpr* first_value = new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} };
 	VarDeclareStmt* first = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	first->setExpression(new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} });
-	VarDeclareStmt* second = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	second->setExpression(new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} });
+	first->setExpression(first_value);
 
+	LiteralExpr* second_value = new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} };
+	VarDeclareStmt* second = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
+	second->setExpression(second_value);
+
+	BlockStmt* block = new BlockStmt();
 	block->addStatement(first);
 	block->addStatement(second);
 
 	Checker checker;
 
 	EXPECT_TRUE(checker.check(block).hasError());
+
+	delete block;
+	delete first;
+	delete second;
+	delete first_value;
+	delete second_value;
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
-	BlockStmt* inner = new BlockStmt();
+	LiteralExpr* inner_value = new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} };
 	VarDeclareStmt* inner_var = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	inner_var->setExpression(new LiteralExpr{ Token{TokenType::NUMBER, "2", 2.0, 1} });
+	inner_var->setExpression(inner_value);
+
+	BlockStmt* inner = new BlockStmt();
 	inner->addStatement(inner_var);
 
-	BlockStmt* outer = new BlockStmt();
+	LiteralExpr* outer_value = new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} };
 	VarDeclareStmt* outer_var = new VarDeclareStmt{ Token{TokenType::IDENTIFIER, "a", "a", 1} };
-	outer_var->setExpression(new LiteralExpr{ Token{TokenType::NUMBER, "1", 1.0, 1} });
+	outer_var->setExpression(outer_value);
+
+	BlockStmt* outer = new BlockStmt();
 	outer->addStatement(outer_var);
 	outer->addStatement(inner);
 
 	Checker checker;
 
 	EXPECT_FALSE(checker.check(outer).hasError());
+
+	delete outer;
+	delete inner;
+	delete outer_var;
+	delete inner_var;
+	delete outer_value;
+	delete inner_value;
 }
