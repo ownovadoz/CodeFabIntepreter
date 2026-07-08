@@ -203,3 +203,22 @@ private:
 	optional<Token> superclass_name;
 	vector<unique_ptr<FunctionDeclStmt>> methods;
 };
+
+class ImportStmt : public Statement {
+public:
+	ImportStmt(const Token& path, const Token& alias_name) : path{ path }, alias_name{ alias_name } {}
+
+	const Token& getPath() const {
+		return path;
+	}
+
+	const Token& getAliasName() const {
+		return alias_name;
+	}
+
+	void accept(StmtVisitor& visitor) override;
+
+private:
+	Token path;
+	Token alias_name;
+};

@@ -2030,3 +2030,94 @@ TEST_F(ParserTestFixture, GetExprMissingNameAfterDotFailed) {
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 }
+
+TEST_F(ParserTestFixture, ImportStmtPassed) {
+	// import "sum.txt" alias sum;
+	const auto& program = buildAndParseProgram({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"sum.txt\"", "sum.txt", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "sum", "sum", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ImportStmt* import_stmt = dynamic_cast<const ImportStmt*>(program[0].get());
+	ASSERT_NE(import_stmt, nullptr);
+	EXPECT_EQ(import_stmt->getPath().getType(), TokenType::STRING);
+	EXPECT_EQ(import_stmt->getPath().getLexeme(), "\"sum.txt\"");
+	EXPECT_EQ(import_stmt->getAliasName().getLexeme(), "sum");
+}
+
+TEST_F(ParserTestFixture, ImportStmtMissingPathFailed) {
+	// import alias sum;
+	expectParseThrows({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "sum", "sum", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportStmtMissingAliasKeywordFailed) {
+	// import "sum.txt" sum;
+	expectParseThrows({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"sum.txt\"", "sum.txt", 1},
+		{TokenType::IDENTIFIER, "sum", "sum", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportStmtMissingAliasNameFailed) {
+	// import "sum.txt" alias;
+	expectParseThrows({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"sum.txt\"", "sum.txt", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportStmtMissingSemicolonFailed) {
+	// import "sum.txt" alias sum
+	expectParseThrows({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"sum.txt\"", "sum.txt", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "sum", "sum", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportedModuleMemberCallPassed) {
+	// sum.add(1, 2);
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "sum", "sum", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "add", "add", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::COMMA, ",", ",", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+
+	const CallExpr* call_expr = expectCall(expr_stmt->getExpr());
+	ASSERT_NE(call_expr, nullptr);
+	const GetExpr* get_expr = expectGet(call_expr->getCallee());
+	ASSERT_NE(get_expr, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(get_expr->getObject(), "sum"));
+	EXPECT_EQ(get_expr->getName().getLexeme(), "add");
+	ASSERT_EQ(call_expr->getArguments().size(), 2u);
+}

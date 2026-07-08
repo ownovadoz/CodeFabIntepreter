@@ -277,6 +277,22 @@ TEST_F(LexerTestFixture, KeywordInstanceof)
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
+TEST_F(LexerTestFixture, KeywordImport)
+{
+    auto tokens = scan("import");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::IMPORT);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordAlias)
+{
+    auto tokens = scan("alias");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::ALIAS);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
 TEST_F(LexerTestFixture, KeywordIf)
 {
     auto tokens = scan("if");

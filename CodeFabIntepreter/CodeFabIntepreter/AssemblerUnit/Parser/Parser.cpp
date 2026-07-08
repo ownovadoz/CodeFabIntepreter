@@ -49,6 +49,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 		return parseReturnStmt();
 	case TokenType::CLASS:
 		return parseClassDeclStmt();
+	case TokenType::IMPORT:
+		return parseImportStmt();
 	case TokenType::LEFT_PAREN:
 	case TokenType::BANG:
 	case TokenType::IDENTIFIER:
@@ -87,6 +89,7 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::COLON:
 	case TokenType::DOT:
 	case TokenType::INSTANCEOF:
+	case TokenType::ALIAS:
 		throw CodeFabException(token, "Unexpected token.");
 	}
 	return nullptr;
@@ -232,6 +235,20 @@ unique_ptr<Statement> Parser::parseClassDeclStmt() {
 	consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
 
 	return make_unique<ClassDeclStmt>(name, move(superclass_name), move(methods));
+}
+
+unique_ptr<Statement> Parser::parseImportStmt() {
+	advance();
+
+	Token path = consume(TokenType::STRING, "Expect file path after 'import'.");
+
+	consume(TokenType::ALIAS, "Expect 'alias' after import path.");
+
+	Token alias_name = consume(TokenType::IDENTIFIER, "Expect alias name.");
+
+	consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+
+	return make_unique<ImportStmt>(path, alias_name);
 }
 
 unique_ptr<Statement> Parser::parseReturnStmt() {

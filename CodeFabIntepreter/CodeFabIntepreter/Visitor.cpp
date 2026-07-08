@@ -26,3 +26,4 @@ void ForStmt::accept(StmtVisitor& visitor) { visitor.visitForStmt(*this); }
 void FunctionDeclStmt::accept(StmtVisitor& visitor) { visitor.visitFunctionDeclStmt(*this); }
 void ReturnStmt::accept(StmtVisitor& visitor) { visitor.visitReturnStmt(*this); }
 void ClassDeclStmt::accept(StmtVisitor& visitor) { visitor.visitClassDeclStmt(*this); }
+void ImportStmt::accept(StmtVisitor& visitor) { visitor.visitImportStmt(*this); }

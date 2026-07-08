@@ -31,7 +31,7 @@ enum class TokenType
     IDENTIFIER, STRING, NUMBER,
 
     // 키워드
-    AND, ARRAY, CLASS, ELSE, FALSE, FOR, FUNC, IF, INSTANCEOF, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR,
+    ALIAS, AND, ARRAY, CLASS, ELSE, FALSE, FOR, FUNC, IF, IMPORT, INSTANCEOF, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR,
 
     END_OF_FILE
 };
@@ -65,6 +65,7 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::IDENTIFIER:   return "IDENTIFIER";
     case TokenType::STRING:       return "STRING";
     case TokenType::NUMBER:       return "NUMBER";
+    case TokenType::ALIAS:        return "ALIAS";
     case TokenType::AND:          return "AND";
     case TokenType::ARRAY:        return "ARRAY";
     case TokenType::CLASS:        return "CLASS";
@@ -73,6 +74,7 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::FOR:          return "FOR";
     case TokenType::FUNC:         return "FUNC";
     case TokenType::IF:           return "IF";
+    case TokenType::IMPORT:       return "IMPORT";
     case TokenType::INSTANCEOF:   return "INSTANCEOF";
     case TokenType::OR:           return "OR";
     case TokenType::PRINT:        return "PRINT";

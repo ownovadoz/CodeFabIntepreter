@@ -32,6 +32,7 @@ private:
 	unique_ptr<Statement> parseClassDeclStmt();
 	unique_ptr<FunctionDeclStmt> parseMethodDecl();
 	unique_ptr<FunctionDeclStmt> parseFunctionBody(const Token& name);
+	unique_ptr<Statement> parseImportStmt();
 
 	unique_ptr<Expression> parseExpression();
 	unique_ptr<Expression> parseAssignExpr();
