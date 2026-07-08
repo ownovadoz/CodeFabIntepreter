@@ -1,4 +1,5 @@
 #include "CodeFabFacade.h"
+#include "AssemblerUnit/Parser/Statement.h"
 #include "CodeFabException.h"
 
 #include <iostream>
@@ -20,7 +21,7 @@ CodeFabFacade::CodeFabFacade(IAssemblerUnit& assembler_unit, IChecker& checker, 
 
 void CodeFabFacade::execute(const string& code_line) {
     try {
-        Statement* statement = assembler_unit->assemble(code_line);
+        unique_ptr<Statement> statement = assembler_unit->assemble(code_line);
         checker->run();
         executor->run();
     }
@@ -33,7 +34,7 @@ void CodeFabFacade::execute(const string& code_line) {
 
 void CodeFabFacade::execute(const string& code_line) {
     try {
-        Statement* statement = assembler_unit.assemble(code_line);
+        unique_ptr<Statement> statement = assembler_unit.assemble(code_line);
         checker.run();
         executor.run();
     }

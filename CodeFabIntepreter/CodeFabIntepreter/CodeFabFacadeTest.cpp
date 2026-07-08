@@ -2,6 +2,7 @@
 
 #include "CodeFabFacade.h"
 #include "InterfaceForCodeFabTest.h"
+#include "AssemblerUnit/Parser/Statement.h"
 #include "CodeFabException.h"
 
 #include <gmock/gmock.h>
@@ -10,7 +11,7 @@ using std::string;
 
 class MockAssemblerUnit : public IAssemblerUnit {
 public:
-	MOCK_METHOD(Statement*, assemble, (const string& code_line), (override));
+	MOCK_METHOD(unique_ptr<Statement>, assemble, (const string& code_line), (override));
 };
 
 class MockChecker : public IChecker {

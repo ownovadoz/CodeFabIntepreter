@@ -7,7 +7,7 @@
 
 using std::vector;
 
-Statement* AssemblerUnit::assemble(const string& code_line) {
+unique_ptr<Statement> AssemblerUnit::assemble(const string& code_line) {
 	Lexer lexer(code_line);
 	vector<Token> tokens = lexer.scanTokens();
 

@@ -1,7 +1,9 @@
 #pragma once
+#include <memory>
 #include <string>
 
 using std::string;
+using std::unique_ptr;
 
 class Statement;
 
@@ -9,7 +11,7 @@ class Statement;
 class IAssemblerUnit {
 public:
 	virtual ~IAssemblerUnit() = default;
-	virtual Statement* assemble(const string& code_line) = 0;
+	virtual unique_ptr<Statement> assemble(const string& code_line) = 0;
 };
 
 class IChecker {
