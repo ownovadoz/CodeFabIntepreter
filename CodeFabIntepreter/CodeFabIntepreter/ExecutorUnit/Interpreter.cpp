@@ -2,6 +2,29 @@
 
 #include "../RuntimeError.h"
 
+namespace {
+
+// 블록 실행 도중 예외가 발생해도 current_environment가 항상 이전 스코프로 복원되도록 보장한다.
+class EnvironmentGuard {
+public:
+    EnvironmentGuard(Environment*& current, Environment* block_environment)
+        : current(current), previous(current)
+    {
+        current = block_environment;
+    }
+
+    ~EnvironmentGuard()
+    {
+        current = previous;
+    }
+
+private:
+    Environment*& current;
+    Environment* previous;
+};
+
+}
+
 Interpreter::Interpreter()
     : global_environment(nullptr), current_environment(&global_environment)
 {}
@@ -33,21 +56,12 @@ void Interpreter::execute(Statement* stmt)
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
 {
-    Environment* enclosing = current_environment;
-    Environment block_environment(enclosing);
-    current_environment = &block_environment;
+    Environment block_environment(current_environment);
+    EnvironmentGuard guard(current_environment, &block_environment);
 
-    try {
-        for (Statement* stmt : block->getStatements()) {
-            execute(stmt);
-        }
+    for (Statement* stmt : block->getStatements()) {
+        execute(stmt);
     }
-    catch (...) {
-        current_environment = enclosing;
-        throw;
-    }
-
-    current_environment = enclosing;
 }
 
 void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
