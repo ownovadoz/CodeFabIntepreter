@@ -23,20 +23,6 @@ public:
 class IExecutor {
 public:
 	virtual ~IExecutor() = default;
-	virtual void run() = 0;
-};
-
-class Executor : public IExecutor {
-public:
-	void run() override {
-
-	}
-};
-#else
-class Executor {
-public:
-	void run() {
-
-	}
+	virtual void interpret(Statement* root) = 0;
 };
 #endif
