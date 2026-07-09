@@ -7,13 +7,16 @@
 
 #include <gmock/gmock.h>
 
+#include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <variant>
 
 using std::make_unique;
 using std::monostate;
 using std::move;
+using std::ostringstream;
 using std::string;
 using std::get;
 using std::holds_alternative;
@@ -96,4 +99,16 @@ TEST_F(InterpreterTestFixture, ExpressionStmtPropagatesEvaluationErrors)
     ExpressionStmt stmt(make_unique<UnsupportedExpr>());
 
     EXPECT_THROW(interpreter.interpret(&stmt), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, PrintStmtWritesStringifiedValueToStdout)
+{
+    PrintStmt stmt(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    ostringstream captured;
+    std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+    interpreter.interpret(&stmt);
+    std::cout.rdbuf(original_buf);
+
+    EXPECT_EQ(captured.str(), "5\n");
 }
