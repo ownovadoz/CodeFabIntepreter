@@ -338,3 +338,27 @@ TEST_F(InterpreterTestFixture, BinaryBangEqualReturnsTrueForDifferentValues)
 
     EXPECT_TRUE(get<bool>(interpreter.evaluate(&binary)));
 }
+
+TEST_F(InterpreterTestFixture, EvaluatingUnaryMinusNegatesNumber)
+{
+    Token op_token(TokenType::MINUS, "-", monostate{}, 1);
+    UnaryExpr unary(op_token, make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&unary)), -3.0);
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingUnaryMinusOnNonNumberThrowsCodeFabException)
+{
+    Token op_token(TokenType::MINUS, "-", monostate{}, 1);
+    UnaryExpr unary(op_token, make_unique<LiteralExpr>(Token(TokenType::STRING, "hi", string("hi"), 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&unary), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingUnaryBangNegatesTruthiness)
+{
+    Token op_token(TokenType::BANG, "!", monostate{}, 1);
+    UnaryExpr unary(op_token, make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&unary)));
+}
