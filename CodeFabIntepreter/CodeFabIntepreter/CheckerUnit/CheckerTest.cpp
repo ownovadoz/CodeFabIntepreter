@@ -17,7 +17,9 @@ using std::vector;
 namespace {
 	unique_ptr<Statement> assemble(const string& source) {
 		AssemblerUnit assembler;
-		return assembler.assemble(source);
+		vector<unique_ptr<Statement>> statements = assembler.assemble(source);
+
+		return statements.empty() ? nullptr : move(statements[0]);
 	}
 }
 
@@ -220,6 +222,32 @@ TEST(CheckerTreeTest, ComplexNestedProgramWithDeepSelfReferenceFails) {
 	Checker checker;
 
 	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, AllStatementsInMultiStatementLineAreCheckedInOrder) {
+	// var a = 3; a = a + 4; { var b = 3; } print b;
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("var a = 3; a = a + 4; { var b = 3; } print b;");
+
+	ASSERT_EQ(statements.size(), 4u);
+
+	Checker checker;
+	for (const auto& statement : statements)
+		EXPECT_NO_THROW(checker.check(statement.get()));
+}
+
+TEST(CheckerTreeTest, DuplicateDeclarationWithinSameMultiStatementLineFails) {
+	// 같은 줄에 세미콜론으로 이어진 여러 문장이라도, 전역 스코프의
+	// 중복 선언은 문장이 나뉘어도 순서대로 검사하면 검출되어야 한다.
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("var a = 3; var a = 4;");
+
+	ASSERT_EQ(statements.size(), 2u);
+
+	Checker checker;
+	checker.check(statements[0].get());
+
+	EXPECT_THROW(checker.check(statements[1].get()), CodeFabException);
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
