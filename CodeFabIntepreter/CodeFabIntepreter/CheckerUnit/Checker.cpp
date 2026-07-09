@@ -42,9 +42,15 @@ void Checker::define(const Token& name)
     scope_stack.back()[name.getLexeme()] = true;
 }
 
-void Checker::check(Statement* root)
+void Checker::check(const vector<unique_ptr<Statement>>& statements)
 {
-    resolveStmt(root);
+    for (const auto& statement : statements)
+    {
+        if (statement)
+        {
+            resolveStmt(statement.get());
+        }
+    }
 }
 
 void Checker::resolveStmt(const Statement* stmt)

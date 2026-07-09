@@ -21,6 +21,13 @@ namespace {
 
 		return statements.empty() ? nullptr : move(statements[0]);
 	}
+
+	vector<unique_ptr<Statement>> single(unique_ptr<Statement> statement) {
+		vector<unique_ptr<Statement>> statements;
+		statements.push_back(move(statement));
+
+		return statements;
+	}
 }
 
 TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
@@ -38,7 +45,7 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(root.get()));
+	EXPECT_NO_THROW(checker.check(single(move(root))));
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
@@ -54,7 +61,7 @@ TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(block.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(block))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughBinaryExprInInitializerFails) {
@@ -62,7 +69,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughBinaryExprInInitializerFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughUnaryExprInInitializerFails) {
@@ -70,7 +77,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughUnaryExprInInitializerFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughGroupingExprInInitializerFails) {
@@ -78,7 +85,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughGroupingExprInInitializerFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughLogicalExprInInitializerFails) {
@@ -86,7 +93,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughLogicalExprInInitializerFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
@@ -94,7 +101,7 @@ TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, ReferencingAlreadyDefinedVariableInSameScopeSucceeds) {
@@ -104,7 +111,7 @@ TEST(CheckerTreeTest, ReferencingAlreadyDefinedVariableInSameScopeSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, LiteralInitializerWithoutReferenceSucceeds) {
@@ -112,7 +119,7 @@ TEST(CheckerTreeTest, LiteralInitializerWithoutReferenceSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationInIfThenBranchBlockFails) {
@@ -120,7 +127,7 @@ TEST(CheckerTreeTest, DuplicateDeclarationInIfThenBranchBlockFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, DeclarationsInMutuallyExclusiveIfBranchesSucceed) {
@@ -128,7 +135,7 @@ TEST(CheckerTreeTest, DeclarationsInMutuallyExclusiveIfBranchesSucceed) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, SelfReferenceInsideIfBranchFails) {
@@ -136,7 +143,7 @@ TEST(CheckerTreeTest, SelfReferenceInsideIfBranchFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, PrintStmtWithUndeclaredVariableSucceeds) {
@@ -145,7 +152,7 @@ TEST(CheckerTreeTest, PrintStmtWithUndeclaredVariableSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, ExpressionStmtIsTraversedWithoutError) {
@@ -153,7 +160,7 @@ TEST(CheckerTreeTest, ExpressionStmtIsTraversedWithoutError) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, ForStmtAllowsShadowingLoopVariableInBody) {
@@ -161,7 +168,7 @@ TEST(CheckerTreeTest, ForStmtAllowsShadowingLoopVariableInBody) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, ForStmtOwnScopeAllowsSeparateLoopsToReuseSameVariableName) {
@@ -170,7 +177,7 @@ TEST(CheckerTreeTest, ForStmtOwnScopeAllowsSeparateLoopsToReuseSameVariableName)
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, ForStmtSelfReferenceInInitializerFails) {
@@ -178,7 +185,7 @@ TEST(CheckerTreeTest, ForStmtSelfReferenceInInitializerFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationAcrossSeparateTopLevelChecksFails) {
@@ -187,22 +194,22 @@ TEST(CheckerTreeTest, DuplicateDeclarationAcrossSeparateTopLevelChecksFails) {
 	Checker checker;
 
 	auto first = assemble("var a = 10;");
-	checker.check(first.get());
+	checker.check(single(move(first)));
 
 	auto second = assemble("var a = 20;");
 
-	EXPECT_THROW(checker.check(second.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(second))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, DifferentVariablesAcrossSeparateTopLevelChecksSucceed) {
 	Checker checker;
 
 	auto first = assemble("var a = 10;");
-	checker.check(first.get());
+	checker.check(single(move(first)));
 
 	auto second = assemble("var b = 20;");
 
-	EXPECT_NO_THROW(checker.check(second.get()));
+	EXPECT_NO_THROW(checker.check(single(move(second))));
 }
 
 TEST(CheckerTreeTest, ComplexNestedProgramWithoutErrorsSucceeds) {
@@ -212,7 +219,7 @@ TEST(CheckerTreeTest, ComplexNestedProgramWithoutErrorsSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, ComplexNestedProgramWithDeepSelfReferenceFails) {
@@ -221,7 +228,7 @@ TEST(CheckerTreeTest, ComplexNestedProgramWithDeepSelfReferenceFails) {
 
 	Checker checker;
 
-	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
 TEST(CheckerTreeTest, AllStatementsInMultiStatementLineAreCheckedInOrder) {
@@ -232,8 +239,7 @@ TEST(CheckerTreeTest, AllStatementsInMultiStatementLineAreCheckedInOrder) {
 	ASSERT_EQ(statements.size(), 4u);
 
 	Checker checker;
-	for (const auto& statement : statements)
-		EXPECT_NO_THROW(checker.check(statement.get()));
+	EXPECT_NO_THROW(checker.check(statements));
 }
 
 TEST(CheckerTreeTest, DuplicateDeclarationWithinSameMultiStatementLineFails) {
@@ -245,9 +251,8 @@ TEST(CheckerTreeTest, DuplicateDeclarationWithinSameMultiStatementLineFails) {
 	ASSERT_EQ(statements.size(), 2u);
 
 	Checker checker;
-	checker.check(statements[0].get());
 
-	EXPECT_THROW(checker.check(statements[1].get()), CodeFabException);
+	EXPECT_THROW(checker.check(statements), CodeFabException);
 }
 
 TEST(CheckerTreeTest, VarDeclareStmtWithoutInitializerSucceeds) {
@@ -258,7 +263,7 @@ TEST(CheckerTreeTest, VarDeclareStmtWithoutInitializerSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(stmt.get()));
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
 }
 
 TEST(CheckerTreeTest, EmptyBlockSucceeds) {
@@ -266,7 +271,7 @@ TEST(CheckerTreeTest, EmptyBlockSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(block.get()));
+	EXPECT_NO_THROW(checker.check(single(move(block))));
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
@@ -285,5 +290,18 @@ TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
 
 	Checker checker;
 
-	EXPECT_NO_THROW(checker.check(outer.get()));
+	EXPECT_NO_THROW(checker.check(single(move(outer))));
+}
+
+TEST(CheckerTreeTest, NullStatementEntryInVectorIsSkipped) {
+	// AssemblerUnit이 실제로 nullptr을 담아 반환하는 일은 없지만, check()는
+	// vector 안에 nullptr이 섞여 있어도 안전하게 건너뛰어야 한다.
+	vector<unique_ptr<Statement>> statements;
+	statements.push_back(nullptr);
+	statements.push_back(assemble("var a = 10;"));
+	statements.push_back(nullptr);
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(statements));
 }

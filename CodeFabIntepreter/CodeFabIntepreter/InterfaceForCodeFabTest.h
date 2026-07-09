@@ -19,7 +19,7 @@ public:
 class IChecker {
 public:
 	virtual ~IChecker() = default;
-	virtual void check(Statement* root) = 0;
+	virtual void check(const vector<unique_ptr<Statement>>& statements) = 0;
 };
 
 class IExecutor {
