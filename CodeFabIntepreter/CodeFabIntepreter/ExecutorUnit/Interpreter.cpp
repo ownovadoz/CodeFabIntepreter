@@ -230,6 +230,27 @@ void Interpreter::ensureNumberOperands(const Token& op, const Value& left, const
 
     throw CodeFabException(op, "피연산자는 반드시 숫자여야 합니다.");
 }
-void Interpreter::visitUnaryExpr(const UnaryExpr&) {}
+void Interpreter::visitUnaryExpr(const UnaryExpr& expr)
+{
+    evaluation_result = evaluateUnaryExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateUnaryExpr(const UnaryExpr& expr)
+{
+    Value operand = evaluate(expr.getExpr());
+    const Token& op = expr.getOperator();
+
+    if (op.getType() == TokenType::MINUS) {
+        if (!isNumber(operand)) throw CodeFabException(op, "피연산자는 반드시 숫자여야 합니다.");
+        return -std::get<double>(operand);
+    }
+
+    if (op.getType() == TokenType::BANG) {
+        return !isTruthy(operand);
+    }
+
+    throw CodeFabException(op, "지원하지 않는 단항 연산자입니다.");
+}
 void Interpreter::visitGroupingExpr(const GroupingExpr&) {}
 void Interpreter::visitLogicalExpr(const LogicalExpr&) {}
