@@ -70,7 +70,25 @@ unique_ptr<Statement> Parser::parseStatement() {
 }
 
 unique_ptr<Statement> Parser::parseIfStmt() {
-	throw CodeFabException(peek(), "'if' statements are not implemented yet.");
+	advance();
+
+	Token left_paren = advance();
+	if (left_paren.getType() != TokenType::LEFT_PAREN) throw CodeFabException(left_paren, "Expect '(' after 'if'.");
+
+	unique_ptr<Expression> condition = parseExpression();
+
+	Token right_paren = advance();
+	if (right_paren.getType() != TokenType::RIGHT_PAREN) throw CodeFabException(right_paren, "Expect ')' after if condition.");
+
+	unique_ptr<Statement> then_branch = parseStatement();
+	unique_ptr<Statement> else_branch = nullptr;
+
+	if (peek().getType() == TokenType::ELSE) {
+		advance();
+		else_branch = parseStatement();
+	}
+
+	return make_unique<IfStmt>(move(condition), move(then_branch), move(else_branch));
 }
 
 unique_ptr<Statement> Parser::parseBlockStmt() {
@@ -110,15 +128,47 @@ unique_ptr<Statement> Parser::parseVarDeclareStmt() {
 }
 
 unique_ptr<Statement> Parser::parsePrintStmt() {
-	throw CodeFabException(peek(), "'print' statements are not implemented yet.");
+	advance();
+
+	unique_ptr<Expression> expr = parseExpression();
+
+	Token after_expr_token = advance();
+	if (after_expr_token.getType() != TokenType::SEMICOLON) throw CodeFabException(after_expr_token, "Expect ';' after value.");
+
+	return make_unique<PrintStmt>(move(expr));
 }
 
 unique_ptr<Statement> Parser::parseForStmt() {
-	throw CodeFabException(peek(), "'for' statements are not implemented yet.");
+	advance();
+
+	Token left_paren = advance();
+	if (left_paren.getType() != TokenType::LEFT_PAREN) throw CodeFabException(left_paren, "Expect '(' after 'for'.");
+
+	unique_ptr<Statement> raw_init = parseVarDeclareStmt();
+	unique_ptr<VarDeclareStmt> init(static_cast<VarDeclareStmt*>(raw_init.release()));
+
+	unique_ptr<Expression> condition = parseExpression();
+
+	Token condition_semicolon = advance();
+	if (condition_semicolon.getType() != TokenType::SEMICOLON) throw CodeFabException(condition_semicolon, "Expect ';' after loop condition.");
+
+	unique_ptr<Expression> increment = parseExpression();
+
+	Token right_paren = advance();
+	if (right_paren.getType() != TokenType::RIGHT_PAREN) throw CodeFabException(right_paren, "Expect ')' after for clauses.");
+
+	unique_ptr<Statement> body = parseStatement();
+
+	return make_unique<ForStmt>(move(init), move(condition), move(increment), move(body));
 }
 
 unique_ptr<Statement> Parser::parseExpressionStmt() {
-	throw CodeFabException(peek(), "Expression statements are not implemented yet.");
+	unique_ptr<Expression> expr = parseExpression();
+
+	Token after_expr_token = advance();
+	if (after_expr_token.getType() != TokenType::SEMICOLON) throw CodeFabException(after_expr_token, "Expect ';' after expression.");
+
+	return make_unique<ExpressionStmt>(move(expr));
 }
 
 unique_ptr<Expression> Parser::parseExpression() {

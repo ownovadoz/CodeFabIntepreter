@@ -563,6 +563,29 @@ TEST_F(ParserTestFixture, ExpressionStmtMissingSemicolonFailed) {
 	});
 }
 
+TEST_F(ParserTestFixture, MultiStatementInvalidAssignmentTargetFailed) {
+	// var a = 1; var b = 2; a + b = 3;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "1", 1.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "2", 2.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::PLUS, "+", "+", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "3", 3.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
 TEST_F(ParserTestFixture, PrintStmtPassed) {
 	// print 10;
 	const auto& program = buildAndParseProgram({
