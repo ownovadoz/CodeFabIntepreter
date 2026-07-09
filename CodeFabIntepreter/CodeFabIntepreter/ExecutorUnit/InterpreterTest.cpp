@@ -164,6 +164,19 @@ TEST_F(InterpreterTestFixture, EvaluateVariableExprReturnsItsCurrentValue)
     EXPECT_EQ(get<double>(interpreter.evaluate(&variable)), 3.0);
 }
 
+TEST_F(InterpreterTestFixture, EvaluatingAssignExprUpdatesEnvironmentAndReturnsValue)
+{
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    VarDeclareStmt var_decl(name_token);
+    var_decl.setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+    interpreter.interpret(&var_decl);
+
+    AssignExpr assign(name_token, make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&assign)), 2.0);
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 2.0);
+}
+
 TEST_F(InterpreterTestFixture, BlockScopedVariableShadowsOuterVariableAndDoesNotLeakOut)
 {
     // var x = "global";
@@ -194,6 +207,24 @@ TEST_F(InterpreterTestFixture, BlockScopedVariableShadowsOuterVariableAndDoesNot
     EXPECT_EQ(captured.str(), "inner\nglobal\n");
 }
 
+TEST_F(InterpreterTestFixture, AcceptOnVarDeclareStmtDispatchesToInterpreter)
+{
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    VarDeclareStmt var_decl(name_token);
+    var_decl.setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "7", 7.0, 1)));
+
+    var_decl.accept(interpreter);
+
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 7.0);
+}
+
+TEST_F(InterpreterTestFixture, AcceptOnLiteralExprDoesNotThrow)
+{
+    LiteralExpr literal(Token(TokenType::NUMBER, "9", 9.0, 1));
+
+    EXPECT_NO_THROW(literal.accept(interpreter));
+}
+
 TEST_F(InterpreterTestFixture, ForStmtDoesNotExecuteBodyWhenConditionIsInitiallyFalsy)
 {
     auto init = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "i", monostate{}, 1));
@@ -207,4 +238,186 @@ TEST_F(InterpreterTestFixture, ForStmtDoesNotExecuteBodyWhenConditionIsInitially
 
     EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
     EXPECT_THROW(interpreter.getVariableValue("i"), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, BinaryPlusAddsNumbers)
+{
+    Token plus_token(TokenType::PLUS, "+", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)),
+        plus_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&binary)), 5.0);
+}
+
+TEST_F(InterpreterTestFixture, BinaryPlusConcatenatesStrings)
+{
+    Token plus_token(TokenType::PLUS, "+", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::STRING, "a", string("a"), 1)),
+        plus_token,
+        make_unique<LiteralExpr>(Token(TokenType::STRING, "b", string("b"), 1)));
+
+    EXPECT_EQ(get<string>(interpreter.evaluate(&binary)), "ab");
+}
+
+TEST_F(InterpreterTestFixture, BinaryPlusOnMismatchedTypesThrowsCodeFabException)
+{
+    Token plus_token(TokenType::PLUS, "+", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)),
+        plus_token,
+        make_unique<LiteralExpr>(Token(TokenType::STRING, "b", string("b"), 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&binary), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, BinaryMinusOnNonNumberThrowsCodeFabException)
+{
+    Token minus_token(TokenType::MINUS, "-", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::STRING, "a", string("a"), 1)),
+        minus_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&binary), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, BinarySlashByZeroThrowsCodeFabException)
+{
+    Token slash_token(TokenType::SLASH, "/", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)),
+        slash_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "0", 0.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&binary), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, BinaryGreaterComparesNumbers)
+{
+    Token greater_token(TokenType::GREATER, ">", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)),
+        greater_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&binary)));
+}
+
+TEST_F(InterpreterTestFixture, BinaryGreaterEqualComparesNumbers)
+{
+    Token op_token(TokenType::GREATER_EQUAL, ">=", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)),
+        op_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&binary)));
+}
+
+TEST_F(InterpreterTestFixture, BinaryEqualEqualComparesValuesOfSameType)
+{
+    Token op_token(TokenType::EQUAL_EQUAL, "==", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)),
+        op_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&binary)));
+}
+
+TEST_F(InterpreterTestFixture, BinaryBangEqualReturnsTrueForDifferentValues)
+{
+    Token op_token(TokenType::BANG_EQUAL, "!=", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)),
+        op_token,
+        make_unique<LiteralExpr>(Token(TokenType::STRING, "3", string("3"), 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&binary)));
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingUnaryMinusNegatesNumber)
+{
+    Token op_token(TokenType::MINUS, "-", monostate{}, 1);
+    UnaryExpr unary(op_token, make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&unary)), -3.0);
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingUnaryMinusOnNonNumberThrowsCodeFabException)
+{
+    Token op_token(TokenType::MINUS, "-", monostate{}, 1);
+    UnaryExpr unary(op_token, make_unique<LiteralExpr>(Token(TokenType::STRING, "hi", string("hi"), 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&unary), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingUnaryBangNegatesTruthiness)
+{
+    Token op_token(TokenType::BANG, "!", monostate{}, 1);
+    UnaryExpr unary(op_token, make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&unary)));
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingGroupingExprReturnsInnerValue)
+{
+    GroupingExpr grouping(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&grouping)), 5.0);
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingGroupingExprPropagatesInnerErrors)
+{
+    Token op_token(TokenType::MINUS, "-", monostate{}, 1);
+    GroupingExpr grouping(make_unique<UnaryExpr>(op_token, make_unique<LiteralExpr>(Token(TokenType::STRING, "hi", string("hi"), 1))));
+
+    EXPECT_THROW(interpreter.evaluate(&grouping), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, LogicalAndShortCircuitsOnFalsyLeftWithoutEvaluatingRight)
+{
+    Token and_token(TokenType::AND, "and", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)),
+        and_token,
+        make_unique<VariableExpr>(Token(TokenType::IDENTIFIER, "undefined", monostate{}, 1)));
+
+    EXPECT_FALSE(get<bool>(interpreter.evaluate(&logical)));
+}
+
+TEST_F(InterpreterTestFixture, LogicalOrShortCircuitsOnTruthyLeftWithoutEvaluatingRight)
+{
+    Token or_token(TokenType::OR, "or", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::TRUE, "true", true, 1)),
+        or_token,
+        make_unique<VariableExpr>(Token(TokenType::IDENTIFIER, "undefined", monostate{}, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&logical)));
+}
+
+TEST_F(InterpreterTestFixture, LogicalAndEvaluatesRightWhenLeftIsTruthy)
+{
+    Token and_token(TokenType::AND, "and", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::TRUE, "true", true, 1)),
+        and_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&logical)), 5.0);
+}
+
+TEST_F(InterpreterTestFixture, LogicalOrEvaluatesRightWhenLeftIsFalsy)
+{
+    Token or_token(TokenType::OR, "or", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)),
+        or_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&logical)), 5.0);
 }
