@@ -6,9 +6,25 @@
 #include "CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 using std::string;
+
+namespace {
+	class CerrCapture {
+	public:
+		CerrCapture() : original(std::cerr.rdbuf(buffer.rdbuf())) {}
+		~CerrCapture() { std::cerr.rdbuf(original); }
+
+		string str() const { return buffer.str(); }
+
+	private:
+		std::ostringstream buffer;
+		std::streambuf* original;
+	};
+}
 
 class MockAssemblerUnit : public IAssemblerUnit {
 public:
@@ -114,16 +130,25 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCodeFabExceptionFrom
 
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCheckerSelfReferenceError) {
 	// "var a = a + 1;" 은 실제 Checker가 초기화식 자기참조로 CodeFabException을 던지는 입력이다.
+	// execute()가 예외를 내부에서 삼키므로, 실제 검출 여부는 stderr 출력으로 확인한다.
 	CodeFabFacade facade;
+
+	CerrCapture capture;
 	EXPECT_NO_THROW(facade.execute("var a = a + 1;"));
+
+	EXPECT_THAT(capture.str(), ::testing::HasSubstr("지역변수를 읽을 수 없습니다"));
 }
 
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCheckerDuplicateDeclarationAcrossLines) {
 	// 같은 Facade 인스턴스로 여러 줄을 실행하는 REPL 시나리오에서, 전역 스코프의
 	// 중복 선언은 줄이 나뉘어도 실제 Checker에 의해 검출되어야 한다.
+	// execute()가 예외를 내부에서 삼키므로, 실제 검출 여부는 stderr 출력으로 확인한다.
 	CodeFabFacade facade;
 	facade.execute("var a = 10;");
 
+	CerrCapture capture;
 	EXPECT_NO_THROW(facade.execute("var a = 20;"));
+
+	EXPECT_THAT(capture.str(), ::testing::HasSubstr("이미 해당 변수는 현재 스코프에서 사용중입니다"));
 }
 #endif
