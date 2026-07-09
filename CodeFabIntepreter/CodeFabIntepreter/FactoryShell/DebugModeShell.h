@@ -1,8 +1,10 @@
 #pragma once
 #include "IShellMode.h"
+#include "DebugSession.h"
 #include "../CodeFabException.h"
 #include "../CodeFabFacade.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -11,6 +13,7 @@
 #endif
 
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 #ifdef _DEBUG
@@ -34,11 +37,14 @@ private:
 	static bool defaultFileExists(const string& path);
 	static vector<string> defaultReadLines(const string& path);
 
+	void runLines(const vector<string>& lines);
+
 	string file_path;
 #ifdef _DEBUG
 	function<bool(const string&)> file_exists;
 	function<vector<string>(const string&)> read_lines;
 #endif
 	vector<string> loaded_lines;
+	unique_ptr<DebugSession> debug_session;
 	CodeFabFacade code_fab_facade;
 };

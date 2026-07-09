@@ -149,6 +149,8 @@
     <ClCompile Include="FactoryShell\FileModeShellTest.cpp" />
     <ClCompile Include="FactoryShell\DebugModeShell.cpp" />
     <ClCompile Include="FactoryShell\DebugModeShellTest.cpp" />
+    <ClCompile Include="FactoryShell\DebugSession.cpp" />
+    <ClCompile Include="FactoryShell\DebugSessionTest.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp" />
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
@@ -176,6 +178,7 @@
     <ClInclude Include="FactoryShell\ArgumentParser.h" />
     <ClInclude Include="FactoryShell\FileModeShell.h" />
     <ClInclude Include="FactoryShell\DebugModeShell.h" />
+    <ClInclude Include="FactoryShell\DebugSession.h" />
     <ClInclude Include="FactoryShell\IShellMode.h" />
     <ClInclude Include="FactoryShell\ShellMode.h" />
     <ClInclude Include="AssemblerUnit\AssemblerUnit.h" />
