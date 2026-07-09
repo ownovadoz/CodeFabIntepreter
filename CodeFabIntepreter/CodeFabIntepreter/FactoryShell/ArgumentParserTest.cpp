@@ -20,3 +20,10 @@ TEST(ArgumentParserTest, RunWithFilePathSelectsFileMode) {
 	EXPECT_EQ(result.mode, ShellMode::File);
 	EXPECT_EQ(result.file_path, "script.txt");
 }
+
+TEST(ArgumentParserTest, DebugWithFilePathSelectsDebugMode) {
+	ParsedArguments result = ArgumentParser::parse({ "debug", "script.txt" });
+
+	EXPECT_EQ(result.mode, ShellMode::Debug);
+	EXPECT_EQ(result.file_path, "script.txt");
+}
