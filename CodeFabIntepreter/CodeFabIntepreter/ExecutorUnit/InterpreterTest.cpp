@@ -362,3 +362,18 @@ TEST_F(InterpreterTestFixture, EvaluatingUnaryBangNegatesTruthiness)
 
     EXPECT_TRUE(get<bool>(interpreter.evaluate(&unary)));
 }
+
+TEST_F(InterpreterTestFixture, EvaluatingGroupingExprReturnsInnerValue)
+{
+    GroupingExpr grouping(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&grouping)), 5.0);
+}
+
+TEST_F(InterpreterTestFixture, EvaluatingGroupingExprPropagatesInnerErrors)
+{
+    Token op_token(TokenType::MINUS, "-", monostate{}, 1);
+    GroupingExpr grouping(make_unique<UnaryExpr>(op_token, make_unique<LiteralExpr>(Token(TokenType::STRING, "hi", string("hi"), 1))));
+
+    EXPECT_THROW(interpreter.evaluate(&grouping), CodeFabException);
+}
