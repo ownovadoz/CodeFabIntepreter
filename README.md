@@ -105,6 +105,9 @@ CodeFab이라는 간단한 스크립트 언어를 파싱하고 실행하는 C++ 
   - `Parser/Parser` — 토큰을 `Statement`/`Expression` AST로 구성합니다.
 - **CheckerUnit** (`CheckerUnit/Checker`)
   - AST를 순회하며 변수 선언 중복, 스코프 규칙 등 정적 검사를 수행합니다.
+  - 각 스코프는 변수 이름을 `declare`(선언됨) → `define`(정의 완료) 2단계 상태로 추적하는
+    Resolver 패턴을 사용합니다. 초기화식을 검사하는 동안 자신의 이름이 아직 `define`되지
+    않은 상태로 스코프에 남아있으면 자기참조로 판단해 오류를 발생시킵니다.
 - **ExecutorUnit** (`ExecutorUnit/`)
   - `Interpreter` — AST를 실행하며 `Environment`(변수 스코프 체인)를 통해 값을 읽고 씁니다.
 - **CodeFabFacade**
@@ -156,7 +159,7 @@ CodeFab Interpreter Exit
 - `exit`, `EXIT`를 입력하거나 EOF(Ctrl+D / Ctrl+Z)를 보내면 REPL이 종료됩니다.
 - 파싱/검사 과정에서 오류가 발생하면 예외 메시지가 표준 에러로 출력되고, REPL은 계속 다음 줄을 입력받습니다.
 
-> **참고**: 현재 `CodeFabFacade`는 코드를 어셈블(토크나이즈+파싱)하는 단계까지 실제로 동작하며, 검사(Checker)와 실행(Executor) 단계는 아직 실제 로직과 연결되지 않은 상태입니다. `Checker`/`Interpreter`의 실제 구현은 각각의 단위 테스트(`CheckerTest.cpp`, `InterpreterTest.cpp`)를 통해 독립적으로 검증되고 있으며, 전체 파이프라인 연결은 진행 중인 작업입니다.
+> **참고**: `CodeFabFacade`는 어셈블(토크나이즈+파싱) → 검사(Checker) → 실행(Executor) 순으로 실제로 연결되어 동작합니다. `Checker`는 현재 문법이 지원하는 모든 문장/표현식을 순회하며 변수 중복 선언과 초기화식 자기참조를 검사하고, PromptShell처럼 한 줄씩 나뉘어 들어오는 입력에서도 전역 스코프를 유지합니다. `Executor`는 아직 일부 문장/표현식만 실행 가능하며, 실제 구현은 단위 테스트(`InterpreterTest.cpp`)를 통해 독립적으로 검증되고 있습니다.
 
 ## 문법 지원 범위
 

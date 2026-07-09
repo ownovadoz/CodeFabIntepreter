@@ -1,4 +1,4 @@
-name: Auto Merge on 3 Approvals
+name: Auto Merge on 2+ Approvals
 
 on:
   pull_request_review:
@@ -16,14 +16,23 @@ jobs:
     steps:
       - name: Approve 수 확인 후 머지
         run: |
+          PR_STATE=$(gh api \
+            repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
+            --jq '.state')
+
+          if [ "$PR_STATE" != "open" ]; then
+            echo "PR이 이미 closed/merged 상태 — 스킵"
+            exit 0
+          fi
+
           APPROVALS=$(gh api \
             repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
-            --jq '[.[] | select(.state == "APPROVED")] | length')
+            --jq '[.[] | select(.state == "APPROVED")] | unique_by(.user.login) | length')
 
-          echo "현재 Approve 수: $APPROVALS"
+          echo "현재 Approve 수 (유니크 리뷰어 기준): $APPROVALS"
 
           if [ "$APPROVALS" -ge 2 ]; then
-            echo "Approve 2개 달성 — 자동 머지 실행"
+            echo "Approve 2개 이상 달성 — 자동 머지 실행"
             gh pr merge ${{ github.event.pull_request.number }} \
               --merge \
               --repo ${{ github.repository }}

@@ -1,9 +1,14 @@
 #include "Environment.h"
 #include "../CodeFabException.h"
 
-Environment::Environment(Environment* enclosing)
-    : enclosing(enclosing)
-{}
+#include <memory>
+
+using std::make_shared;
+
+Environment::Environment(shared_ptr<Environment> enclosing) : enclosing(std::move(enclosing))
+{
+}
+
 
 void Environment::define(const string& name, const Value& value)
 {
@@ -15,7 +20,7 @@ Value Environment::get(const string& name) const
     auto found = values.find(name);
     if (found != values.end()) return found->second;
 
-    if (enclosing != nullptr) return enclosing->get(name);
+    if (enclosing) return enclosing->get(name);
 
     throw CodeFabException(0, "Undefined variable '" + name + "'.");
 }
@@ -28,7 +33,7 @@ void Environment::assign(const string& name, const Value& value)
         return;
     }
 
-    if (enclosing != nullptr) {
+    if (enclosing) {
         enclosing->assign(name, value);
         return;
     }

@@ -8,7 +8,6 @@
 
 #include <gmock/gmock.h>
 #include <memory>
-#include <optional>
 #include <vector>
 
 using std::make_unique;
@@ -16,58 +15,10 @@ using std::move;
 using std::vector;
 
 namespace {
-	Token makeIdentifier(const string& name) {
-		return Token(TokenType::IDENTIFIER, name, name, 1);
-	}
-
 	unique_ptr<Statement> assemble(const string& source) {
 		AssemblerUnit assembler;
 		return assembler.assemble(source);
 	}
-}
-
-class CheckerTest : public ::testing::Test {
-protected:
-    void SetUp() override { guard.emplace(checker); }
-
-    Checker checker;
-    std::optional<Checker::ScopeGuard> guard;
-};
-
-TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
-}
-
-TEST_F(CheckerTest, DuplicateDeclarationInSameScopeFails) {
-    checker.declareVariable(makeIdentifier("a"), {});
-
-    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), {}), CodeFabException);
-}
-
-TEST_F(CheckerTest, SameNameInNestedScopeSucceeds) {
-    checker.declareVariable(makeIdentifier("a"), {});
-    Checker::ScopeGuard inner(checker);
-
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
-}
-
-TEST_F(CheckerTest, RedeclaringAfterScopeExitSucceeds) {
-    {
-        Checker::ScopeGuard inner(checker);
-        checker.declareVariable(makeIdentifier("a"), {});
-    }
-
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
-}
-
-TEST_F(CheckerTest, SelfReferenceInInitializerFails) {
-    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), { "a" }), CodeFabException);
-}
-
-TEST_F(CheckerTest, ReferencingOtherVariableInInitializerSucceeds) {
-    checker.declareVariable(makeIdentifier("b"), {});
-
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), { "b" }));
 }
 
 TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
@@ -144,6 +95,16 @@ TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
 	EXPECT_NO_THROW(checker.check(stmt.get()));
 }
 
+TEST(CheckerTreeTest, ReferencingAlreadyDefinedVariableInSameScopeSucceeds) {
+	// 'a'는 같은 스코프에서 이미 정의(define)가 끝난 뒤이므로,
+	// declare 상태(false)로 남아있는 'b' 자신과는 구분되어야 한다.
+	auto stmt = assemble("{ var a = 1; var b = a + 1; }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
 TEST(CheckerTreeTest, LiteralInitializerWithoutReferenceSucceeds) {
 	auto stmt = assemble("var a = 1 + 2;");
 
@@ -212,6 +173,49 @@ TEST(CheckerTreeTest, ForStmtOwnScopeAllowsSeparateLoopsToReuseSameVariableName)
 
 TEST(CheckerTreeTest, ForStmtSelfReferenceInInitializerFails) {
 	auto stmt = assemble("for (var i = i; i < 3; i = i + 1) { print i; }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, DuplicateDeclarationAcrossSeparateTopLevelChecksFails) {
+	// REPL에서 한 줄씩 입력되는 각 문장은 같은 Checker 인스턴스로 검사되므로,
+	// 전역 스코프의 중복 선언은 호출이 나뉘어도 검출되어야 한다.
+	Checker checker;
+
+	auto first = assemble("var a = 10;");
+	checker.check(first.get());
+
+	auto second = assemble("var a = 20;");
+
+	EXPECT_THROW(checker.check(second.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, DifferentVariablesAcrossSeparateTopLevelChecksSucceed) {
+	Checker checker;
+
+	auto first = assemble("var a = 10;");
+	checker.check(first.get());
+
+	auto second = assemble("var b = 20;");
+
+	EXPECT_NO_THROW(checker.check(second.get()));
+}
+
+TEST(CheckerTreeTest, ComplexNestedProgramWithoutErrorsSucceeds) {
+	auto stmt = assemble(
+		"{ var a = 1; if (a > 0) { var b = a + 1; print b; } "
+		"for (var i = 0; i < a; i = i + 1) { print i; } }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, ComplexNestedProgramWithDeepSelfReferenceFails) {
+	auto stmt = assemble(
+		"{ var a = 1; if (a > 0) { for (var i = 0; i < a; i = i + 1) { var b = b + i; } } }");
 
 	Checker checker;
 
