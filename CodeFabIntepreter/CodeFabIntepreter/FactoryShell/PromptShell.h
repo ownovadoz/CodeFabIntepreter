@@ -1,13 +1,14 @@
 #pragma once
+#include "IShellMode.h"
 #include "../CodeFabFacade.h"
 
 #include <string>
 
 using std::string;
 
-class PromptShell {
+class PromptShell : public IShellMode {
 public:
-	void runPrompt();
+	void enter() override;
 	const string& getLine() const { return code_line; }
 private:
 	string code_line;
