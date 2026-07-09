@@ -18,10 +18,10 @@ public:
 class StmtVisitor {
 public:
 	virtual ~StmtVisitor() = default;
-	virtual void visitExpressionStmt(ExpressionStmt& stmt) = 0;
-	virtual void visitIfStmt(IfStmt& stmt) = 0;
-	virtual void visitBlockStmt(BlockStmt& stmt) = 0;
-	virtual void visitVarDeclareStmt(VarDeclareStmt& stmt) = 0;
-	virtual void visitPrintStmt(PrintStmt& stmt) = 0;
-	virtual void visitForStmt(ForStmt& stmt) = 0;
+	virtual void visitExpressionStmt(const ExpressionStmt& stmt) = 0;
+	virtual void visitIfStmt(const IfStmt& stmt) = 0;
+	virtual void visitBlockStmt(const BlockStmt& stmt) = 0;
+	virtual void visitVarDeclareStmt(const VarDeclareStmt& stmt) = 0;
+	virtual void visitPrintStmt(const PrintStmt& stmt) = 0;
+	virtual void visitForStmt(const ForStmt& stmt) = 0;
 };

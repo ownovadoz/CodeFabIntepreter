@@ -43,35 +43,63 @@ void Checker::check(Statement* root)
     checkStatement(root);
 }
 
-void Checker::checkStatement(Statement* stmt)
+void Checker::checkStatement(const Statement* stmt)
 {
     if (stmt == nullptr) return;
 
-    if (BlockStmt* block = dynamic_cast<BlockStmt*>(stmt))
-    {
-        checkBlockStmt(block);
-        return;
-    }
+    stmt->accept(*this);
+}
 
-    if (VarDeclareStmt* var_decl = dynamic_cast<VarDeclareStmt*>(stmt))
+void Checker::visitExpressionStmt(const ExpressionStmt& stmt)
+{
+    checkExpression(stmt.getExpr());
+}
+
+void Checker::visitIfStmt(const IfStmt& stmt)
+{
+    checkExpression(stmt.getCondition());
+
+    // 분기별로 독립된 스코프를 부여해, 서로 배타적인 then/else 분기에서
+    // 같은 이름을 선언해도 중복 선언으로 오검출되지 않도록 한다.
     {
-        checkVarDeclareStmt(var_decl);
-        return;
+        ScopeGuard then_scope(*this);
+        checkStatement(stmt.getThenBranch());
+    }
+    {
+        ScopeGuard else_scope(*this);
+        checkStatement(stmt.getElseBranch());
     }
 }
 
-void Checker::checkBlockStmt(BlockStmt* block)
+void Checker::visitBlockStmt(const BlockStmt& stmt)
 {
     ScopeGuard guard(*this);
 
-    for (const auto& stmt : block->getStatements())
-        checkStatement(stmt.get());
+    for (const auto& child : stmt.getStatements())
+        checkStatement(child.get());
 }
 
-void Checker::checkVarDeclareStmt(VarDeclareStmt* var_decl)
+void Checker::visitVarDeclareStmt(const VarDeclareStmt& stmt)
 {
-    vector<string> references = collectIdentifierReferences(var_decl->getInitializer());
-    declareVariable(var_decl->getName(), references);
+    vector<string> references = collectIdentifierReferences(stmt.getInitializer());
+    declareVariable(stmt.getName(), references);
+}
+
+void Checker::visitPrintStmt(const PrintStmt& stmt)
+{
+    checkExpression(stmt.getExpr());
+}
+
+void Checker::visitForStmt(const ForStmt& stmt)
+{
+    // for 문의 초기화 변수는 for 문 자신의 스코프에 속하며, body 블록과는
+    // 별개로 for 문이 끝나면 함께 소멸한다.
+    ScopeGuard guard(*this);
+
+    checkStatement(stmt.getInit());
+    checkExpression(stmt.getCondition());
+    checkExpression(stmt.getIncrement());
+    checkStatement(stmt.getBody());
 }
 
 void Checker::checkExpression(const Expression* expr)

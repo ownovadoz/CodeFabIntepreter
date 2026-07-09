@@ -13,7 +13,7 @@ using std::vector;
 
 class Statement : public StatementOrExpression {
 public:
-	virtual void accept(StmtVisitor& visitor) = 0;
+	virtual void accept(StmtVisitor& visitor) const = 0;
 };
 
 class ExpressionStmt : public Statement {
@@ -24,7 +24,7 @@ public:
 		return expr.get();
 	}
 
-	void accept(StmtVisitor& visitor) override;
+	void accept(StmtVisitor& visitor) const override;
 
 private:
 	unique_ptr<Expression> expr;
@@ -47,7 +47,7 @@ public:
 		return else_branch.get();
 	}
 
-	void accept(StmtVisitor& visitor) override;
+	void accept(StmtVisitor& visitor) const override;
 
 private:
 	unique_ptr<Expression> condition;
@@ -65,7 +65,7 @@ public:
 		return statements;
 	}
 
-	void accept(StmtVisitor& visitor) override;
+	void accept(StmtVisitor& visitor) const override;
 
 private:
 	vector<unique_ptr<Statement>> statements;
@@ -79,15 +79,15 @@ public:
 		initializer = move(expr);
 	}
 
-	const Token& getName() {
+	const Token& getName() const {
 		return name;
 	}
 
-	const Expression* getInitializer() {
+	const Expression* getInitializer() const {
 		return initializer.get();
 	}
 
-	void accept(StmtVisitor& visitor) override;
+	void accept(StmtVisitor& visitor) const override;
 
 private:
 	Token name;
@@ -102,7 +102,7 @@ public:
 		return expr.get();
 	}
 
-	void accept(StmtVisitor& visitor) override;
+	void accept(StmtVisitor& visitor) const override;
 
 private:
 	unique_ptr<Expression> expr;
@@ -129,7 +129,7 @@ public:
 		return body.get();
 	}
 
-	void accept(StmtVisitor& visitor) override;
+	void accept(StmtVisitor& visitor) const override;
 
 private:
 	unique_ptr<VarDeclareStmt> init;
