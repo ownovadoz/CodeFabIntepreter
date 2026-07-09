@@ -1,4 +1,5 @@
 #include "Lexer.h"
+#include "../../CodeFabException.h"
 
 #include <gmock/gmock.h>
 #include <vector>
@@ -215,4 +216,14 @@ TEST_F(LexerTestFixture, KeywordFalse)
     EXPECT_EQ(tokens[0].getType(), TokenType::FALSE);
     EXPECT_EQ(std::get<bool>(tokens[0].getLiteral()), false);
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, UnterminatedStringThrows)
+{
+    EXPECT_THROW(scan("\"hello"), CodeFabException);
+}
+
+TEST_F(LexerTestFixture, UnexpectedCharacterThrows)
+{
+    EXPECT_THROW(scan("@"), CodeFabException);
 }

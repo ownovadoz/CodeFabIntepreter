@@ -1,4 +1,5 @@
 #include "Lexer.h"
+#include "../../CodeFabException.h"
 
 #include <stdexcept>
 #include <unordered_map>
@@ -71,6 +72,8 @@ void Lexer::scanToken()
                 scanNumber();
             else if (isalpha(static_cast<unsigned char>(current_char)) || current_char == '_')
                 scanIdentifier();
+            else
+                throw CodeFabException(line, string("Unexpected character: '") + current_char + "'");
             break;
     }
 }
@@ -123,6 +126,9 @@ void Lexer::scanString()
         advance();
     }
 
+    if (isAtEnd())
+        throw CodeFabException(line, "Unterminated string.");
+
     advance(); // 닫는 "
 
     string value = source.substr(start + 1, current - start - 2);
@@ -165,6 +171,13 @@ void Lexer::scanNumber()
         while (isdigit(static_cast<unsigned char>(peek()))) advance();
     }
 
-    double value = std::stod(source.substr(start, current - start));
-    addToken(TokenType::NUMBER, value);
+    try
+    {
+        double value = std::stod(source.substr(start, current - start));
+        addToken(TokenType::NUMBER, value);
+    }
+    catch (const std::exception&)
+    {
+        throw CodeFabException(line, "Invalid number literal.");
+    }
 }
