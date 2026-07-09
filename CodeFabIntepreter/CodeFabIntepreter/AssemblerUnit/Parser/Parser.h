@@ -3,9 +3,13 @@
 #include "Statement.h"
 #include "../Tokenizer/Token.h"
 
+#include <initializer_list>
 #include <memory>
+#include <string>
 #include <vector>
 
+using std::initializer_list;
+using std::string;
 using std::unique_ptr;
 using std::vector;
 
@@ -35,6 +39,10 @@ private:
 	unique_ptr<Expression> parseUnaryExpr();
 	unique_ptr<Expression> parsePrimaryExpr();
 
+	using ExprFactory = unique_ptr<Expression> (*)(unique_ptr<Expression>, const Token&, unique_ptr<Expression>);
+
+	unique_ptr<Expression> parseLeftAssocExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators, ExprFactory makeExpr);
+
 	void init(const vector<Token>& tokens) {
 		this->tokens = tokens;
 		current_token_it = this->tokens.begin();
@@ -54,6 +62,20 @@ private:
 	bool isAtEnd() const {
 		return current_token_it == tokens.end() || current_token_it->getType() == TokenType::END_OF_FILE;
 	}
+
+	bool check(TokenType type) const {
+		if (isAtEnd()) return false;
+		return peek().getType() == type;
+	}
+
+	bool checkAny(initializer_list<TokenType> types) const {
+		for (TokenType type : types) {
+			if (check(type)) return true;
+		}
+		return false;
+	}
+
+	Token consume(TokenType type, const string& message);
 
 	vector<Token> tokens;
 	vector<Token>::const_iterator current_token_it;

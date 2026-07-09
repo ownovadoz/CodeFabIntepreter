@@ -1,5 +1,6 @@
 #include "Checker.h"
 
+#include "../AssemblerUnit/AssemblerUnit.h"
 #include "../AssemblerUnit/Parser/Parser.h"
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Tokenizer/Token.h"
@@ -17,6 +18,11 @@ using std::vector;
 namespace {
 	Token makeIdentifier(const string& name) {
 		return Token(TokenType::IDENTIFIER, name, name, 1);
+	}
+
+	unique_ptr<Statement> assemble(const string& source) {
+		AssemblerUnit assembler;
+		return assembler.assemble(source);
 	}
 }
 
@@ -96,6 +102,54 @@ TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
 	Checker checker;
 
 	EXPECT_THROW(checker.check(block.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughBinaryExprInInitializerFails) {
+	auto stmt = assemble("var a = a + 1;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughUnaryExprInInitializerFails) {
+	auto stmt = assemble("var a = -a;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughGroupingExprInInitializerFails) {
+	auto stmt = assemble("var a = (a);");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughLogicalExprInInitializerFails) {
+	auto stmt = assemble("var a = a and true;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
+	auto stmt = assemble("var a = b + 1;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, LiteralInitializerWithoutReferenceSucceeds) {
+	auto stmt = assemble("var a = 1 + 2;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {

@@ -8,8 +8,14 @@
 
 using std::make_unique;
 using std::move;
+using std::string;
 using std::unique_ptr;
 using std::vector;
+
+Token Parser::consume(TokenType type, const string& message) {
+	if (check(type)) return advance();
+	throw CodeFabException(peek(), message);
+}
 
 vector<unique_ptr<Statement>> Parser::parse(const vector<Token>& tokens) {
 	if (tokens.empty()) return {};
@@ -72,13 +78,11 @@ unique_ptr<Statement> Parser::parseStatement() {
 unique_ptr<Statement> Parser::parseIfStmt() {
 	advance();
 
-	Token left_paren = advance();
-	if (left_paren.getType() != TokenType::LEFT_PAREN) throw CodeFabException(left_paren, "Expect '(' after 'if'.");
+	consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
 
 	unique_ptr<Expression> condition = parseExpression();
 
-	Token right_paren = advance();
-	if (right_paren.getType() != TokenType::RIGHT_PAREN) throw CodeFabException(right_paren, "Expect ')' after if condition.");
+	consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
 
 	unique_ptr<Statement> then_branch = parseStatement();
 	unique_ptr<Statement> else_branch = nullptr;
@@ -99,28 +103,21 @@ unique_ptr<Statement> Parser::parseBlockStmt() {
 		block->addStatement(parseStatement());
 	}
 
-	if (peek().getType() != TokenType::RIGHT_BRACE) throw CodeFabException(peek(), "Expect '}' after block.");
-	advance();
+	consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
 
 	return block;
 }
 
 unique_ptr<Statement> Parser::parseVarDeclareStmt() {
-	Token var_token = advance();
-	if (var_token.getType() != TokenType::VAR) throw CodeFabException(var_token, "Expect 'var'.");
-	if (peek().getType() != TokenType::IDENTIFIER) throw CodeFabException(peek(), "Expect variable name.");
+	consume(TokenType::VAR, "Expect 'var'.");
 
-	auto stmt = make_unique<VarDeclareStmt>(advance());
+	auto stmt = make_unique<VarDeclareStmt>(consume(TokenType::IDENTIFIER, "Expect variable name."));
 
-	Token equal_token = advance();
-	if (equal_token.getType() != TokenType::EQUAL) throw CodeFabException(equal_token, "Expect '=' after variable name.");
+	consume(TokenType::EQUAL, "Expect '=' after variable name.");
 
 	unique_ptr<Expression> expr = parseExpression();
 
-	Token after_expr_token = advance();
-	if (after_expr_token.getType() != TokenType::SEMICOLON) {
-		throw CodeFabException(after_expr_token, "Expect ';' after variable declaration.");
-	}
+	consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
 
 	stmt->setExpression(move(expr));
 
@@ -132,8 +129,7 @@ unique_ptr<Statement> Parser::parsePrintStmt() {
 
 	unique_ptr<Expression> expr = parseExpression();
 
-	Token after_expr_token = advance();
-	if (after_expr_token.getType() != TokenType::SEMICOLON) throw CodeFabException(after_expr_token, "Expect ';' after value.");
+	consume(TokenType::SEMICOLON, "Expect ';' after value.");
 
 	return make_unique<PrintStmt>(move(expr));
 }
@@ -141,21 +137,18 @@ unique_ptr<Statement> Parser::parsePrintStmt() {
 unique_ptr<Statement> Parser::parseForStmt() {
 	advance();
 
-	Token left_paren = advance();
-	if (left_paren.getType() != TokenType::LEFT_PAREN) throw CodeFabException(left_paren, "Expect '(' after 'for'.");
+	consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
 
 	unique_ptr<Statement> raw_init = parseVarDeclareStmt();
 	unique_ptr<VarDeclareStmt> init(static_cast<VarDeclareStmt*>(raw_init.release()));
 
 	unique_ptr<Expression> condition = parseExpression();
 
-	Token condition_semicolon = advance();
-	if (condition_semicolon.getType() != TokenType::SEMICOLON) throw CodeFabException(condition_semicolon, "Expect ';' after loop condition.");
+	consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
 
 	unique_ptr<Expression> increment = parseExpression();
 
-	Token right_paren = advance();
-	if (right_paren.getType() != TokenType::RIGHT_PAREN) throw CodeFabException(right_paren, "Expect ')' after for clauses.");
+	consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
 
 	unique_ptr<Statement> body = parseStatement();
 
@@ -165,8 +158,7 @@ unique_ptr<Statement> Parser::parseForStmt() {
 unique_ptr<Statement> Parser::parseExpressionStmt() {
 	unique_ptr<Expression> expr = parseExpression();
 
-	Token after_expr_token = advance();
-	if (after_expr_token.getType() != TokenType::SEMICOLON) throw CodeFabException(after_expr_token, "Expect ';' after expression.");
+	consume(TokenType::SEMICOLON, "Expect ';' after expression.");
 
 	return make_unique<ExpressionStmt>(move(expr));
 }
@@ -194,73 +186,48 @@ unique_ptr<Expression> Parser::parseAssignExpr() {
 }
 
 unique_ptr<Expression> Parser::parseLogicOr() {
-	unique_ptr<Expression> expr = parseLogicAnd();
-
-	while (peek().getType() == TokenType::OR) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseLogicAnd();
-		expr = make_unique<LogicalExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseLeftAssocExpr(&Parser::parseLogicAnd, { TokenType::OR }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<LogicalExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseLogicAnd() {
-	unique_ptr<Expression> expr = parseEquality();
-
-	while (peek().getType() == TokenType::AND) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseEquality();
-		expr = make_unique<LogicalExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseLeftAssocExpr(&Parser::parseEquality, { TokenType::AND }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<LogicalExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseEquality() {
-	unique_ptr<Expression> expr = parseComparison();
-
-	while (peek().getType() == TokenType::BANG_EQUAL || peek().getType() == TokenType::EQUAL_EQUAL) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseComparison();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseLeftAssocExpr(&Parser::parseComparison, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseComparison() {
-	unique_ptr<Expression> expr = parseTerm();
-
-	while (peek().getType() == TokenType::GREATER || peek().getType() == TokenType::GREATER_EQUAL
-		|| peek().getType() == TokenType::LESS || peek().getType() == TokenType::LESS_EQUAL) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseTerm();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseLeftAssocExpr(&Parser::parseTerm, { TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseTerm() {
-	unique_ptr<Expression> expr = parseFactor();
-
-	while (peek().getType() == TokenType::PLUS || peek().getType() == TokenType::MINUS) {
-		Token op = advance();
-		unique_ptr<Expression> right = parseFactor();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
-	}
-
-	return expr;
+	return parseLeftAssocExpr(&Parser::parseFactor, { TokenType::PLUS, TokenType::MINUS }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
 }
 
 unique_ptr<Expression> Parser::parseFactor() {
-	unique_ptr<Expression> expr = parseUnaryExpr();
+	return parseLeftAssocExpr(&Parser::parseUnaryExpr, { TokenType::STAR, TokenType::SLASH }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+		return make_unique<BinaryExpr>(move(left), op, move(right));
+	});
+}
 
-	while (peek().getType() == TokenType::STAR || peek().getType() == TokenType::SLASH) {
+unique_ptr<Expression> Parser::parseLeftAssocExpr(unique_ptr<Expression> (Parser::* parseOperand)(), initializer_list<TokenType> operators, ExprFactory makeExpr) {
+	unique_ptr<Expression> expr = (this->*parseOperand)();
+
+	while (checkAny(operators)) {
 		Token op = advance();
-		unique_ptr<Expression> right = parseUnaryExpr();
-		expr = make_unique<BinaryExpr>(move(expr), op, move(right));
+		unique_ptr<Expression> right = (this->*parseOperand)();
+		expr = makeExpr(move(expr), op, move(right));
 	}
 
 	return expr;
@@ -289,8 +256,7 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 		advance();
 		unique_ptr<Expression> expr = parseExpression();
 
-		Token close_paren = advance();
-		if (close_paren.getType() != TokenType::RIGHT_PAREN) throw CodeFabException(close_paren, "Expect ')' after expression.");
+		consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
 
 		return make_unique<GroupingExpr>(move(expr));
 	}

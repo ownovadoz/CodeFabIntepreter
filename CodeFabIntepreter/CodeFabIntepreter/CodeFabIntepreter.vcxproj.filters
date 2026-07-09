@@ -54,6 +54,9 @@
     <ClCompile Include="FactoryShell\PromptShellTest.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
+    <ClCompile Include="Visitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="CheckerUnit\CheckerTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -15,6 +15,7 @@ public:
 	const Token& getToken() const {
 		return token;
 	}
+	void accept(ExprVisitor& visitor) const override;
 private:
 	Token token;
 };
@@ -26,6 +27,8 @@ public:
 	const Token& getToken() const {
 		return token;
 	}
+
+	void accept(ExprVisitor& visitor) const override;
 
 private:
 	Token token;
@@ -42,6 +45,8 @@ public:
 	const Expression* getValue() const {
 		return value.get();
 	}
+
+	void accept(ExprVisitor& visitor) const override;
 
 private:
 	Token identifier;
@@ -65,6 +70,8 @@ public:
 		return right.get();
 	}
 
+	void accept(ExprVisitor& visitor) const override;
+
 private:
 	unique_ptr<Expression> left;
 	Token op;
@@ -83,6 +90,8 @@ public:
 		return expr.get();
 	}
 
+	void accept(ExprVisitor& visitor) const override;
+
 private:
 	Token op;
 	unique_ptr<Expression> expr;
@@ -95,6 +104,8 @@ public:
 	const Expression* getExpr() const {
 		return expr.get();
 	}
+
+	void accept(ExprVisitor& visitor) const override;
 
 private:
 	unique_ptr<Expression> expr;
@@ -116,6 +127,8 @@ public:
 	const Expression* getRight() const {
 		return right.get();
 	}
+
+	void accept(ExprVisitor& visitor) const override;
 
 private:
 	unique_ptr<Expression> left;

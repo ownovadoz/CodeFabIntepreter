@@ -23,6 +23,11 @@ public:
     Interpreter interpreter;
 };
 
+class UnsupportedExpr : public Expression {
+public:
+    void accept(ExprVisitor&) const override {}
+};
+
 TEST_F(InterpreterTestFixture, VarDeclareWithInitializerDefinesVariable)
 {
     Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
@@ -74,7 +79,7 @@ TEST_F(InterpreterTestFixture, EvaluateLiteralExprReturnsItsValue)
 
 TEST_F(InterpreterTestFixture, EvaluatingUnsupportedExpressionThrowsCodeFabException)
 {
-    Expression unsupported;
+    UnsupportedExpr unsupported;
 
     EXPECT_THROW(interpreter.evaluate(&unsupported), CodeFabException);
 }
