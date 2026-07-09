@@ -74,6 +74,17 @@ protected:
 		EXPECT_NE(grouping, nullptr);
 	}
 
+	void expectVariable(const Expression* expr, const string& lexeme) {
+		const VariableExpr* variable = dynamic_cast<const VariableExpr*>(expr);
+
+		ASSERT_NE(variable, nullptr);
+
+		const Token& token = variable->getToken();
+
+		EXPECT_EQ(token.getType(), TokenType::IDENTIFIER);
+		EXPECT_EQ(token.getLexeme(), lexeme);
+	}
+
 	Parser parser;
 	unique_ptr<Statement> parsed;
 };
@@ -211,6 +222,38 @@ TEST_F(ParserTestFixture, VarDeclareStmtGroupingTrailingExtraParenFailed) {
 		{TokenType::SEMICOLON, ";", ";", 1},
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtVariableReferencePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({ {TokenType::IDENTIFIER, "b", "b", 1} });
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectVariable(stmt->getInitializer(), "b"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtNegatedVariablePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+
+	const UnaryExpr* unary = dynamic_cast<const UnaryExpr*>(stmt->getInitializer());
+	ASSERT_NE(unary, nullptr);
+	EXPECT_EQ(unary->getOperator().getType(), TokenType::MINUS);
+	ASSERT_NO_FATAL_FAILURE(expectVariable(unary->getExpr(), "b"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtGroupedVariablePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectGrouping(stmt->getInitializer()));
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtMissingIdentifierFailed) {
