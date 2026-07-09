@@ -257,4 +257,23 @@ void Interpreter::visitGroupingExpr(const GroupingExpr& expr)
     evaluation_result = evaluate(expr.getExpr());
     has_evaluation_result = true;
 }
-void Interpreter::visitLogicalExpr(const LogicalExpr&) {}
+void Interpreter::visitLogicalExpr(const LogicalExpr& expr)
+{
+    evaluation_result = evaluateLogicalExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateLogicalExpr(const LogicalExpr& expr)
+{
+    Value left = evaluate(expr.getLeft());
+    const Token& op = expr.getOperator();
+
+    if (op.getType() == TokenType::OR) {
+        if (isTruthy(left)) return left;
+    }
+    else {
+        if (!isTruthy(left)) return left;
+    }
+
+    return evaluate(expr.getRight());
+}
