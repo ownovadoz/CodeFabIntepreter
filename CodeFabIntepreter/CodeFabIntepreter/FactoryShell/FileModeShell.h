@@ -34,6 +34,8 @@ private:
 	static bool defaultFileExists(const string& path);
 	static vector<string> defaultReadLines(const string& path);
 
+	void runLines(const vector<string>& lines);
+
 	string file_path;
 #ifdef _DEBUG
 	function<bool(const string&)> file_exists;

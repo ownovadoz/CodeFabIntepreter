@@ -16,26 +16,7 @@ FileModeShell::FileModeShell(string file_path, function<bool(const string&)> fil
 void FileModeShell::enter() {
 	if (!file_exists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
-	int line_number = 0;
-	for (const string& input_line : read_lines(file_path)) {
-		line_number++;
-		code_line = input_line;
-		try {
-			code_fab_facade.execute(code_line);
-		}
-		catch (const CodeFabException& exception) {
-			std::cerr << "[line " << line_number << "] Error: " << exception.getMessage() << std::endl;
-			return;
-		}
-		catch (const std::exception& exception) {
-			std::cerr << "[line " << line_number << "] [unexpected error] " << exception.what() << std::endl;
-			return;
-		}
-		catch (...) {
-			std::cerr << "[line " << line_number << "] [unexpected error] unknown exception" << std::endl;
-			return;
-		}
-	}
+	runLines(read_lines(file_path));
 }
 
 #else
@@ -45,26 +26,7 @@ FileModeShell::FileModeShell(string file_path) : file_path(move(file_path)) {}
 void FileModeShell::enter() {
 	if (!defaultFileExists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
-	int line_number = 0;
-	for (const string& input_line : defaultReadLines(file_path)) {
-		line_number++;
-		code_line = input_line;
-		try {
-			code_fab_facade.execute(code_line);
-		}
-		catch (const CodeFabException& exception) {
-			std::cerr << "[line " << line_number << "] Error: " << exception.getMessage() << std::endl;
-			return;
-		}
-		catch (const std::exception& exception) {
-			std::cerr << "[line " << line_number << "] [unexpected error] " << exception.what() << std::endl;
-			return;
-		}
-		catch (...) {
-			std::cerr << "[line " << line_number << "] [unexpected error] unknown exception" << std::endl;
-			return;
-		}
-	}
+	runLines(defaultReadLines(file_path));
 }
 
 #endif
@@ -81,4 +43,27 @@ vector<string> FileModeShell::defaultReadLines(const string& path) {
 		lines.push_back(line);
 	}
 	return lines;
+}
+
+void FileModeShell::runLines(const vector<string>& lines) {
+	int line_number = 0;
+	for (const string& input_line : lines) {
+		line_number++;
+		code_line = input_line;
+		try {
+			code_fab_facade.execute(code_line);
+		}
+		catch (const CodeFabException& exception) {
+			std::cerr << "[line " << line_number << "] Error: " << exception.getMessage() << std::endl;
+			return;
+		}
+		catch (const std::exception& exception) {
+			std::cerr << "[line " << line_number << "] [unexpected error] " << exception.what() << std::endl;
+			return;
+		}
+		catch (...) {
+			std::cerr << "[line " << line_number << "] [unexpected error] unknown exception" << std::endl;
+			return;
+		}
+	}
 }
