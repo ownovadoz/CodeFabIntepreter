@@ -22,13 +22,13 @@ jobs:
 
           echo "현재 Approve 수: $APPROVALS"
 
-          if [ "$APPROVALS" -ge 3 ]; then
-            echo "Approve 3개 달성 — 자동 머지 실행"
+          if [ "$APPROVALS" -ge 2 ]; then
+            echo "Approve 2개 달성 — 자동 머지 실행"
             gh pr merge ${{ github.event.pull_request.number }} \
               --merge \
               --repo ${{ github.repository }}
           else
-            echo "Approve $APPROVALS/3 — 대기 중"
+            echo "Approve $APPROVALS/2 — 대기 중"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
