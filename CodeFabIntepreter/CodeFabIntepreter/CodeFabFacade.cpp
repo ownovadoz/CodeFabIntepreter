@@ -1,6 +1,26 @@
 #include "CodeFabFacade.h"
 #include "AssemblerUnit/Parser/Statement.h"
 
+#include <memory>
+#include <vector>
+
+using std::unique_ptr;
+using std::vector;
+
+namespace {
+    // 조립된 문장 전체를 먼저 검사한 뒤에야 실행에 들어간다. 문장 하나를
+    // 검사/실행할 때마다 번갈아 처리하면, 뒤쪽 문장의 오류를 미처 걸러내지
+    // 못한 채 앞쪽 문장이 이미 실행되어 버리는 상황이 생길 수 있다.
+    template <typename CheckerT, typename ExecutorT>
+    void runPipeline(vector<unique_ptr<Statement>>& statements, CheckerT& checker, ExecutorT& executor) {
+        for (const auto& statement : statements)
+            checker.check(statement.get());
+
+        for (const auto& statement : statements)
+            executor.interpret(statement.get());
+    }
+}
+
 #ifdef _DEBUG
 
 CodeFabFacade::CodeFabFacade()
@@ -17,17 +37,15 @@ CodeFabFacade::CodeFabFacade(IAssemblerUnit& assembler_unit, IChecker& checker, 
 }
 
 void CodeFabFacade::execute(const string& code_line) {
-    unique_ptr<Statement> statement = assembler_unit->assemble(code_line);
-    checker->check(statement.get());
-    executor->interpret(statement.get());
+    vector<unique_ptr<Statement>> statements = assembler_unit->assemble(code_line);
+    runPipeline(statements, *checker, *executor);
 }
 
 #else
 
 void CodeFabFacade::execute(const string& code_line) {
-    unique_ptr<Statement> statement = assembler_unit.assemble(code_line);
-    checker.check(statement.get());
-    executor.interpret(statement.get());
+    vector<unique_ptr<Statement>> statements = assembler_unit.assemble(code_line);
+    runPipeline(statements, checker, executor);
 }
 
 #endif

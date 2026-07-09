@@ -9,13 +9,10 @@
 using std::unique_ptr;
 using std::vector;
 
-unique_ptr<Statement> AssemblerUnit::assemble(const string& code_line) {
+vector<unique_ptr<Statement>> AssemblerUnit::assemble(const string& code_line) {
 	Lexer lexer(code_line);
 	vector<Token> tokens = lexer.scanTokens();
 
 	Parser parser;
-	vector<unique_ptr<Statement>> program = parser.parse(tokens);
-	if (program.empty()) return nullptr;
-
-	return std::move(program[0]);
+	return parser.parse(tokens);
 }
