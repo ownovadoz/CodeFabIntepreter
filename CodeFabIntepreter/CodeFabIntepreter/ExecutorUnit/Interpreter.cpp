@@ -33,6 +33,11 @@ void Interpreter::execute(Statement* stmt)
         executeVarDeclareStmt(var_decl);
         return;
     }
+
+    if (ExpressionStmt* expr_stmt = dynamic_cast<ExpressionStmt*>(stmt)) {
+        executeExpressionStmt(expr_stmt);
+        return;
+    }
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
@@ -54,6 +59,11 @@ void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
     }
 
     environment->define(var_decl->getName().getLexeme(), value);
+}
+
+void Interpreter::executeExpressionStmt(ExpressionStmt* stmt)
+{
+    evaluate(stmt->getExpr());
 }
 
 Value Interpreter::evaluate(const Expression* expr)
