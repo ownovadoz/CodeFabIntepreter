@@ -112,3 +112,40 @@ TEST_F(InterpreterTestFixture, PrintStmtWritesStringifiedValueToStdout)
 
     EXPECT_EQ(captured.str(), "5\n");
 }
+
+TEST_F(InterpreterTestFixture, IfStmtExecutesThenBranchWhenConditionIsTruthy)
+{
+    auto then_branch = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    then_branch->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+    auto else_branch = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    else_branch->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)));
+
+    IfStmt if_stmt(make_unique<LiteralExpr>(Token(TokenType::TRUE, "true", true, 1)), move(then_branch), move(else_branch));
+    interpreter.interpret(&if_stmt);
+
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 1.0);
+}
+
+TEST_F(InterpreterTestFixture, IfStmtExecutesElseBranchWhenConditionIsFalsy)
+{
+    auto then_branch = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    then_branch->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+    auto else_branch = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    else_branch->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)));
+
+    IfStmt if_stmt(make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)), move(then_branch), move(else_branch));
+    interpreter.interpret(&if_stmt);
+
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 2.0);
+}
+
+TEST_F(InterpreterTestFixture, IfStmtDoesNothingWhenConditionIsFalsyAndNoElseBranch)
+{
+    auto then_branch = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    then_branch->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    IfStmt if_stmt(make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)), move(then_branch), nullptr);
+    interpreter.interpret(&if_stmt);
+
+    EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
+}
