@@ -10,9 +10,12 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 using std::string;
 using std::shared_ptr;
+using std::unique_ptr;
+using std::vector;
 
 #ifdef _DEBUG
 class Interpreter : public IExecutor, public ExprVisitor, public StmtVisitor
@@ -24,9 +27,9 @@ public:
     Interpreter();
 
 #ifdef _DEBUG
-    void interpret(Statement* stmt) override;
+    void interpret(const vector<unique_ptr<Statement>>& statements) override;
 #else
-    void interpret(Statement* stmt);
+    void interpret(const vector<unique_ptr<Statement>>& statements);
 #endif
     Value evaluate(const Expression* expr);
     Value getVariableValue(const string& name) const;
