@@ -150,6 +150,50 @@ TEST_F(InterpreterTestFixture, IfStmtDoesNothingWhenConditionIsFalsyAndNoElseBra
     EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
 }
 
+TEST_F(InterpreterTestFixture, EvaluateVariableExprReturnsItsCurrentValue)
+{
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    Token literal_token(TokenType::NUMBER, "3", 3.0, 1);
+
+    VarDeclareStmt var_decl(name_token);
+    var_decl.setExpression(make_unique<LiteralExpr>(literal_token));
+    interpreter.interpret(&var_decl);
+
+    VariableExpr variable(name_token);
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&variable)), 3.0);
+}
+
+TEST_F(InterpreterTestFixture, BlockScopedVariableShadowsOuterVariableAndDoesNotLeakOut)
+{
+    // var x = "global";
+    // { var x = "inner"; print x; }
+    // print x;
+    auto outer_decl = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "x", monostate{}, 1));
+    outer_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::STRING, "global", string("global"), 1)));
+
+    auto inner_decl = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "x", monostate{}, 2));
+    inner_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::STRING, "inner", string("inner"), 2)));
+    auto inner_print = make_unique<PrintStmt>(make_unique<VariableExpr>(Token(TokenType::IDENTIFIER, "x", monostate{}, 2)));
+
+    auto block = make_unique<BlockStmt>();
+    block->addStatement(move(inner_decl));
+    block->addStatement(move(inner_print));
+
+    auto outer_print = make_unique<PrintStmt>(make_unique<VariableExpr>(Token(TokenType::IDENTIFIER, "x", monostate{}, 4)));
+
+    ostringstream captured;
+    std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+
+    interpreter.interpret(outer_decl.get());
+    interpreter.interpret(block.get());
+    interpreter.interpret(outer_print.get());
+
+    std::cout.rdbuf(original_buf);
+
+    EXPECT_EQ(captured.str(), "inner\nglobal\n");
+}
+
 TEST_F(InterpreterTestFixture, ForStmtDoesNotExecuteBodyWhenConditionIsInitiallyFalsy)
 {
     auto init = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "i", monostate{}, 1));
