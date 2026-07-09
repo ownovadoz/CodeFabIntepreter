@@ -1,31 +1,15 @@
+#ifdef _DEBUG
+
 #include "FileModeShell.h"
 #include "../CodeFabException.h"
 
 #include <gmock/gmock.h>
-#include <filesystem>
-#include <fstream>
 #include <string>
+#include <vector>
 
-using std::ofstream;
 using std::string;
+using std::vector;
 using namespace testing;
-
-namespace {
-	class TempScriptFile {
-	public:
-		explicit TempScriptFile(const string& content) : path("file_mode_shell_test_temp.txt") {
-			ofstream file(path);
-			file << content;
-		}
-		~TempScriptFile() {
-			std::filesystem::remove(path);
-		}
-		const string& getPath() const { return path; }
-
-	private:
-		string path;
-	};
-}
 
 TEST(FileModeShellTest, RunWithMissingFileThrowsCodeFabException) {
 	FileModeShell shell([](const string&) { return false; });
@@ -33,18 +17,22 @@ TEST(FileModeShellTest, RunWithMissingFileThrowsCodeFabException) {
 	EXPECT_THROW(shell.run("missing.txt"), CodeFabException);
 }
 
-TEST(FileModeShellTest, RunWithEmptyFileDoesNotThrow) {
-	TempScriptFile temp_file("");
-	FileModeShell shell;
+TEST(FileModeShellTest, RunWithNoLinesDoesNotThrow) {
+	FileModeShell shell(
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{}; });
 
-	EXPECT_NO_THROW(shell.run(temp_file.getPath()));
+	EXPECT_NO_THROW(shell.run("script.txt"));
 }
 
 TEST(FileModeShellTest, RunExecutesEachLineAndTracksTheLastOne) {
-	TempScriptFile temp_file("var a = 1;\nvar b = 2;\n");
-	FileModeShell shell;
+	FileModeShell shell(
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;", "var b = 2;"}; });
 
-	shell.run(temp_file.getPath());
+	shell.run("script.txt");
 
 	EXPECT_EQ(shell.getLastLine(), "var b = 2;");
 }
+
+#endif
