@@ -45,6 +45,11 @@ void Interpreter::execute(Statement* stmt)
         executePrintStmt(print_stmt);
         return;
     }
+
+    if (IfStmt* if_stmt = dynamic_cast<IfStmt*>(stmt)) {
+        executeIfStmt(if_stmt);
+        return;
+    }
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
@@ -77,6 +82,16 @@ void Interpreter::executePrintStmt(PrintStmt* stmt)
 {
     Value value = evaluate(stmt->getExpr());
     cout << stringify(value) << "\n";
+}
+
+void Interpreter::executeIfStmt(IfStmt* if_stmt)
+{
+    if (isTruthy(evaluate(if_stmt->getCondition()))) {
+        execute(const_cast<Statement*>(if_stmt->getThenBranch()));
+    }
+    else {
+        execute(const_cast<Statement*>(if_stmt->getElseBranch()));
+    }
 }
 
 Value Interpreter::evaluate(const Expression* expr)
