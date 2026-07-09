@@ -252,5 +252,9 @@ Value Interpreter::evaluateUnaryExpr(const UnaryExpr& expr)
 
     throw CodeFabException(op, "지원하지 않는 단항 연산자입니다.");
 }
-void Interpreter::visitGroupingExpr(const GroupingExpr&) {}
+void Interpreter::visitGroupingExpr(const GroupingExpr& expr)
+{
+    evaluation_result = evaluate(expr.getExpr());
+    has_evaluation_result = true;
+}
 void Interpreter::visitLogicalExpr(const LogicalExpr&) {}
