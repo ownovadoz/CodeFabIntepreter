@@ -3,6 +3,7 @@
 #include "../CodeFabException.h"
 #include <iostream>
 #include <memory>
+#include <utility>
 #include <variant>
 using std::cout;
 using std::make_shared;
@@ -24,11 +25,43 @@ Value Interpreter::getVariableValue(const string& name) const
     return environment->get(Token(TokenType::IDENTIFIER, name, Value(), 0));
 }
 
+void Interpreter::setBeforeStatementHook(function<void(int line)> hook)
+{
+    before_statement_hook = std::move(hook);
+}
+
 void Interpreter::execute(Statement* stmt)
 {
     if (stmt == nullptr) return;
 
+    if (before_statement_hook) before_statement_hook(resolveStatementLine(stmt));
+
     stmt->accept(*this);
+}
+
+int Interpreter::resolveStatementLine(const Statement* stmt) const
+{
+    if (const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(stmt)) return resolveLine(expr_stmt->getExpr());
+    if (const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(stmt)) return resolveLine(print_stmt->getExpr());
+    if (const VarDeclareStmt* var_decl = dynamic_cast<const VarDeclareStmt*>(stmt)) return var_decl->getName().getLine();
+    if (const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(stmt)) return resolveLine(if_stmt->getCondition());
+
+    if (const BlockStmt* block = dynamic_cast<const BlockStmt*>(stmt)) {
+        for (const auto& inner : block->getStatements()) {
+            int line = resolveStatementLine(inner.get());
+            if (line != 0) return line;
+        }
+        return 0;
+    }
+
+    if (const ForStmt* for_stmt = dynamic_cast<const ForStmt*>(stmt)) {
+        if (for_stmt->getInit() != nullptr) return resolveStatementLine(for_stmt->getInit());
+        if (for_stmt->getCondition() != nullptr) return resolveLine(for_stmt->getCondition());
+        if (for_stmt->getIncrement() != nullptr) return resolveLine(for_stmt->getIncrement());
+        return resolveStatementLine(for_stmt->getBody());
+    }
+
+    return 0;
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)

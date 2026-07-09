@@ -8,10 +8,12 @@
 #include "../InterfaceForCodeFabTest.h"
 #include "../Visitor.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+using std::function;
 using std::string;
 using std::shared_ptr;
 using std::unique_ptr;
@@ -34,8 +36,13 @@ public:
     Value evaluate(const Expression* expr);
     Value getVariableValue(const string& name) const;
 
+    // 문장을 실행하기 직전마다 호출되는 훅을 등록한다. 디버그 모드가 Stmt 단위로
+    // stepping/breakpoint를 지원하는 데 사용하며, 등록하지 않으면 아무 영향이 없다.
+    void setBeforeStatementHook(function<void(int line)> hook);
+
 private:
     void execute(Statement* stmt);
+    int resolveStatementLine(const Statement* stmt) const;
     void executeBlockStmt(BlockStmt* block);
     void executeVarDeclareStmt(VarDeclareStmt* var_decl);
     void executeExpressionStmt(ExpressionStmt* stmt);
@@ -72,4 +79,6 @@ private:
 
     Value evaluation_result;
     bool has_evaluation_result = false;
+
+    function<void(int line)> before_statement_hook;
 };

@@ -432,3 +432,54 @@ TEST_F(InterpreterTestFixture, LogicalOrEvaluatesRightWhenLeftIsFalsy)
 
     EXPECT_EQ(get<double>(interpreter.evaluate(&logical)), 5.0);
 }
+
+TEST_F(InterpreterTestFixture, BeforeStatementHookIsCalledOncePerTopLevelStatementInOrder)
+{
+    vector<int> observed_lines;
+    interpreter.setBeforeStatementHook([&observed_lines](int line) { observed_lines.push_back(line); });
+
+    auto first = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    first->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    auto second = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "b", monostate{}, 2));
+    second->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 2)));
+
+    vector<unique_ptr<Statement>> statements;
+    statements.push_back(move(first));
+    statements.push_back(move(second));
+
+    interpreter.interpret(statements);
+
+    EXPECT_THAT(observed_lines, testing::ElementsAre(1, 2));
+}
+
+TEST_F(InterpreterTestFixture, BeforeStatementHookIsCalledForStatementsNestedInsideABlock)
+{
+    vector<int> observed_lines;
+    interpreter.setBeforeStatementHook([&observed_lines](int line) { observed_lines.push_back(line); });
+
+    auto inner_first = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 5));
+    inner_first->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 5)));
+
+    auto inner_second = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "b", monostate{}, 6));
+    inner_second->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 6)));
+
+    auto block = make_unique<BlockStmt>();
+    block->addStatement(move(inner_first));
+    block->addStatement(move(inner_second));
+
+    interpreter.interpret(single(move(block)));
+
+    // 블록 자신도 하나의 Stmt이므로 첫 내부 문장의 줄 번호로 한 번,
+    // 이어서 내부 문장 각각에 대해 한 번씩 총 3번 호출된다.
+    EXPECT_THAT(observed_lines, testing::ElementsAre(5, 5, 6));
+}
+
+TEST_F(InterpreterTestFixture, InterpretWithoutRegisteringHookStillExecutesNormally)
+{
+    auto var_decl = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    EXPECT_NO_THROW(interpreter.interpret(single(move(var_decl))));
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 3.0);
+}
