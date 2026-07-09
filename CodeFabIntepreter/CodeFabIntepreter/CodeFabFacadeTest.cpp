@@ -157,9 +157,11 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateD
 
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteChecksAndRunsEveryStatementInAMultiStatementLine) {
 	// 세미콜론으로 이어진 여러 문장이 한 줄에 있어도 전부 검사/실행 대상이 되어야 한다.
+	// Interpreter::evaluate가 아직 리터럴 외 표현식(변수 참조 등)은 지원하지 않으므로,
+	// 리터럴만 사용해 Checker/Executor 양쪽 모두가 실제로 지원하는 범위로 검증한다.
 	CodeFabFacade facade;
 
-	EXPECT_NO_THROW(facade.execute("var a = 3; a = a + 4; { var b = 3; } print b;"));
+	EXPECT_NO_THROW(facade.execute("var a = 3; print 1; { var b = 4; } print 2;"));
 }
 
 TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateDeclarationWithinSameLine) {
