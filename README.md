@@ -82,7 +82,7 @@ CodeFab Interpreter Exit
 - `exit`, `EXIT`를 입력하거나 EOF(Ctrl+D / Ctrl+Z)를 보내면 REPL이 종료됩니다.
 - 파싱/검사 과정에서 오류가 발생하면 예외 메시지가 표준 에러로 출력되고, REPL은 계속 다음 줄을 입력받습니다.
 
-> **참고**: 현재 `CodeFabFacade`는 코드를 어셈블(토크나이즈+파싱)하는 단계까지 실제로 동작하며, 검사(Checker)와 실행(Executor) 단계는 아직 실제 로직과 연결되지 않은 상태입니다. `Checker`/`Interpreter`의 실제 구현은 각각의 단위 테스트(`CheckerTest.cpp`, `InterpreterTest.cpp`)를 통해 독립적으로 검증되고 있으며, 전체 파이프라인 연결은 진행 중인 작업입니다.
+> **참고**: `CodeFabFacade`는 어셈블(토크나이즈+파싱) → 검사(Checker) → 실행(Executor) 순으로 실제로 연결되어 동작합니다. `Checker`는 현재 문법이 지원하는 모든 문장/표현식을 순회하며 변수 중복 선언과 초기화식 자기참조를 검사하고, PromptShell처럼 한 줄씩 나뉘어 들어오는 입력에서도 전역 스코프를 유지합니다. `Executor`는 아직 일부 문장/표현식만 실행 가능하며, 실제 구현은 단위 테스트(`InterpreterTest.cpp`)를 통해 독립적으로 검증되고 있습니다.
 
 ## 문법 지원 범위
 
