@@ -22,7 +22,7 @@ public:
 
 class MockExecutor : public IExecutor {
 public:
-	MOCK_METHOD(void, run, (), (override));
+	MOCK_METHOD(void, interpret, (Statement* root), (override));
 };
 
 class CodeFabFacadeTestFixture : public ::testing::Test {
@@ -39,7 +39,7 @@ TEST_F(CodeFabFacadeTestFixture, SequenceTest) {
 	::testing::InSequence seq;
 	EXPECT_CALL(mock_assembler_unit, assemble(string("var x = 10;"))).Times(1);
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(1);
-	EXPECT_CALL(mock_executor, run()).Times(1);
+	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(1);
 
 	facade.execute("var x = 10;");
 }
@@ -47,7 +47,7 @@ TEST_F(CodeFabFacadeTestFixture, SequenceTest) {
 TEST_F(CodeFabFacadeTestFixture, ExecuteCalledMultipleTimesInvokesEachDependencyPerCall) {
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_)).Times(2);
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(2);
-	EXPECT_CALL(mock_executor, run()).Times(2);
+	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(2);
 
 	facade.execute("var x = 10;");
 	facade.execute("var y = 20;");
@@ -57,7 +57,7 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromAssemblerUnit
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
-	EXPECT_CALL(mock_executor, run()).Times(0);
+	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
 	EXPECT_NO_THROW(facade.execute("var x = 10;"));
 }
@@ -66,7 +66,7 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromCheckerAndSki
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_)).Times(1);
 	EXPECT_CALL(mock_checker, check(::testing::_))
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
-	EXPECT_CALL(mock_executor, run()).Times(0);
+	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
 	EXPECT_NO_THROW(facade.execute("var x = 10;"));
 }
@@ -74,7 +74,7 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromCheckerAndSki
 TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromExecutor) {
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_)).Times(1);
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(1);
-	EXPECT_CALL(mock_executor, run())
+	EXPECT_CALL(mock_executor, interpret(::testing::_))
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
 
 	EXPECT_NO_THROW(facade.execute("var x = 10;"));
@@ -104,5 +104,11 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesUnknownExceptionFromAssemblerUnit
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteDoesNotThrowWithRealDependencies) {
 	CodeFabFacade facade;
 	EXPECT_NO_THROW(facade.execute(""));
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCodeFabExceptionFromInvalidSyntax) {
+	// "var a = ;" 는 실제 Parser가 초기화식 누락으로 CodeFabException을 던지는 입력이다.
+	CodeFabFacade facade;
+	EXPECT_NO_THROW(facade.execute("var a = ;"));
 }
 #endif

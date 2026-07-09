@@ -5,16 +5,26 @@
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Parser/Statement.h"
 #include "../AssemblerUnit/Tokenizer/Value.h"
+#include "../InterfaceForCodeFabTest.h"
 
 #include <string>
 
 using std::string;
 
-class Interpreter {
+#ifdef _DEBUG
+class Interpreter : public IExecutor
+#else
+class Interpreter
+#endif
+{
 public:
     Interpreter();
 
+#ifdef _DEBUG
+    void interpret(Statement* stmt) override;
+#else
     void interpret(Statement* stmt);
+#endif
     Value evaluate(const Expression* expr);
     Value getVariableValue(const string& name) const;
 

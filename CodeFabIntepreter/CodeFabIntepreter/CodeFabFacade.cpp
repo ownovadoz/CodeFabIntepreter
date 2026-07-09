@@ -24,7 +24,7 @@ namespace {
 CodeFabFacade::CodeFabFacade()
     : owned_assembler_unit(std::make_unique<AssemblerUnit>()),
     owned_checker(std::make_unique<Checker>()),
-    owned_executor(std::make_unique<Executor>()),
+    owned_executor(std::make_unique<Interpreter>()),
     assembler_unit(owned_assembler_unit.get()),
     checker(owned_checker.get()),
     executor(owned_executor.get()) {
@@ -38,7 +38,7 @@ void CodeFabFacade::execute(const string& code_line) {
     try {
         unique_ptr<Statement> statement = assembler_unit->assemble(code_line);
         checker->check(statement.get());
-        executor->run();
+        executor->interpret(statement.get());
     }
     catch (const CodeFabException& exception) {
         reportException(exception);
@@ -57,7 +57,7 @@ void CodeFabFacade::execute(const string& code_line) {
     try {
         unique_ptr<Statement> statement = assembler_unit.assemble(code_line);
         checker.check(statement.get());
-        executor.run();
+        executor.interpret(statement.get());
     }
     catch (const CodeFabException& exception) {
         reportException(exception);
