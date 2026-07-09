@@ -3,6 +3,8 @@ name: Auto Merge on 3 Approvals
 on:
   pull_request_review:
     types: [submitted]
+  pull_request:
+    types: [synchronize]
 
 jobs:
   auto-merge:
