@@ -83,3 +83,17 @@ TEST_F(InterpreterTestFixture, EvaluatingUnsupportedExpressionThrowsCodeFabExcep
 
     EXPECT_THROW(interpreter.evaluate(&unsupported), CodeFabException);
 }
+
+TEST_F(InterpreterTestFixture, ExpressionStmtEvaluatesInnerExpressionWithoutThrowing)
+{
+    ExpressionStmt stmt(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_NO_THROW(interpreter.interpret(&stmt));
+}
+
+TEST_F(InterpreterTestFixture, ExpressionStmtPropagatesEvaluationErrors)
+{
+    ExpressionStmt stmt(make_unique<UnsupportedExpr>());
+
+    EXPECT_THROW(interpreter.interpret(&stmt), CodeFabException);
+}
