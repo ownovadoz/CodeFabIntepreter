@@ -152,6 +152,72 @@ TEST(CheckerTreeTest, LiteralInitializerWithoutReferenceSucceeds) {
 	EXPECT_NO_THROW(checker.check(stmt.get()));
 }
 
+TEST(CheckerTreeTest, DuplicateDeclarationInIfThenBranchBlockFails) {
+	auto stmt = assemble("if (true) { var a = 1; var a = 2; }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, DeclarationsInMutuallyExclusiveIfBranchesSucceed) {
+	auto stmt = assemble("if (true) var a = 1; else var a = 2;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, SelfReferenceInsideIfBranchFails) {
+	auto stmt = assemble("if (true) { var a = 1; if (true) { var b = b + a; } }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, PrintStmtWithUndeclaredVariableSucceeds) {
+	// Checker는 미선언 변수 참조를 검사하지 않는다 (Executor의 책임).
+	auto stmt = assemble("print a + 1;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, ExpressionStmtIsTraversedWithoutError) {
+	auto stmt = assemble("a = 1;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, ForStmtAllowsShadowingLoopVariableInBody) {
+	auto stmt = assemble("for (var i = 0; i < 3; i = i + 1) { var i = 1; }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, ForStmtOwnScopeAllowsSeparateLoopsToReuseSameVariableName) {
+	auto stmt = assemble(
+		"{ for (var i = 0; i < 3; i = i + 1) { print i; } for (var i = 0; i < 3; i = i + 1) { print i; } }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, ForStmtSelfReferenceInInitializerFails) {
+	auto stmt = assemble("for (var i = i; i < 3; i = i + 1) { print i; }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
 	auto inner_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
 	inner_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
