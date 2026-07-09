@@ -34,15 +34,15 @@ CodeFabFacade::CodeFabFacade(IAssemblerUnit& assembler_unit, IChecker& checker, 
 }
 
 void CodeFabFacade::execute(const string& code_line) {
-    vector<unique_ptr<Statement>> statements = assembler_unit->assemble(code_line);
-    runPipeline(statements, *checker, *executor);
+    retained_statements.push_back(assembler_unit->assemble(code_line));
+    runPipeline(retained_statements.back(), *checker, *executor);
 }
 
 #else
 
 void CodeFabFacade::execute(const string& code_line) {
-    vector<unique_ptr<Statement>> statements = assembler_unit.assemble(code_line);
-    runPipeline(statements, checker, executor);
+    retained_statements.push_back(assembler_unit.assemble(code_line));
+    runPipeline(retained_statements.back(), checker, executor);
 }
 
 #endif

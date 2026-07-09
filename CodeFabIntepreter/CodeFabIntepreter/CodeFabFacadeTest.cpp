@@ -248,4 +248,21 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArgumentCountMism
 		EXPECT_THAT(exception.what(), ::testing::HasSubstr("인자 개수가 일치하지 않습니다"));
 	}
 }
+
+TEST(CodeFabFacadeDefaultConstructorTest, FunctionDeclaredOnOnePreviousLineCanBeCalledOnALaterLine) {
+	// PromptShell의 REPL처럼 Func 선언과 호출이 서로 다른 execute() 호출(=다른 줄)에
+	// 걸쳐 있어도 동작해야 한다. CodeFabFunction은 선언 시점의 FunctionStmt를 raw
+	// pointer로 참조하므로, 그 문장을 조립했던 줄의 AST가 이후 줄에서도 계속
+	// 살아있어야 한다(그렇지 않으면 dangling pointer로 인자 개수가 0으로 읽히는
+	// 등 정의되지 않은 동작이 발생한다).
+	CodeFabFacade facade;
+	facade.execute("Func add(a, b) { return a + b; }");
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("var ret = add(3, 7); print ret;");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "10\n");
+}
 #endif
