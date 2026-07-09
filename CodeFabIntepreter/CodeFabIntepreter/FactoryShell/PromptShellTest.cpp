@@ -62,6 +62,10 @@ TEST_F(PromptShellTestFixture, ExitTest) {
 	string input = "exit";
 	string expectedOutput = "";
 	EXPECT_EQ(expectedOutput, runPromptTest(input));
-	input = "EXIT";
+}
+
+TEST_F(PromptShellTestFixture, QuitTest) {
+	string input = "quit";
+	string expectedOutput = "";
 	EXPECT_EQ(expectedOutput, runPromptTest(input));
 }
