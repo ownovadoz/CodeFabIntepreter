@@ -27,6 +27,12 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ArgumentParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArgumentParserTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -91,6 +97,12 @@
   <ItemGroup>
     <ClInclude Include="PromptShell.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArgumentParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShellMode.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CheckerUnit\Checker.h">
       <Filter>Header Files</Filter>
