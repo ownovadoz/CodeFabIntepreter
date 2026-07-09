@@ -250,6 +250,25 @@ TEST(CheckerTreeTest, DuplicateDeclarationWithinSameMultiStatementLineFails) {
 	EXPECT_THROW(checker.check(statements[1].get()), CodeFabException);
 }
 
+TEST(CheckerTreeTest, VarDeclareStmtWithoutInitializerSucceeds) {
+	// Parser 문법상 var 선언은 항상 '='을 요구해 초기화식이 없는 VarDeclareStmt는
+	// 실제 파이프라인으로 만들어지지 않지만, Checker 자체는 initializer가
+	// nullptr인 경우(resolveExpr의 null 가드)도 안전하게 처리해야 한다.
+	auto stmt = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, EmptyBlockSucceeds) {
+	auto block = make_unique<BlockStmt>();
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(block.get()));
+}
+
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
 	auto inner_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
 	inner_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
