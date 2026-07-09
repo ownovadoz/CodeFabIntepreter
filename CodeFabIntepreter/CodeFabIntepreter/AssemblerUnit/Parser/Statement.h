@@ -15,13 +15,36 @@ class Statement : public StatementOrExpression {
 };
 
 class ExpressionStmt : public Statement {
+public:
+	explicit ExpressionStmt(unique_ptr<Expression> expr) : expr{ move(expr) } {}
+
+	const Expression* getExpr() const {
+		return expr.get();
+	}
+
 private:
 	unique_ptr<Expression> expr;
 };
 
 class IfStmt : public Statement {
+public:
+	IfStmt(unique_ptr<Expression> condition, unique_ptr<Statement> then_branch, unique_ptr<Statement> else_branch)
+		: condition{ move(condition) }, then_branch{ move(then_branch) }, else_branch{ move(else_branch) } {}
+
+	const Expression* getCondition() const {
+		return condition.get();
+	}
+
+	const Statement* getThenBranch() const {
+		return then_branch.get();
+	}
+
+	const Statement* getElseBranch() const {
+		return else_branch.get();
+	}
+
 private:
-	unique_ptr<BinaryExpr> condition;	// Enforce binary expressions only.
+	unique_ptr<Expression> condition;
 	unique_ptr<Statement> then_branch;
 	unique_ptr<Statement> else_branch;
 };
@@ -62,14 +85,41 @@ private:
 };
 
 class PrintStmt : public Statement {
+public:
+	explicit PrintStmt(unique_ptr<Expression> expr) : expr{ move(expr) } {}
+
+	const Expression* getExpr() const {
+		return expr.get();
+	}
+
 private:
 	unique_ptr<Expression> expr;
 };
 
 class ForStmt : public Statement {
+public:
+	ForStmt(unique_ptr<VarDeclareStmt> init, unique_ptr<Expression> condition, unique_ptr<Expression> increment, unique_ptr<Statement> body)
+		: init{ move(init) }, condition{ move(condition) }, increment{ move(increment) }, body{ move(body) } {}
+
+	const VarDeclareStmt* getInit() const {
+		return init.get();
+	}
+
+	const Expression* getCondition() const {
+		return condition.get();
+	}
+
+	const Expression* getIncrement() const {
+		return increment.get();
+	}
+
+	const Statement* getBody() const {
+		return body.get();
+	}
+
 private:
 	unique_ptr<VarDeclareStmt> init;
-	unique_ptr<BinaryExpr> condition;
+	unique_ptr<Expression> condition;
 	unique_ptr<Expression> increment;
 	unique_ptr<Statement> body;
 };
