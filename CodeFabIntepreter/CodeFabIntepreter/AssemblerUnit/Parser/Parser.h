@@ -25,6 +25,7 @@ private:
 	unique_ptr<Statement> parseExpressionStmt();
 
 	unique_ptr<Expression> parseExpression();
+	unique_ptr<Expression> parseAssignExpr();
 	unique_ptr<Expression> parseUnaryExpr();
 	unique_ptr<Expression> parsePrimaryExpr();
 

@@ -32,10 +32,20 @@ private:
 };
 
 class AssignExpr : public Expression {
+public:
+	AssignExpr(const Token& identifier, unique_ptr<Expression> value) : identifier{ identifier }, value{ move(value) } {}
+
+	const Token& getIdentifier() const {
+		return identifier;
+	}
+
+	const Expression* getValue() const {
+		return value.get();
+	}
+
 private:
 	Token identifier;
-	unique_ptr<Expression> assign_expr;
-	unique_ptr<Expression> expr;
+	unique_ptr<Expression> value;
 };
 
 class BinaryExpr : public Expression {

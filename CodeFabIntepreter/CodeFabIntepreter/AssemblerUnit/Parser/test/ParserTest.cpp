@@ -85,6 +85,18 @@ protected:
 		EXPECT_EQ(token.getLexeme(), lexeme);
 	}
 
+	const Expression* expectAssignAndGetValue(const Expression* expr, const string& identifier_lexeme) {
+		const AssignExpr* assign = dynamic_cast<const AssignExpr*>(expr);
+
+		EXPECT_NE(assign, nullptr);
+		if (assign == nullptr) return nullptr;
+
+		EXPECT_EQ(assign->getIdentifier().getType(), TokenType::IDENTIFIER);
+		EXPECT_EQ(assign->getIdentifier().getLexeme(), identifier_lexeme);
+
+		return assign->getValue();
+	}
+
 	Parser parser;
 	unique_ptr<Statement> parsed;
 };
@@ -254,6 +266,75 @@ TEST_F(ParserTestFixture, VarDeclareStmtGroupedVariablePassed) {
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectGrouping(stmt->getInitializer()));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtAssignToLiteralPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+
+	const Expression* value = expectAssignAndGetValue(stmt->getInitializer(), "b");
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(value, TokenType::NUMBER, "10"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtAssignToVariablePassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "c", "c", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+
+	const Expression* value = expectAssignAndGetValue(stmt->getInitializer(), "b");
+	ASSERT_NO_FATAL_FAILURE(expectVariable(value, "c"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtChainedAssignPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "c", "c", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+
+	const Expression* outer_value = expectAssignAndGetValue(stmt->getInitializer(), "b");
+	const Expression* inner_value = expectAssignAndGetValue(outer_value, "c");
+	ASSERT_NO_FATAL_FAILURE(expectLiteral(inner_value, TokenType::NUMBER, "10"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtInvalidAssignmentTargetFailed) {
+	// var a = 10 = 20;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "20", 20.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtAssignMissingValueFailed) {
+	// var a = b = ;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::IDENTIFIER, "b", "b", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtMissingIdentifierFailed) {
