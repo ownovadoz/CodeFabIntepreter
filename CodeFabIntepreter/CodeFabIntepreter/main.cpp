@@ -1,6 +1,8 @@
 #include <gmock/gmock.h>
 #include "FactoryShell/ArgumentParser.h"
+#include "FactoryShell/FileModeShell.h"
 #include "FactoryShell/PromptShell.h"
+#include "CodeFabException.h"
 
 #include <iostream>
 #include <string>
@@ -24,9 +26,16 @@ int main(int argc, char* argv[]) {
 		shell.runPrompt();
 		break;
 	}
-	case ShellMode::File:
-		cerr << "[파일 모드] 실행 로직은 아직 구현되지 않았습니다: " << parsed.file_path << "\n";
+	case ShellMode::File: {
+		try {
+			FileModeShell file_mode_shell;
+			file_mode_shell.run(parsed.file_path);
+		}
+		catch (const CodeFabException& exception) {
+			cerr << exception.what() << "\n";
+		}
 		break;
+	}
 	case ShellMode::Invalid:
 	default:
 		cerr << "사용법: CodeFabIntepreter [run <파일경로>]\n";

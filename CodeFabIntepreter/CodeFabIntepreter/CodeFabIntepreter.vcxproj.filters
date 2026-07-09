@@ -36,6 +36,12 @@
     <ClCompile Include="FactoryShell\ArgumentParserTest.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
+    <ClCompile Include="FactoryShell\FileModeShell.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
+    <ClCompile Include="FactoryShell\FileModeShellTest.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -102,6 +108,9 @@
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="FactoryShell\ArgumentParser.h">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClInclude>
+    <ClInclude Include="FactoryShell\FileModeShell.h">
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="FactoryShell\ShellMode.h">

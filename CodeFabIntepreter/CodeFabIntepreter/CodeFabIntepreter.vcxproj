@@ -145,6 +145,8 @@
   <ItemGroup>
     <ClCompile Include="FactoryShell\ArgumentParser.cpp" />
     <ClCompile Include="FactoryShell\ArgumentParserTest.cpp" />
+    <ClCompile Include="FactoryShell\FileModeShell.cpp" />
+    <ClCompile Include="FactoryShell\FileModeShellTest.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp" />
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
@@ -169,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FactoryShell\ArgumentParser.h" />
+    <ClInclude Include="FactoryShell\FileModeShell.h" />
     <ClInclude Include="FactoryShell\ShellMode.h" />
     <ClInclude Include="AssemblerUnit\AssemblerUnit.h" />
     <ClInclude Include="AssemblerUnit\Tokenizer\Lexer.h" />
