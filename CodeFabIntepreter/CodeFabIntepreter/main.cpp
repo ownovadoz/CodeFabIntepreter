@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include "FactoryShell/ArgumentParser.h"
+#include "FactoryShell/DebugModeShell.h"
 #include "FactoryShell/FileModeShell.h"
 #include "FactoryShell/IShellMode.h"
 #include "FactoryShell/PromptShell.h"
@@ -39,9 +40,12 @@ int main(int argc, char* argv[]) {
 	case ShellMode::File:
 		shell = make_unique<FileModeShell>(parsed.file_path);
 		break;
+	case ShellMode::Debug:
+		shell = make_unique<DebugModeShell>(parsed.file_path);
+		break;
 	case ShellMode::Invalid:
 	default:
-		cerr << "사용법: CodeFabIntepreter [run <파일경로>]\n";
+		cerr << "사용법: CodeFabIntepreter [run <파일경로>] [debug <파일경로>]\n";
 		return 0;
 	}
 
