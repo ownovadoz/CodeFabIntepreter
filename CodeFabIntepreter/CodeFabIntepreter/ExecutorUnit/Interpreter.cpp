@@ -153,7 +153,18 @@ void Interpreter::visitVariableExpr(const VariableExpr& expr)
     has_evaluation_result = true;
 }
 
-void Interpreter::visitAssignExpr(const AssignExpr&) {}
+void Interpreter::visitAssignExpr(const AssignExpr& expr)
+{
+    evaluation_result = evaluateAssignExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateAssignExpr(const AssignExpr& expr)
+{
+    Value value = evaluate(expr.getValue());
+    environment->assign(expr.getIdentifier().getLexeme(), value);
+    return value;
+}
 void Interpreter::visitBinaryExpr(const BinaryExpr&) {}
 void Interpreter::visitUnaryExpr(const UnaryExpr&) {}
 void Interpreter::visitGroupingExpr(const GroupingExpr&) {}

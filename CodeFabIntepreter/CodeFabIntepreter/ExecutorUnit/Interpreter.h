@@ -41,6 +41,7 @@ private:
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
     Value evaluateVariableExpr(const VariableExpr* variable);
+    Value evaluateAssignExpr(const AssignExpr& expr);
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;
