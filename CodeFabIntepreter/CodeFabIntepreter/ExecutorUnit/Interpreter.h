@@ -6,6 +6,7 @@
 #include "../AssemblerUnit/Parser/Statement.h"
 #include "../AssemblerUnit/Tokenizer/Value.h"
 #include "../InterfaceForCodeFabTest.h"
+#include "../Visitor.h"
 
 #include <memory>
 #include <string>
