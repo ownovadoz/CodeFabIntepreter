@@ -1,0 +1,32 @@
+name: Auto Merge on 3 Approvals
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Approve 수 확인 후 머지
+        run: |
+          APPROVALS=$(gh api \
+            repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+            --jq '[.[] | select(.state == "APPROVED")] | length')
+
+          echo "현재 Approve 수: $APPROVALS"
+
+          if [ "$APPROVALS" -ge 3 ]; then
+            echo "Approve 3개 달성 — 자동 머지 실행"
+            gh pr merge ${{ github.event.pull_request.number }} \
+              --merge \
+              --repo ${{ github.repository }}
+          else
+            echo "Approve $APPROVALS/3 — 대기 중"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
