@@ -1,5 +1,6 @@
 #include "Checker.h"
 
+#include "../AssemblerUnit/AssemblerUnit.h"
 #include "../AssemblerUnit/Parser/Parser.h"
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Tokenizer/Token.h"
@@ -96,6 +97,66 @@ TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
 	Checker checker;
 
 	EXPECT_THROW(checker.check(block.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughBinaryExprInInitializerFails) {
+	// var a = a + 1;
+	AssemblerUnit assembler;
+	auto stmt = assembler.assemble("var a = a + 1;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughUnaryExprInInitializerFails) {
+	// var a = -a;
+	AssemblerUnit assembler;
+	auto stmt = assembler.assemble("var a = -a;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughGroupingExprInInitializerFails) {
+	// var a = (a);
+	AssemblerUnit assembler;
+	auto stmt = assembler.assemble("var a = (a);");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SelfReferenceThroughLogicalExprInInitializerFails) {
+	// var a = a and true;
+	AssemblerUnit assembler;
+	auto stmt = assembler.assemble("var a = a and true;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
+	// var a = b + 1;
+	AssemblerUnit assembler;
+	auto stmt = assembler.assemble("var a = b + 1;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, LiteralInitializerWithoutReferenceSucceeds) {
+	// var a = 1 + 2;
+	AssemblerUnit assembler;
+	auto stmt = assembler.assemble("var a = 1 + 2;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
 }
 
 TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
