@@ -2,6 +2,7 @@
 #include "AssemblerUnit/Parser/Statement.h"
 #include "CodeFabException.h"
 
+#include <exception>
 #include <iostream>
 
 #ifdef _DEBUG
@@ -28,6 +29,12 @@ void CodeFabFacade::execute(const string& code_line) {
     catch (const CodeFabException& exception) {
         std::cerr << exception.what() << std::endl;
     }
+    catch (const std::exception& exception) {
+        std::cerr << "[unexpected error] " << exception.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "[unexpected error] unknown exception" << std::endl;
+    }
 }
 
 #else
@@ -40,6 +47,12 @@ void CodeFabFacade::execute(const string& code_line) {
     }
     catch (const CodeFabException& exception) {
         std::cerr << exception.what() << std::endl;
+    }
+    catch (const std::exception& exception) {
+        std::cerr << "[unexpected error] " << exception.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "[unexpected error] unknown exception" << std::endl;
     }
 }
 
