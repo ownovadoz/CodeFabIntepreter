@@ -19,7 +19,7 @@ void Interpreter::interpret(Statement* stmt)
 
 Value Interpreter::getVariableValue(const string& name) const
 {
-    return environment->get(name);
+    return environment->get(Token(TokenType::IDENTIFIER, name, Value(), 0));
 }
 
 void Interpreter::execute(Statement* stmt)
@@ -129,7 +129,7 @@ Value Interpreter::evaluate(const Expression* expr)
         return evaluateVariableExpr(variable);
     }
 
-    throw CodeFabException(0, "지원하지 않는 표현식입니다.");
+    throw CodeFabException(resolveLine(expr), "지원하지 않는 표현식입니다.");
 }
 
 Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)
@@ -139,5 +139,18 @@ Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)
 
 Value Interpreter::evaluateVariableExpr(const VariableExpr* variable)
 {
-    return environment->get(variable->getToken().getLexeme());
+    return environment->get(variable->getToken());
+}
+
+int Interpreter::resolveLine(const Expression* expr) const
+{
+    if (const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(expr)) return literal->getToken().getLine();
+    if (const VariableExpr* variable = dynamic_cast<const VariableExpr*>(expr)) return variable->getToken().getLine();
+    if (const AssignExpr* assign = dynamic_cast<const AssignExpr*>(expr)) return assign->getIdentifier().getLine();
+    if (const BinaryExpr* binary = dynamic_cast<const BinaryExpr*>(expr)) return binary->getOperator().getLine();
+    if (const UnaryExpr* unary = dynamic_cast<const UnaryExpr*>(expr)) return unary->getOperator().getLine();
+    if (const LogicalExpr* logical = dynamic_cast<const LogicalExpr*>(expr)) return logical->getOperator().getLine();
+    if (const GroupingExpr* grouping = dynamic_cast<const GroupingExpr*>(expr)) return resolveLine(grouping->getExpr());
+
+    return 0;
 }

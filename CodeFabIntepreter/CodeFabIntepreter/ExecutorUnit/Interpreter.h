@@ -41,6 +41,7 @@ private:
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
     Value evaluateVariableExpr(const VariableExpr* variable);
+    int resolveLine(const Expression* expr) const;
 
     shared_ptr<Environment> globals;
     shared_ptr<Environment> environment;

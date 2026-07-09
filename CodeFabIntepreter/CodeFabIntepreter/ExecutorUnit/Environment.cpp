@@ -15,19 +15,19 @@ void Environment::define(const string& name, const Value& value)
     values[name] = value;
 }
 
-Value Environment::get(const string& name) const
+Value Environment::get(const Token& name) const
 {
-    auto found = values.find(name);
+    auto found = values.find(name.getLexeme());
     if (found != values.end()) return found->second;
 
     if (enclosing) return enclosing->get(name);
 
-    throw CodeFabException(0, "Undefined variable '" + name + "'.");
+    throw CodeFabException(name, "Undefined variable '" + name.getLexeme() + "'.");
 }
 
-void Environment::assign(const string& name, const Value& value)
+void Environment::assign(const Token& name, const Value& value)
 {
-    auto found = values.find(name);
+    auto found = values.find(name.getLexeme());
     if (found != values.end()) {
         found->second = value;
         return;
@@ -38,5 +38,5 @@ void Environment::assign(const string& name, const Value& value)
         return;
     }
 
-    throw CodeFabException(0, "Undefined variable '" + name + "'.");
+    throw CodeFabException(name, "Undefined variable '" + name.getLexeme() + "'.");
 }
