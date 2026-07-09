@@ -4,12 +4,12 @@
 #include "../InterfaceForCodeFabTest.h"
 #include "../Visitor.h"
 
-#include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-using std::set;
 using std::string;
+using std::unordered_map;
 using std::vector;
 
 #ifdef _DEBUG
@@ -24,8 +24,8 @@ public:
     class ScopeGuard
     {
     public:
-        explicit ScopeGuard(Checker& checker) : checker(checker) { checker.enterScope(); }
-        ~ScopeGuard() { checker.exitScope(); }
+        explicit ScopeGuard(Checker& checker) : checker(checker) { checker.beginScope(); }
+        ~ScopeGuard() { checker.endScope(); }
 
         ScopeGuard(const ScopeGuard&) = delete;
         ScopeGuard& operator=(const ScopeGuard&) = delete;
@@ -33,8 +33,6 @@ public:
     private:
         Checker& checker;
     };
-
-    void declareVariable(const Token& name, const vector<string>& initializer_references);
 
 #ifdef _DEBUG
     void check(Statement* root) override;
@@ -58,16 +56,19 @@ public:
     void visitForStmt(const ForStmt& stmt) override;
 
 private:
-    void enterScope();
-    void exitScope();
+    void beginScope();
+    void endScope();
 
-    void checkStatement(const Statement* stmt);
-    void checkStatementInNewScope(const Statement* stmt);
-    void checkExpression(const Expression* expr);
-    vector<string> collectIdentifierReferences(const Expression* expr);
+    void declare(const Token& name);
+    void define(const Token& name);
 
-    bool isDeclaredInCurrentScope(const string& name) const;
+    void resolveStmt(const Statement* stmt);
+    void resolveStmtInNewScope(const Statement* stmt);
+    void resolveExpr(const Expression* expr);
 
-    vector<set<string>> scope_stack;
-    vector<string>* collecting_references = nullptr;
+    // 스코프 내 각 변수 이름은 declare 시 false(선언됨, 아직 정의되지 않음)로,
+    // define 시 true(정의 완료)로 표시된다. 초기화식을 검사하는 시점에는
+    // 아직 정의되지 않은 상태이므로, 이 시점에 같은 스코프에서 자신의 이름이
+    // false로 발견되면 자기참조로 판단한다.
+    vector<unordered_map<string, bool>> scope_stack;
 };

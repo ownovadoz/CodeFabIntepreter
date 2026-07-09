@@ -17,7 +17,7 @@ protected:
 	}
 	string runPromptTest(const std::string& input) {
 		feedInput(input);
-		shell.runPrompt();
+		shell.enter();
 		return shell.getLine();
 	}
 	void feedInput(const std::string& input) {
@@ -50,6 +50,12 @@ TEST_F(PromptShellTestFixture, DISABLED_WithLineFeedTest) {
 	string input = "var x = 10;\\n var y = 20;\\n var z = 30;";
 	string expectedOutput = "var x = 10;";
 	EXPECT_EQ(expectedOutput, runPromptTest(input));
+}
+
+TEST_F(PromptShellTestFixture, ContinuesAfterRuntimeErrorTest) {
+	// 첫 줄이 런타임 오류를 던져도 REPL은 종료되지 않고 다음 줄을 계속 처리해야 한다.
+	string input = "var a = ;\nvar b = 2;";
+	EXPECT_EQ("var b = 2;", runPromptTest(input));
 }
 
 TEST_F(PromptShellTestFixture, ExitTest) {

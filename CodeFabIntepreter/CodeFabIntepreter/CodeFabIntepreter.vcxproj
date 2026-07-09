@@ -173,6 +173,7 @@
   <ItemGroup>
     <ClInclude Include="FactoryShell\ArgumentParser.h" />
     <ClInclude Include="FactoryShell\FileModeShell.h" />
+    <ClInclude Include="FactoryShell\IShellMode.h" />
     <ClInclude Include="FactoryShell\ShellMode.h" />
     <ClInclude Include="AssemblerUnit\AssemblerUnit.h" />
     <ClInclude Include="AssemblerUnit\Tokenizer\Lexer.h" />

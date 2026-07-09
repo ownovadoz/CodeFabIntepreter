@@ -1,10 +1,12 @@
 #include <gmock/gmock.h>
 #include "FactoryShell/ArgumentParser.h"
 #include "FactoryShell/FileModeShell.h"
+#include "FactoryShell/IShellMode.h"
 #include "FactoryShell/PromptShell.h"
 #include "CodeFabException.h"
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,7 +15,9 @@
 #endif
 
 using std::cerr;
+using std::make_unique;
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 int main(int argc, char* argv[]) {
@@ -27,26 +31,25 @@ int main(int argc, char* argv[]) {
 	vector<string> args(argv + 1, argv + argc);
 	ParsedArguments parsed = ArgumentParser::parse(args);
 
+	unique_ptr<IShellMode> shell;
 	switch (parsed.mode) {
-	case ShellMode::Prompt: {
-		PromptShell shell;
-		shell.runPrompt();
+	case ShellMode::Prompt:
+		shell = make_unique<PromptShell>();
 		break;
-	}
-	case ShellMode::File: {
-		try {
-			FileModeShell file_mode_shell;
-			file_mode_shell.run(parsed.file_path);
-		}
-		catch (const CodeFabException& exception) {
-			cerr << exception.what() << "\n";
-		}
+	case ShellMode::File:
+		shell = make_unique<FileModeShell>(parsed.file_path);
 		break;
-	}
 	case ShellMode::Invalid:
 	default:
 		cerr << "사용법: CodeFabIntepreter [run <파일경로>]\n";
-		break;
+		return 0;
+	}
+
+	try {
+		shell->enter();
+	}
+	catch (const CodeFabException& exception) {
+		cerr << exception.what() << "\n";
 	}
 #endif
 }

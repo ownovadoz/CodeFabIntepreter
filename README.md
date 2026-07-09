@@ -105,6 +105,9 @@ CodeFab이라는 간단한 스크립트 언어를 파싱하고 실행하는 C++ 
   - `Parser/Parser` — 토큰을 `Statement`/`Expression` AST로 구성합니다.
 - **CheckerUnit** (`CheckerUnit/Checker`)
   - AST를 순회하며 변수 선언 중복, 스코프 규칙 등 정적 검사를 수행합니다.
+  - 각 스코프는 변수 이름을 `declare`(선언됨) → `define`(정의 완료) 2단계 상태로 추적하는
+    Resolver 패턴을 사용합니다. 초기화식을 검사하는 동안 자신의 이름이 아직 `define`되지
+    않은 상태로 스코프에 남아있으면 자기참조로 판단해 오류를 발생시킵니다.
 - **ExecutorUnit** (`ExecutorUnit/`)
   - `Interpreter` — AST를 실행하며 `Environment`(변수 스코프 체인)를 통해 값을 읽고 씁니다.
 - **CodeFabFacade**
