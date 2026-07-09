@@ -53,52 +53,52 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCalledMultipleTimesInvokesEachDependency
 	facade.execute("var y = 20;");
 }
 
-TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromAssemblerUnitAndSkipsRemainingSteps) {
+TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesCodeFabExceptionFromAssemblerUnitAndSkipsRemainingSteps) {
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
 	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
-	EXPECT_NO_THROW(facade.execute("var x = 10;"));
+	EXPECT_THROW(facade.execute("var x = 10;"), CodeFabException);
 }
 
-TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromCheckerAndSkipsRemainingSteps) {
+TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesCodeFabExceptionFromCheckerAndSkipsRemainingSteps) {
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_)).Times(1);
 	EXPECT_CALL(mock_checker, check(::testing::_))
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
 	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
-	EXPECT_NO_THROW(facade.execute("var x = 10;"));
+	EXPECT_THROW(facade.execute("var x = 10;"), CodeFabException);
 }
 
-TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromExecutor) {
+TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesCodeFabExceptionFromExecutor) {
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_)).Times(1);
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(1);
 	EXPECT_CALL(mock_executor, interpret(::testing::_))
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
 
-	EXPECT_NO_THROW(facade.execute("var x = 10;"));
+	EXPECT_THROW(facade.execute("var x = 10;"), CodeFabException);
 }
 
-TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesStdExceptionFromAssemblerUnitAndSkipsRemainingSteps) {
-	// CodeFabException 이외의 표준 라이브러리 예외(예: std::stod의 out_of_range)가
-	// 새어나와도 REPL 프로세스가 죽지 않아야 한다.
+TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesStdExceptionFromAssemblerUnit) {
+	// CodeFabException 이외의 표준 라이브러리 예외(예: std::stod의 out_of_range)도
+	// 그대로 전파되어야 한다. 삼키고 계속할지/멈출지는 호출한 셸이 결정한다.
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
 		.WillOnce(::testing::Throw(std::out_of_range("boom")));
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
 	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
-	EXPECT_NO_THROW(facade.execute("var x = 10;"));
+	EXPECT_THROW(facade.execute("var x = 10;"), std::out_of_range);
 }
 
-TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesUnknownExceptionFromAssemblerUnitAndSkipsRemainingSteps) {
-	// std::exception 계층에 속하지 않는 임의의 값이 던져져도 방어되어야 한다.
+TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesUnknownExceptionFromAssemblerUnit) {
+	// std::exception 계층에 속하지 않는 임의의 값도 그대로 전파되어야 한다.
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
 		.WillOnce(::testing::Throw(42));
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
 	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
-	EXPECT_NO_THROW(facade.execute("var x = 10;"));
+	EXPECT_ANY_THROW(facade.execute("var x = 10;"));
 }
 
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteDoesNotThrowWithRealDependencies) {
@@ -106,9 +106,9 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteDoesNotThrowWithRealDependencie
 	EXPECT_NO_THROW(facade.execute(""));
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCodeFabExceptionFromInvalidSyntax) {
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCodeFabExceptionFromInvalidSyntax) {
 	// "var a = ;" 는 실제 Parser가 초기화식 누락으로 CodeFabException을 던지는 입력이다.
 	CodeFabFacade facade;
-	EXPECT_NO_THROW(facade.execute("var a = ;"));
+	EXPECT_THROW(facade.execute("var a = ;"), CodeFabException);
 }
 #endif

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <utility>
 
 using std::ifstream;
@@ -15,9 +16,25 @@ FileModeShell::FileModeShell(string file_path, function<bool(const string&)> fil
 void FileModeShell::enter() {
 	if (!file_exists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
+	int line_number = 0;
 	for (const string& input_line : read_lines(file_path)) {
+		line_number++;
 		code_line = input_line;
-		code_fab_facade.execute(code_line);
+		try {
+			code_fab_facade.execute(code_line);
+		}
+		catch (const CodeFabException& exception) {
+			std::cerr << "[line " << line_number << "] Error: " << exception.getMessage() << std::endl;
+			return;
+		}
+		catch (const std::exception& exception) {
+			std::cerr << "[line " << line_number << "] [unexpected error] " << exception.what() << std::endl;
+			return;
+		}
+		catch (...) {
+			std::cerr << "[line " << line_number << "] [unexpected error] unknown exception" << std::endl;
+			return;
+		}
 	}
 }
 
@@ -28,9 +45,25 @@ FileModeShell::FileModeShell(string file_path) : file_path(move(file_path)) {}
 void FileModeShell::enter() {
 	if (!defaultFileExists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
+	int line_number = 0;
 	for (const string& input_line : defaultReadLines(file_path)) {
+		line_number++;
 		code_line = input_line;
-		code_fab_facade.execute(code_line);
+		try {
+			code_fab_facade.execute(code_line);
+		}
+		catch (const CodeFabException& exception) {
+			std::cerr << "[line " << line_number << "] Error: " << exception.getMessage() << std::endl;
+			return;
+		}
+		catch (const std::exception& exception) {
+			std::cerr << "[line " << line_number << "] [unexpected error] " << exception.what() << std::endl;
+			return;
+		}
+		catch (...) {
+			std::cerr << "[line " << line_number << "] [unexpected error] unknown exception" << std::endl;
+			return;
+		}
 	}
 }
 
