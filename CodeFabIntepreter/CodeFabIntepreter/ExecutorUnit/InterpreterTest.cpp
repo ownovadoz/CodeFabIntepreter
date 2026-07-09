@@ -377,3 +377,47 @@ TEST_F(InterpreterTestFixture, EvaluatingGroupingExprPropagatesInnerErrors)
 
     EXPECT_THROW(interpreter.evaluate(&grouping), CodeFabException);
 }
+
+TEST_F(InterpreterTestFixture, LogicalAndShortCircuitsOnFalsyLeftWithoutEvaluatingRight)
+{
+    Token and_token(TokenType::AND, "and", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)),
+        and_token,
+        make_unique<VariableExpr>(Token(TokenType::IDENTIFIER, "undefined", monostate{}, 1)));
+
+    EXPECT_FALSE(get<bool>(interpreter.evaluate(&logical)));
+}
+
+TEST_F(InterpreterTestFixture, LogicalOrShortCircuitsOnTruthyLeftWithoutEvaluatingRight)
+{
+    Token or_token(TokenType::OR, "or", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::TRUE, "true", true, 1)),
+        or_token,
+        make_unique<VariableExpr>(Token(TokenType::IDENTIFIER, "undefined", monostate{}, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&logical)));
+}
+
+TEST_F(InterpreterTestFixture, LogicalAndEvaluatesRightWhenLeftIsTruthy)
+{
+    Token and_token(TokenType::AND, "and", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::TRUE, "true", true, 1)),
+        and_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&logical)), 5.0);
+}
+
+TEST_F(InterpreterTestFixture, LogicalOrEvaluatesRightWhenLeftIsFalsy)
+{
+    Token or_token(TokenType::OR, "or", monostate{}, 1);
+    LogicalExpr logical(
+        make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1)),
+        or_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&logical)), 5.0);
+}
