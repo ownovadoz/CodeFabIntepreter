@@ -14,9 +14,7 @@ namespace {
     template <typename CheckerT, typename ExecutorT>
     void runPipeline(vector<unique_ptr<Statement>>& statements, CheckerT& checker, ExecutorT& executor) {
         checker.check(statements);
-
-        for (const auto& statement : statements)
-            executor.interpret(statement.get());
+        executor.interpret(statements);
     }
 }
 

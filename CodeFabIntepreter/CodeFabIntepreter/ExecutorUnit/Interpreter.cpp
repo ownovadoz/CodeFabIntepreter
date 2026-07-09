@@ -13,9 +13,10 @@ Interpreter::Interpreter()
     environment = globals;
 }
 
-void Interpreter::interpret(Statement* stmt)
+void Interpreter::interpret(const vector<unique_ptr<Statement>>& statements)
 {
-    execute(stmt);
+    for (const auto& statement : statements)
+        execute(statement.get());
 }
 
 Value Interpreter::getVariableValue(const string& name) const

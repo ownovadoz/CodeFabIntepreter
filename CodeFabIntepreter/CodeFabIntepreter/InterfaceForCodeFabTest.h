@@ -25,6 +25,6 @@ public:
 class IExecutor {
 public:
 	virtual ~IExecutor() = default;
-	virtual void interpret(Statement* root) = 0;
+	virtual void interpret(const vector<unique_ptr<Statement>>& statements) = 0;
 };
 #endif

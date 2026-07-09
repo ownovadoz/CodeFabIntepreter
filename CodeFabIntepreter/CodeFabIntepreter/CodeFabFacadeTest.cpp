@@ -32,7 +32,7 @@ public:
 
 class MockExecutor : public IExecutor {
 public:
-	MOCK_METHOD(void, interpret, (Statement* root), (override));
+	MOCK_METHOD(void, interpret, (const vector<unique_ptr<Statement>>& statements), (override));
 };
 
 class CodeFabFacadeTestFixture : public ::testing::Test {
