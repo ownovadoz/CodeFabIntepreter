@@ -24,6 +24,6 @@ TEST(AssemblerUnitTest, MultipleStatementsOnOneLineAreAllReturnedInOrder) {
 	auto statements = assembler_unit.assemble("var a = 3; var b = 4;");
 
 	ASSERT_EQ(statements.size(), 2u);
-	EXPECT_NE(dynamic_cast<VarDeclareStmt*>(statements[0].get()), nullptr);
-	EXPECT_NE(dynamic_cast<VarDeclareStmt*>(statements[1].get()), nullptr);
+	for (const auto& statement : statements)
+		EXPECT_THAT(dynamic_cast<VarDeclareStmt*>(statement.get()), ::testing::NotNull());
 }
