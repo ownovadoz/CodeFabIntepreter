@@ -111,4 +111,19 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCodeFabExceptionFrom
 	CodeFabFacade facade;
 	EXPECT_NO_THROW(facade.execute("var a = ;"));
 }
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCheckerSelfReferenceError) {
+	// "var a = a + 1;" 은 실제 Checker가 초기화식 자기참조로 CodeFabException을 던지는 입력이다.
+	CodeFabFacade facade;
+	EXPECT_NO_THROW(facade.execute("var a = a + 1;"));
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteCatchesRealCheckerDuplicateDeclarationAcrossLines) {
+	// 같은 Facade 인스턴스로 여러 줄을 실행하는 REPL 시나리오에서, 전역 스코프의
+	// 중복 선언은 줄이 나뉘어도 실제 Checker에 의해 검출되어야 한다.
+	CodeFabFacade facade;
+	facade.execute("var a = 10;");
+
+	EXPECT_NO_THROW(facade.execute("var a = 20;"));
+}
 #endif
