@@ -2,6 +2,7 @@
 
 #include "../AssemblerUnit/Parser/Statement.h"
 #include "../InterfaceForCodeFabTest.h"
+#include "../Visitor.h"
 
 #include <set>
 #include <string>
@@ -12,9 +13,9 @@ using std::string;
 using std::vector;
 
 #ifdef _DEBUG
-class Checker : public IChecker
+class Checker : public IChecker, public ExprVisitor
 #else
-class Checker
+class Checker : public ExprVisitor
 #endif
 {
 public:
@@ -39,6 +40,14 @@ public:
     void check(Statement* root);
 #endif
 
+    void visitLiteralExpr(const LiteralExpr& expr) override;
+    void visitVariableExpr(const VariableExpr& expr) override;
+    void visitAssignExpr(const AssignExpr& expr) override;
+    void visitBinaryExpr(const BinaryExpr& expr) override;
+    void visitUnaryExpr(const UnaryExpr& expr) override;
+    void visitGroupingExpr(const GroupingExpr& expr) override;
+    void visitLogicalExpr(const LogicalExpr& expr) override;
+
 private:
     void enterScope();
     void exitScope();
@@ -47,7 +56,11 @@ private:
     void checkBlockStmt(BlockStmt* block);
     void checkVarDeclareStmt(VarDeclareStmt* var_decl);
 
+    void checkExpression(const Expression* expr);
+    vector<string> collectIdentifierReferences(const Expression* expr);
+
     bool isDeclaredInCurrentScope(const string& name) const;
 
     vector<set<string>> scope_stack;
+    vector<string>* collecting_references = nullptr;
 };
