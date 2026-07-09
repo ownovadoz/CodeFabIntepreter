@@ -27,7 +27,7 @@ namespace {
 
 class MockChecker : public IChecker {
 public:
-	MOCK_METHOD(void, check, (Statement* root), (override));
+	MOCK_METHOD(void, check, (const vector<unique_ptr<Statement>>& statements), (override));
 };
 
 class MockExecutor : public IExecutor {

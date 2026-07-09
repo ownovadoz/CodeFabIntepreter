@@ -13,8 +13,7 @@ namespace {
     // 못한 채 앞쪽 문장이 이미 실행되어 버리는 상황이 생길 수 있다.
     template <typename CheckerT, typename ExecutorT>
     void runPipeline(vector<unique_ptr<Statement>>& statements, CheckerT& checker, ExecutorT& executor) {
-        for (const auto& statement : statements)
-            checker.check(statement.get());
+        checker.check(statements);
 
         for (const auto& statement : statements)
             executor.interpret(statement.get());

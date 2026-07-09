@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../AssemblerUnit/Tokenizer/Token.h"
 #include "../AssemblerUnit/Tokenizer/Value.h"
 
 #include <memory>
@@ -16,8 +17,8 @@ public:
     explicit Environment(shared_ptr<Environment> enclosing);
 
     void define(const string& name, const Value& value);
-    Value get(const string& name) const;
-    void assign(const string& name, const Value& value);
+    Value get(const Token& name) const;
+    void assign(const Token& name, const Value& value);
 
 private:
     shared_ptr<Environment> enclosing;

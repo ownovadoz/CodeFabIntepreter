@@ -4,11 +4,13 @@
 #include "../InterfaceForCodeFabTest.h"
 #include "../Visitor.h"
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 using std::string;
+using std::unique_ptr;
 using std::unordered_map;
 using std::vector;
 
@@ -35,9 +37,9 @@ public:
     };
 
 #ifdef _DEBUG
-    void check(Statement* root) override;
+    void check(const vector<unique_ptr<Statement>>& statements) override;
 #else
-    void check(Statement* root);
+    void check(const vector<unique_ptr<Statement>>& statements);
 #endif
 
     void visitLiteralExpr(const LiteralExpr& expr) override;

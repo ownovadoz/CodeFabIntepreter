@@ -20,7 +20,7 @@ void Interpreter::interpret(Statement* stmt)
 
 Value Interpreter::getVariableValue(const string& name) const
 {
-    return environment->get(name);
+    return environment->get(Token(TokenType::IDENTIFIER, name, Value(), 0));
 }
 
 void Interpreter::execute(Statement* stmt)
@@ -97,7 +97,7 @@ Value Interpreter::evaluate(const Expression* expr)
     has_evaluation_result = false;
     expr->accept(*this);
 
-    if (!has_evaluation_result) throw CodeFabException(0, "지원하지 않는 표현식입니다.");
+    if (!has_evaluation_result) throw CodeFabException(resolveLine(expr), "지원하지 않는 표현식입니다.");
 
     return evaluation_result;
 }
@@ -109,7 +109,20 @@ Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)
 
 Value Interpreter::evaluateVariableExpr(const VariableExpr* variable)
 {
-    return environment->get(variable->getToken().getLexeme());
+    return environment->get(variable->getToken());
+}
+
+int Interpreter::resolveLine(const Expression* expr) const
+{
+    if (const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(expr)) return literal->getToken().getLine();
+    if (const VariableExpr* variable = dynamic_cast<const VariableExpr*>(expr)) return variable->getToken().getLine();
+    if (const AssignExpr* assign = dynamic_cast<const AssignExpr*>(expr)) return assign->getIdentifier().getLine();
+    if (const BinaryExpr* binary = dynamic_cast<const BinaryExpr*>(expr)) return binary->getOperator().getLine();
+    if (const UnaryExpr* unary = dynamic_cast<const UnaryExpr*>(expr)) return unary->getOperator().getLine();
+    if (const LogicalExpr* logical = dynamic_cast<const LogicalExpr*>(expr)) return logical->getOperator().getLine();
+    if (const GroupingExpr* grouping = dynamic_cast<const GroupingExpr*>(expr)) return resolveLine(grouping->getExpr());
+
+    return 0;
 }
 
 void Interpreter::visitExpressionStmt(const ExpressionStmt& stmt)
@@ -163,7 +176,7 @@ void Interpreter::visitAssignExpr(const AssignExpr& expr)
 Value Interpreter::evaluateAssignExpr(const AssignExpr& expr)
 {
     Value value = evaluate(expr.getValue());
-    environment->assign(expr.getIdentifier().getLexeme(), value);
+    environment->assign(expr.getIdentifier(), value);
     return value;
 }
 void Interpreter::visitBinaryExpr(const BinaryExpr& expr)

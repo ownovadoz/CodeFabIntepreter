@@ -10,6 +10,10 @@
 #include <string>
 #include <vector>
 
+#ifndef _DEBUG
+#include <windows.h>
+#endif
+
 using std::cerr;
 using std::make_unique;
 using std::string;
@@ -21,6 +25,9 @@ int main(int argc, char* argv[]) {
 	::testing::InitGoogleMock(&argc, argv);
 	return RUN_ALL_TESTS();
 #else
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
+
 	vector<string> args(argv + 1, argv + argc);
 	ParsedArguments parsed = ArgumentParser::parse(args);
 
