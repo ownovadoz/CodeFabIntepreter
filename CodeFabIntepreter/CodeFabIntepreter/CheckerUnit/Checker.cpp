@@ -2,8 +2,6 @@
 
 #include "../CodeFabException.h"
 
-#include <algorithm>
-
 Checker::Checker()
 {
     // 전역 스코프는 Checker 인스턴스가 살아있는 동안 유지되어, PromptShell처럼
@@ -24,25 +22,24 @@ void Checker::exitScope()
     scope_stack.pop_back();
 }
 
-void Checker::declareVariable(const Token& name, const vector<string>& initializer_references)
+void Checker::declare(const Token& name)
 {
+    if (scope_stack.empty()) return;
+
+    unordered_map<string, bool>& scope = scope_stack.back();
     const string lexeme = name.getLexeme();
 
-    if (isDeclaredInCurrentScope(lexeme))
+    if (scope.find(lexeme) != scope.end())
         throw CodeFabException(name, "이미 해당 변수는 현재 스코프에서 사용중입니다: '" + lexeme + "'");
 
-    bool is_self_referenced = std::find(initializer_references.begin(), initializer_references.end(), lexeme) != initializer_references.end();
-    if (is_self_referenced)
-        throw CodeFabException(name, "자신의 초기화식에서 지역변수를 읽을 수 없습니다: '" + lexeme + "'");
-
-    scope_stack.back().insert(lexeme);
+    scope[lexeme] = false;
 }
 
-bool Checker::isDeclaredInCurrentScope(const string& name) const
+void Checker::define(const Token& name)
 {
-    if (scope_stack.empty()) return false;
+    if (scope_stack.empty()) return;
 
-    return scope_stack.back().count(name) > 0;
+    scope_stack.back()[name.getLexeme()] = true;
 }
 
 void Checker::check(Statement* root)
@@ -88,8 +85,9 @@ void Checker::visitBlockStmt(const BlockStmt& stmt)
 
 void Checker::visitVarDeclareStmt(const VarDeclareStmt& stmt)
 {
-    vector<string> references = collectIdentifierReferences(stmt.getInitializer());
-    declareVariable(stmt.getName(), references);
+    declare(stmt.getName());
+    checkExpression(stmt.getInitializer());
+    define(stmt.getName());
 }
 
 void Checker::visitPrintStmt(const PrintStmt& stmt)
@@ -116,26 +114,19 @@ void Checker::checkExpression(const Expression* expr)
     expr->accept(*this);
 }
 
-vector<string> Checker::collectIdentifierReferences(const Expression* expr)
-{
-    vector<string> references;
-    vector<string>* previous_references = collecting_references;
-
-    collecting_references = &references;
-    checkExpression(expr);
-    collecting_references = previous_references;
-
-    return references;
-}
-
 void Checker::visitLiteralExpr(const LiteralExpr&)
 {
 }
 
 void Checker::visitVariableExpr(const VariableExpr& expr)
 {
-    if (collecting_references != nullptr)
-        collecting_references->push_back(expr.getToken().getLexeme());
+    if (scope_stack.empty()) return;
+
+    const unordered_map<string, bool>& scope = scope_stack.back();
+    auto found = scope.find(expr.getToken().getLexeme());
+
+    if (found != scope.end() && found->second == false)
+        throw CodeFabException(expr.getToken(), "자신의 초기화식에서 지역변수를 읽을 수 없습니다: '" + expr.getToken().getLexeme() + "'");
 }
 
 void Checker::visitAssignExpr(const AssignExpr& expr)
