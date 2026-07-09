@@ -70,5 +70,62 @@ void Checker::checkBlockStmt(BlockStmt* block)
 
 void Checker::checkVarDeclareStmt(VarDeclareStmt* var_decl)
 {
-    declareVariable(var_decl->getName(), {});
+    vector<string> references = collectIdentifierReferences(var_decl->getInitializer());
+    declareVariable(var_decl->getName(), references);
+}
+
+void Checker::checkExpression(const Expression* expr)
+{
+    if (expr == nullptr) return;
+
+    expr->accept(*this);
+}
+
+vector<string> Checker::collectIdentifierReferences(const Expression* expr)
+{
+    vector<string> references;
+    vector<string>* previous_references = collecting_references;
+
+    collecting_references = &references;
+    checkExpression(expr);
+    collecting_references = previous_references;
+
+    return references;
+}
+
+void Checker::visitLiteralExpr(const LiteralExpr&)
+{
+}
+
+void Checker::visitVariableExpr(const VariableExpr& expr)
+{
+    if (collecting_references != nullptr)
+        collecting_references->push_back(expr.getToken().getLexeme());
+}
+
+void Checker::visitAssignExpr(const AssignExpr& expr)
+{
+    checkExpression(expr.getValue());
+}
+
+void Checker::visitBinaryExpr(const BinaryExpr& expr)
+{
+    checkExpression(expr.getLeft());
+    checkExpression(expr.getRight());
+}
+
+void Checker::visitUnaryExpr(const UnaryExpr& expr)
+{
+    checkExpression(expr.getExpr());
+}
+
+void Checker::visitGroupingExpr(const GroupingExpr& expr)
+{
+    checkExpression(expr.getExpr());
+}
+
+void Checker::visitLogicalExpr(const LogicalExpr& expr)
+{
+    checkExpression(expr.getLeft());
+    checkExpression(expr.getRight());
 }
