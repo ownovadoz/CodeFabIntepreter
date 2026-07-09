@@ -237,6 +237,20 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCallingNonCallabl
 	}
 }
 
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCallingStringVariableAsFunctionError) {
+	// var x = "hello"; x();
+	CodeFabFacade facade;
+	facade.execute("var x = \"hello\";");
+
+	try {
+		facade.execute("x();");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("호출할 수 없는 대상입니다"));
+	}
+}
+
 TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArgumentCountMismatchError) {
 	CodeFabFacade facade;
 

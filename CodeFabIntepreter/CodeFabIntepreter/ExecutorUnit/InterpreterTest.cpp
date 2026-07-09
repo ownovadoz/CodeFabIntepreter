@@ -496,6 +496,25 @@ TEST_F(InterpreterTestFixture, CallingNonCallableValueThrowsCodeFabException)
     EXPECT_THROW(interpreter.evaluate(&call), CodeFabException);
 }
 
+TEST_F(InterpreterTestFixture, CallingStringValueThrowsCodeFabExceptionWithExpectedMessage)
+{
+    // var x = "hello"; x();
+    Token name_token(TokenType::IDENTIFIER, "x", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::STRING, "hello", string("hello"), 1)));
+    interpreter.interpret(single(move(var_decl)));
+
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::RIGHT_PAREN, ")", monostate{}, 1), {});
+
+    try {
+        interpreter.evaluate(&call);
+        FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+    }
+    catch (const CodeFabException& exception) {
+        EXPECT_THAT(exception.what(), testing::HasSubstr("호출할 수 없는 대상입니다"));
+    }
+}
+
 TEST_F(InterpreterTestFixture, CallingFunctionWithWrongArgumentCountThrowsCodeFabException)
 {
     Token name_token(TokenType::IDENTIFIER, "add", monostate{}, 1);
