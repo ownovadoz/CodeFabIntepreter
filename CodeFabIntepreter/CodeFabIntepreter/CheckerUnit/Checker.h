@@ -13,9 +13,9 @@ using std::string;
 using std::vector;
 
 #ifdef _DEBUG
-class Checker : public IChecker, public ExprVisitor
+class Checker : public IChecker, public ExprVisitor, public StmtVisitor
 #else
-class Checker : public ExprVisitor
+class Checker : public ExprVisitor, public StmtVisitor
 #endif
 {
 public:
@@ -48,14 +48,19 @@ public:
     void visitGroupingExpr(const GroupingExpr& expr) override;
     void visitLogicalExpr(const LogicalExpr& expr) override;
 
+    void visitExpressionStmt(const ExpressionStmt& stmt) override;
+    void visitIfStmt(const IfStmt& stmt) override;
+    void visitBlockStmt(const BlockStmt& stmt) override;
+    void visitVarDeclareStmt(const VarDeclareStmt& stmt) override;
+    void visitPrintStmt(const PrintStmt& stmt) override;
+    void visitForStmt(const ForStmt& stmt) override;
+
 private:
     void enterScope();
     void exitScope();
 
-    void checkStatement(Statement* stmt);
-    void checkBlockStmt(BlockStmt* block);
-    void checkVarDeclareStmt(VarDeclareStmt* var_decl);
-
+    void checkStatement(const Statement* stmt);
+    void checkStatementInNewScope(const Statement* stmt);
     void checkExpression(const Expression* expr);
     vector<string> collectIdentifierReferences(const Expression* expr);
 
