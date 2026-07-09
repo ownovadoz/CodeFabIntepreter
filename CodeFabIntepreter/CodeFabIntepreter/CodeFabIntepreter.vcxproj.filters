@@ -39,6 +39,9 @@
     <ClCompile Include="PromptShellTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Visitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="CheckerUnit\CheckerTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

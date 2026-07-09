@@ -12,6 +12,8 @@ using std::unique_ptr;
 using std::vector;
 
 class Statement : public StatementOrExpression {
+public:
+	virtual void accept(StmtVisitor& visitor) = 0;
 };
 
 class ExpressionStmt : public Statement {
@@ -21,6 +23,8 @@ public:
 	const Expression* getExpr() const {
 		return expr.get();
 	}
+
+	void accept(StmtVisitor& visitor) override;
 
 private:
 	unique_ptr<Expression> expr;
@@ -43,6 +47,8 @@ public:
 		return else_branch.get();
 	}
 
+	void accept(StmtVisitor& visitor) override;
+
 private:
 	unique_ptr<Expression> condition;
 	unique_ptr<Statement> then_branch;
@@ -58,6 +64,8 @@ public:
 	const vector<unique_ptr<Statement>>& getStatements() const {
 		return statements;
 	}
+
+	void accept(StmtVisitor& visitor) override;
 
 private:
 	vector<unique_ptr<Statement>> statements;
@@ -79,6 +87,8 @@ public:
 		return initializer.get();
 	}
 
+	void accept(StmtVisitor& visitor) override;
+
 private:
 	Token name;
 	unique_ptr<Expression> initializer;
@@ -91,6 +101,8 @@ public:
 	const Expression* getExpr() const {
 		return expr.get();
 	}
+
+	void accept(StmtVisitor& visitor) override;
 
 private:
 	unique_ptr<Expression> expr;
@@ -116,6 +128,8 @@ public:
 	const Statement* getBody() const {
 		return body.get();
 	}
+
+	void accept(StmtVisitor& visitor) override;
 
 private:
 	unique_ptr<VarDeclareStmt> init;
