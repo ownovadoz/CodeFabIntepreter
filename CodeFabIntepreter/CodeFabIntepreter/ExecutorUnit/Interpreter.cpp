@@ -3,6 +3,7 @@
 #include "../CodeFabException.h"
 #include <iostream>
 #include <memory>
+#include <variant>
 using std::cout;
 using std::make_shared;
 
@@ -165,7 +166,70 @@ Value Interpreter::evaluateAssignExpr(const AssignExpr& expr)
     environment->assign(expr.getIdentifier().getLexeme(), value);
     return value;
 }
-void Interpreter::visitBinaryExpr(const BinaryExpr&) {}
+void Interpreter::visitBinaryExpr(const BinaryExpr& expr)
+{
+    evaluation_result = evaluateBinaryExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateBinaryExpr(const BinaryExpr& expr)
+{
+    Value left = evaluate(expr.getLeft());
+    Value right = evaluate(expr.getRight());
+    const Token& op = expr.getOperator();
+
+    switch (op.getType()) {
+    case TokenType::PLUS:
+        if (isNumber(left) && isNumber(right)) return std::get<double>(left) + std::get<double>(right);
+        if (isString(left) && isString(right)) return std::get<string>(left) + std::get<string>(right);
+        throw CodeFabException(op, "피연산자는 둘 다 숫자이거나 둘 다 문자열이어야 합니다.");
+
+    case TokenType::MINUS:
+        ensureNumberOperands(op, left, right);
+        return std::get<double>(left) - std::get<double>(right);
+
+    case TokenType::STAR:
+        ensureNumberOperands(op, left, right);
+        return std::get<double>(left) * std::get<double>(right);
+
+    case TokenType::SLASH:
+        ensureNumberOperands(op, left, right);
+        if (std::get<double>(right) == 0.0) throw CodeFabException(op, "0으로 나눌 수 없습니다.");
+        return std::get<double>(left) / std::get<double>(right);
+
+    case TokenType::GREATER:
+        ensureNumberOperands(op, left, right);
+        return std::get<double>(left) > std::get<double>(right);
+
+    case TokenType::LESS:
+        ensureNumberOperands(op, left, right);
+        return std::get<double>(left) < std::get<double>(right);
+
+    case TokenType::GREATER_EQUAL:
+        ensureNumberOperands(op, left, right);
+        return std::get<double>(left) >= std::get<double>(right);
+
+    case TokenType::LESS_EQUAL:
+        ensureNumberOperands(op, left, right);
+        return std::get<double>(left) <= std::get<double>(right);
+
+    case TokenType::EQUAL_EQUAL:
+        return left == right;
+
+    case TokenType::BANG_EQUAL:
+        return left != right;
+
+    default:
+        throw CodeFabException(op, "지원하지 않는 이항 연산자입니다.");
+    }
+}
+
+void Interpreter::ensureNumberOperands(const Token& op, const Value& left, const Value& right) const
+{
+    if (isNumber(left) && isNumber(right)) return;
+
+    throw CodeFabException(op, "피연산자는 반드시 숫자여야 합니다.");
+}
 void Interpreter::visitUnaryExpr(const UnaryExpr&) {}
 void Interpreter::visitGroupingExpr(const GroupingExpr&) {}
 void Interpreter::visitLogicalExpr(const LogicalExpr&) {}

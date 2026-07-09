@@ -42,6 +42,8 @@ private:
     Value evaluateLiteralExpr(const LiteralExpr* literal);
     Value evaluateVariableExpr(const VariableExpr* variable);
     Value evaluateAssignExpr(const AssignExpr& expr);
+    Value evaluateBinaryExpr(const BinaryExpr& expr);
+    void ensureNumberOperands(const Token& op, const Value& left, const Value& right) const;
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;
