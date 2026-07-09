@@ -19,6 +19,8 @@ class Checker : public ExprVisitor, public StmtVisitor
 #endif
 {
 public:
+    Checker();
+
     class ScopeGuard
     {
     public:

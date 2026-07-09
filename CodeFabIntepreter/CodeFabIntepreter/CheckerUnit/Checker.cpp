@@ -4,6 +4,14 @@
 
 #include <algorithm>
 
+Checker::Checker()
+{
+    // 전역 스코프는 Checker 인스턴스가 살아있는 동안 유지되어, PromptShell처럼
+    // 한 줄씩 나뉘어 들어오는 여러 번의 check() 호출에서도 전역 변수의 중복
+    // 선언을 검출할 수 있게 한다 (Interpreter의 global_environment와 대응).
+    enterScope();
+}
+
 void Checker::enterScope()
 {
     scope_stack.emplace_back();
@@ -39,7 +47,6 @@ bool Checker::isDeclaredInCurrentScope(const string& name) const
 
 void Checker::check(Statement* root)
 {
-    ScopeGuard guard(*this);
     checkStatement(root);
 }
 
