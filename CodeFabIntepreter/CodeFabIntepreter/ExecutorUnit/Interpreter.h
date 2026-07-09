@@ -40,6 +40,7 @@ private:
     void executeForStmt(ForStmt* for_stmt);
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
+    Value evaluateVariableExpr(const VariableExpr* variable);
 
     shared_ptr<Environment> globals;
     shared_ptr<Environment> environment;

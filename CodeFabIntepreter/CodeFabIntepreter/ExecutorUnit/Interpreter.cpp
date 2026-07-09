@@ -125,10 +125,19 @@ Value Interpreter::evaluate(const Expression* expr)
         return evaluateLiteralExpr(literal);
     }
 
+    if (const VariableExpr* variable = dynamic_cast<const VariableExpr*>(expr)) {
+        return evaluateVariableExpr(variable);
+    }
+
     throw CodeFabException(0, "지원하지 않는 표현식입니다.");
 }
 
 Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)
 {
     return literal->getToken().getLiteral();
+}
+
+Value Interpreter::evaluateVariableExpr(const VariableExpr* variable)
+{
+    return environment->get(variable->getToken().getLexeme());
 }
