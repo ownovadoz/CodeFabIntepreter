@@ -149,3 +149,18 @@ TEST_F(InterpreterTestFixture, IfStmtDoesNothingWhenConditionIsFalsyAndNoElseBra
 
     EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
 }
+
+TEST_F(InterpreterTestFixture, ForStmtDoesNotExecuteBodyWhenConditionIsInitiallyFalsy)
+{
+    auto init = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "i", monostate{}, 1));
+    init->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "0", 0.0, 1)));
+    auto condition = make_unique<LiteralExpr>(Token(TokenType::FALSE, "false", false, 1));
+    auto body = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    body->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "9", 9.0, 1)));
+
+    ForStmt for_stmt(move(init), move(condition), nullptr, move(body));
+    interpreter.interpret(&for_stmt);
+
+    EXPECT_THROW(interpreter.getVariableValue("a"), CodeFabException);
+    EXPECT_THROW(interpreter.getVariableValue("i"), CodeFabException);
+}
