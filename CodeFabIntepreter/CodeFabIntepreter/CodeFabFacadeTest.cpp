@@ -86,7 +86,7 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesStdExceptionFromAssemblerUnitAndS
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
 		.WillOnce(::testing::Throw(std::out_of_range("boom")));
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
-	EXPECT_CALL(mock_executor, run()).Times(0);
+	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
 	EXPECT_NO_THROW(facade.execute("var x = 10;"));
 }
@@ -96,7 +96,7 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesUnknownExceptionFromAssemblerUnit
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
 		.WillOnce(::testing::Throw(42));
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
-	EXPECT_CALL(mock_executor, run()).Times(0);
+	EXPECT_CALL(mock_executor, interpret(::testing::_)).Times(0);
 
 	EXPECT_NO_THROW(facade.execute("var x = 10;"));
 }
