@@ -82,6 +82,60 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 	EXPECT_NO_THROW(checker.check(root.get()));
 }
 
+TEST(CheckerTreeTest, IfStmtRecursesIntoBareThenBranchAndDetectsDuplicateFails) {
+	auto outer_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	outer_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
+
+	auto then_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	then_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
+
+	auto if_stmt = make_unique<IfStmt>(nullptr, move(then_var), nullptr);
+
+	auto block = make_unique<BlockStmt>();
+	block->addStatement(move(outer_var));
+	block->addStatement(move(if_stmt));
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(block.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, IfStmtRecursesIntoBareElseBranchAndDetectsDuplicateFails) {
+	auto outer_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	outer_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
+
+	auto else_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	else_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
+
+	auto if_stmt = make_unique<IfStmt>(nullptr, nullptr, move(else_var));
+
+	auto block = make_unique<BlockStmt>();
+	block->addStatement(move(outer_var));
+	block->addStatement(move(if_stmt));
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(block.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, IfStmtBranchesWrappedInBlocksHaveIndependentScopesSucceeds) {
+	auto then_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	then_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
+	auto then_block = make_unique<BlockStmt>();
+	then_block->addStatement(move(then_var));
+
+	auto else_var = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
+	else_var->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "2", 2.0, 1}));
+	auto else_block = make_unique<BlockStmt>();
+	else_block->addStatement(move(else_var));
+
+	auto if_stmt = make_unique<IfStmt>(nullptr, move(then_block), move(else_block));
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(if_stmt.get()));
+}
+
 TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
 	auto first = make_unique<VarDeclareStmt>(Token{TokenType::IDENTIFIER, "a", "a", 1});
 	first->setExpression(make_unique<LiteralExpr>(Token{TokenType::NUMBER, "1", 1.0, 1}));
