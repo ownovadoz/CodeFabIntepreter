@@ -35,6 +35,7 @@ private:
     void executeBlockStmt(BlockStmt* block);
     void executeVarDeclareStmt(VarDeclareStmt* var_decl);
     void executeExpressionStmt(ExpressionStmt* stmt);
+    void executePrintStmt(PrintStmt* stmt);
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
 

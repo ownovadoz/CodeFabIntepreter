@@ -1,7 +1,9 @@
 #include "Interpreter.h"
 
 #include "../CodeFabException.h"
+#include <iostream>
 #include <memory>
+using std::cout;
 using std::make_shared;
 
 Interpreter::Interpreter()
@@ -38,6 +40,11 @@ void Interpreter::execute(Statement* stmt)
         executeExpressionStmt(expr_stmt);
         return;
     }
+
+    if (PrintStmt* print_stmt = dynamic_cast<PrintStmt*>(stmt)) {
+        executePrintStmt(print_stmt);
+        return;
+    }
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
@@ -64,6 +71,12 @@ void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
 void Interpreter::executeExpressionStmt(ExpressionStmt* stmt)
 {
     evaluate(stmt->getExpr());
+}
+
+void Interpreter::executePrintStmt(PrintStmt* stmt)
+{
+    Value value = evaluate(stmt->getExpr());
+    cout << stringify(value) << "\n";
 }
 
 Value Interpreter::evaluate(const Expression* expr)
