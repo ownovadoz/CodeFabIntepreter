@@ -22,16 +22,19 @@
     <Filter Include="Header Files\Parser\test">
       <UniqueIdentifier>{8e37e947-c8d4-4a07-a29e-304754492059}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\FactoryShell">
+      <UniqueIdentifier>{d1a2f3b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ArgumentParser.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="FactoryShell\ArgumentParser.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
-    <ClCompile Include="ArgumentParserTest.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="FactoryShell\ArgumentParserTest.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc">
       <Filter>Source Files</Filter>
@@ -39,11 +42,11 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PromptShell.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="FactoryShell\PromptShell.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
-    <ClCompile Include="PromptShellTest.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="FactoryShell\PromptShellTest.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
     <ClCompile Include="CheckerUnit\CheckerTest.cpp">
       <Filter>Source Files</Filter>
@@ -95,14 +98,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PromptShell.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="FactoryShell\PromptShell.h">
+      <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
-    <ClInclude Include="ArgumentParser.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="FactoryShell\ArgumentParser.h">
+      <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
-    <ClInclude Include="ShellMode.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="FactoryShell\ShellMode.h">
+      <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="CheckerUnit\Checker.h">
       <Filter>Header Files</Filter>

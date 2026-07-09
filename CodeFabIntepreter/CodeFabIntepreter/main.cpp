@@ -1,6 +1,6 @@
 #include <gmock/gmock.h>
-#include "ArgumentParser.h"
-#include "PromptShell.h"
+#include "FactoryShell/ArgumentParser.h"
+#include "FactoryShell/PromptShell.h"
 
 #include <iostream>
 #include <string>
