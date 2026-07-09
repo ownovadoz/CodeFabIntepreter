@@ -25,6 +25,9 @@
     <Filter Include="Source Files\FactoryShell">
       <UniqueIdentifier>{d1a2f3b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="TestScripts">
+      <UniqueIdentifier>{7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -105,6 +108,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="TestScripts\day1_gist_script.cf">
+      <Filter>TestScripts</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FactoryShell\PromptShell.h">

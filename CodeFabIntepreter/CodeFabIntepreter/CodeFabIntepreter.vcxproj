@@ -142,6 +142,16 @@
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
   </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerCommandArguments>run $(ProjectDir)TestScripts\day1_gist_script.cf</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerCommandArguments>run $(ProjectDir)TestScripts\day1_gist_script.cf</LocalDebuggerCommandArguments>
+  </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="FactoryShell\ArgumentParser.cpp" />
     <ClCompile Include="FactoryShell\ArgumentParserTest.cpp" />
@@ -169,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="TestScripts\day1_gist_script.cf" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FactoryShell\ArgumentParser.h" />
