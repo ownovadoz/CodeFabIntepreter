@@ -7,15 +7,15 @@ Checker::Checker()
     // 전역 스코프는 Checker 인스턴스가 살아있는 동안 유지되어, PromptShell처럼
     // 한 줄씩 나뉘어 들어오는 여러 번의 check() 호출에서도 전역 변수의 중복
     // 선언을 검출할 수 있게 한다 (Interpreter의 global_environment와 대응).
-    enterScope();
+    beginScope();
 }
 
-void Checker::enterScope()
+void Checker::beginScope()
 {
     scope_stack.emplace_back();
 }
 
-void Checker::exitScope()
+void Checker::endScope()
 {
     if (scope_stack.empty()) return;
 
@@ -44,10 +44,10 @@ void Checker::define(const Token& name)
 
 void Checker::check(Statement* root)
 {
-    checkStatement(root);
+    resolveStmt(root);
 }
 
-void Checker::checkStatement(const Statement* stmt)
+void Checker::resolveStmt(const Statement* stmt)
 {
     if (stmt == nullptr) return;
 
@@ -56,23 +56,23 @@ void Checker::checkStatement(const Statement* stmt)
 
 void Checker::visitExpressionStmt(const ExpressionStmt& stmt)
 {
-    checkExpression(stmt.getExpr());
+    resolveExpr(stmt.getExpr());
 }
 
 void Checker::visitIfStmt(const IfStmt& stmt)
 {
-    checkExpression(stmt.getCondition());
+    resolveExpr(stmt.getCondition());
 
     // 분기별로 독립된 스코프를 부여해, 서로 배타적인 then/else 분기에서
     // 같은 이름을 선언해도 중복 선언으로 오검출되지 않도록 한다.
-    checkStatementInNewScope(stmt.getThenBranch());
-    checkStatementInNewScope(stmt.getElseBranch());
+    resolveStmtInNewScope(stmt.getThenBranch());
+    resolveStmtInNewScope(stmt.getElseBranch());
 }
 
-void Checker::checkStatementInNewScope(const Statement* stmt)
+void Checker::resolveStmtInNewScope(const Statement* stmt)
 {
     ScopeGuard guard(*this);
-    checkStatement(stmt);
+    resolveStmt(stmt);
 }
 
 void Checker::visitBlockStmt(const BlockStmt& stmt)
@@ -80,19 +80,19 @@ void Checker::visitBlockStmt(const BlockStmt& stmt)
     ScopeGuard guard(*this);
 
     for (const auto& child : stmt.getStatements())
-        checkStatement(child.get());
+        resolveStmt(child.get());
 }
 
 void Checker::visitVarDeclareStmt(const VarDeclareStmt& stmt)
 {
     declare(stmt.getName());
-    checkExpression(stmt.getInitializer());
+    resolveExpr(stmt.getInitializer());
     define(stmt.getName());
 }
 
 void Checker::visitPrintStmt(const PrintStmt& stmt)
 {
-    checkExpression(stmt.getExpr());
+    resolveExpr(stmt.getExpr());
 }
 
 void Checker::visitForStmt(const ForStmt& stmt)
@@ -101,13 +101,13 @@ void Checker::visitForStmt(const ForStmt& stmt)
     // 별개로 for 문이 끝나면 함께 소멸한다.
     ScopeGuard guard(*this);
 
-    checkStatement(stmt.getInit());
-    checkExpression(stmt.getCondition());
-    checkExpression(stmt.getIncrement());
-    checkStatement(stmt.getBody());
+    resolveStmt(stmt.getInit());
+    resolveExpr(stmt.getCondition());
+    resolveExpr(stmt.getIncrement());
+    resolveStmt(stmt.getBody());
 }
 
-void Checker::checkExpression(const Expression* expr)
+void Checker::resolveExpr(const Expression* expr)
 {
     if (expr == nullptr) return;
 
@@ -131,27 +131,27 @@ void Checker::visitVariableExpr(const VariableExpr& expr)
 
 void Checker::visitAssignExpr(const AssignExpr& expr)
 {
-    checkExpression(expr.getValue());
+    resolveExpr(expr.getValue());
 }
 
 void Checker::visitBinaryExpr(const BinaryExpr& expr)
 {
-    checkExpression(expr.getLeft());
-    checkExpression(expr.getRight());
+    resolveExpr(expr.getLeft());
+    resolveExpr(expr.getRight());
 }
 
 void Checker::visitUnaryExpr(const UnaryExpr& expr)
 {
-    checkExpression(expr.getExpr());
+    resolveExpr(expr.getExpr());
 }
 
 void Checker::visitGroupingExpr(const GroupingExpr& expr)
 {
-    checkExpression(expr.getExpr());
+    resolveExpr(expr.getExpr());
 }
 
 void Checker::visitLogicalExpr(const LogicalExpr& expr)
 {
-    checkExpression(expr.getLeft());
-    checkExpression(expr.getRight());
+    resolveExpr(expr.getLeft());
+    resolveExpr(expr.getRight());
 }

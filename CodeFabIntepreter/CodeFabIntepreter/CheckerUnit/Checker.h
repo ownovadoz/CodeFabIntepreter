@@ -24,8 +24,8 @@ public:
     class ScopeGuard
     {
     public:
-        explicit ScopeGuard(Checker& checker) : checker(checker) { checker.enterScope(); }
-        ~ScopeGuard() { checker.exitScope(); }
+        explicit ScopeGuard(Checker& checker) : checker(checker) { checker.beginScope(); }
+        ~ScopeGuard() { checker.endScope(); }
 
         ScopeGuard(const ScopeGuard&) = delete;
         ScopeGuard& operator=(const ScopeGuard&) = delete;
@@ -56,15 +56,15 @@ public:
     void visitForStmt(const ForStmt& stmt) override;
 
 private:
-    void enterScope();
-    void exitScope();
+    void beginScope();
+    void endScope();
 
     void declare(const Token& name);
     void define(const Token& name);
 
-    void checkStatement(const Statement* stmt);
-    void checkStatementInNewScope(const Statement* stmt);
-    void checkExpression(const Expression* expr);
+    void resolveStmt(const Statement* stmt);
+    void resolveStmtInNewScope(const Statement* stmt);
+    void resolveExpr(const Expression* expr);
 
     // 스코프 내 각 변수 이름은 declare 시 false(선언됨, 아직 정의되지 않음)로,
     // define 시 true(정의 완료)로 표시된다. 초기화식을 검사하는 시점에는
