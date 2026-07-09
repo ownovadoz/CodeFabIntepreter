@@ -143,6 +143,10 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FactoryShell\ArgumentParser.cpp" />
+    <ClCompile Include="FactoryShell\ArgumentParserTest.cpp" />
+    <ClCompile Include="FactoryShell\FileModeShell.cpp" />
+    <ClCompile Include="FactoryShell\FileModeShellTest.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp" />
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
@@ -159,14 +163,17 @@
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="PromptShell.cpp" />
-    <ClCompile Include="PromptShellTest.cpp" />
+    <ClCompile Include="FactoryShell\PromptShell.cpp" />
+    <ClCompile Include="FactoryShell\PromptShellTest.cpp" />
     <ClCompile Include="Visitor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FactoryShell\ArgumentParser.h" />
+    <ClInclude Include="FactoryShell\FileModeShell.h" />
+    <ClInclude Include="FactoryShell\ShellMode.h" />
     <ClInclude Include="AssemblerUnit\AssemblerUnit.h" />
     <ClInclude Include="AssemblerUnit\Tokenizer\Lexer.h" />
     <ClInclude Include="AssemblerUnit\Tokenizer\Token.h" />
@@ -181,7 +188,7 @@
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />
     <ClInclude Include="AssemblerUnit\Parser\Node.h" />
-    <ClInclude Include="PromptShell.h" />
+    <ClInclude Include="FactoryShell\PromptShell.h" />
     <ClInclude Include="RuntimeError.h" />
     <ClInclude Include="Visitor.h" />
   </ItemGroup>
