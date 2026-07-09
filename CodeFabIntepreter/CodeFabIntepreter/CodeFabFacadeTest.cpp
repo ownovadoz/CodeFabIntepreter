@@ -6,6 +6,7 @@
 #include "CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <stdexcept>
 #include <string>
 using std::string;
 
@@ -75,6 +76,27 @@ TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesCodeFabExceptionFromExecutor) {
 	EXPECT_CALL(mock_checker, check(::testing::_)).Times(1);
 	EXPECT_CALL(mock_executor, run())
 		.WillOnce(::testing::Throw(CodeFabException(1, "boom")));
+
+	EXPECT_NO_THROW(facade.execute("var x = 10;"));
+}
+
+TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesStdExceptionFromAssemblerUnitAndSkipsRemainingSteps) {
+	// CodeFabException 이외의 표준 라이브러리 예외(예: std::stod의 out_of_range)가
+	// 새어나와도 REPL 프로세스가 죽지 않아야 한다.
+	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
+		.WillOnce(::testing::Throw(std::out_of_range("boom")));
+	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
+	EXPECT_CALL(mock_executor, run()).Times(0);
+
+	EXPECT_NO_THROW(facade.execute("var x = 10;"));
+}
+
+TEST_F(CodeFabFacadeTestFixture, ExecuteCatchesUnknownExceptionFromAssemblerUnitAndSkipsRemainingSteps) {
+	// std::exception 계층에 속하지 않는 임의의 값이 던져져도 방어되어야 한다.
+	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
+		.WillOnce(::testing::Throw(42));
+	EXPECT_CALL(mock_checker, check(::testing::_)).Times(0);
+	EXPECT_CALL(mock_executor, run()).Times(0);
 
 	EXPECT_NO_THROW(facade.execute("var x = 10;"));
 }

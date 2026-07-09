@@ -2,7 +2,22 @@
 #include "AssemblerUnit/Parser/Statement.h"
 #include "CodeFabException.h"
 
+#include <exception>
 #include <iostream>
+
+namespace {
+    void reportException(const CodeFabException& exception) {
+        std::cerr << exception.what() << std::endl;
+    }
+
+    void reportException(const std::exception& exception) {
+        std::cerr << "[unexpected error] " << exception.what() << std::endl;
+    }
+
+    void reportUnknownException() {
+        std::cerr << "[unexpected error] unknown exception" << std::endl;
+    }
+}
 
 #ifdef _DEBUG
 
@@ -26,7 +41,13 @@ void CodeFabFacade::execute(const string& code_line) {
         executor->run();
     }
     catch (const CodeFabException& exception) {
-        std::cerr << exception.what() << std::endl;
+        reportException(exception);
+    }
+    catch (const std::exception& exception) {
+        reportException(exception);
+    }
+    catch (...) {
+        reportUnknownException();
     }
 }
 
@@ -39,7 +60,13 @@ void CodeFabFacade::execute(const string& code_line) {
         executor.run();
     }
     catch (const CodeFabException& exception) {
-        std::cerr << exception.what() << std::endl;
+        reportException(exception);
+    }
+    catch (const std::exception& exception) {
+        reportException(exception);
+    }
+    catch (...) {
+        reportUnknownException();
     }
 }
 
