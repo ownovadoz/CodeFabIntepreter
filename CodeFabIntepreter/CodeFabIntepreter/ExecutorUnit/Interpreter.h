@@ -7,9 +7,11 @@
 #include "../AssemblerUnit/Tokenizer/Value.h"
 #include "../InterfaceForCodeFabTest.h"
 
+#include <memory>
 #include <string>
 
 using std::string;
+using std::shared_ptr;
 
 #ifdef _DEBUG
 class Interpreter : public IExecutor
@@ -35,6 +37,7 @@ private:
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
 
-    Environment global_environment;
-    Environment* current_environment;
+    shared_ptr<Environment> globals;
+    shared_ptr<Environment> environment;
+
 };

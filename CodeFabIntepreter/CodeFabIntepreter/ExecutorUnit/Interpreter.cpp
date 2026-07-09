@@ -1,31 +1,14 @@
 #include "Interpreter.h"
 
 #include "../CodeFabException.h"
-
-namespace {
-class EnvironmentGuard {
-public:
-    EnvironmentGuard(Environment*& current, Environment* block_environment)
-        : current(current), previous(current)
-    {
-        current = block_environment;
-    }
-
-    ~EnvironmentGuard()
-    {
-        current = previous;
-    }
-
-private:
-    Environment*& current;
-    Environment* previous;
-};
-
-}
+#include <memory>
+using std::make_shared;
 
 Interpreter::Interpreter()
-    : global_environment(nullptr), current_environment(&global_environment)
-{}
+{
+    globals = make_shared<Environment>();
+    environment = globals;
+}
 
 void Interpreter::interpret(Statement* stmt)
 {
@@ -34,7 +17,7 @@ void Interpreter::interpret(Statement* stmt)
 
 Value Interpreter::getVariableValue(const string& name) const
 {
-    return current_environment->get(name);
+    return environment->get(name);
 }
 
 void Interpreter::execute(Statement* stmt)
@@ -54,12 +37,13 @@ void Interpreter::execute(Statement* stmt)
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
 {
-    Environment block_environment(current_environment);
-    EnvironmentGuard guard(current_environment, &block_environment);
+    shared_ptr<Environment> previous = environment;
+    environment = make_shared<Environment>(previous);
 
     for (const auto& stmt : block->getStatements()) {
         execute(stmt.get());
     }
+    environment = previous;
 }
 
 void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
@@ -69,7 +53,7 @@ void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
         value = evaluate(initializer);
     }
 
-    current_environment->define(var_decl->getName().getLexeme(), value);
+    environment->define(var_decl->getName().getLexeme(), value);
 }
 
 Value Interpreter::evaluate(const Expression* expr)
