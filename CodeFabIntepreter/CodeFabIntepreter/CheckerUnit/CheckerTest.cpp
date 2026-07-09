@@ -75,7 +75,7 @@ TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
 	};
 
 	Parser parser;
-	auto root = parser.parse(tokens);
+	auto root = move(parser.parse(tokens)[0]);
 
 	Checker checker;
 
