@@ -8,7 +8,6 @@
 
 #include <gmock/gmock.h>
 #include <memory>
-#include <optional>
 #include <vector>
 
 using std::make_unique;
@@ -28,10 +27,9 @@ namespace {
 
 class CheckerTest : public ::testing::Test {
 protected:
-    void SetUp() override { guard.emplace(checker); }
-
+    // Checker의 생성자가 전역 스코프를 만들어 주므로, 테스트에서 별도로
+    // 스코프를 만들지 않아도 declareVariable을 바로 호출할 수 있다.
     Checker checker;
-    std::optional<Checker::ScopeGuard> guard;
 };
 
 TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
@@ -212,6 +210,49 @@ TEST(CheckerTreeTest, ForStmtOwnScopeAllowsSeparateLoopsToReuseSameVariableName)
 
 TEST(CheckerTreeTest, ForStmtSelfReferenceInInitializerFails) {
 	auto stmt = assemble("for (var i = i; i < 3; i = i + 1) { print i; }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(stmt.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, DuplicateDeclarationAcrossSeparateTopLevelChecksFails) {
+	// REPL에서 한 줄씩 입력되는 각 문장은 같은 Checker 인스턴스로 검사되므로,
+	// 전역 스코프의 중복 선언은 호출이 나뉘어도 검출되어야 한다.
+	Checker checker;
+
+	auto first = assemble("var a = 10;");
+	checker.check(first.get());
+
+	auto second = assemble("var a = 20;");
+
+	EXPECT_THROW(checker.check(second.get()), CodeFabException);
+}
+
+TEST(CheckerTreeTest, DifferentVariablesAcrossSeparateTopLevelChecksSucceed) {
+	Checker checker;
+
+	auto first = assemble("var a = 10;");
+	checker.check(first.get());
+
+	auto second = assemble("var b = 20;");
+
+	EXPECT_NO_THROW(checker.check(second.get()));
+}
+
+TEST(CheckerTreeTest, ComplexNestedProgramWithoutErrorsSucceeds) {
+	auto stmt = assemble(
+		"{ var a = 1; if (a > 0) { var b = a + 1; print b; } "
+		"for (var i = 0; i < a; i = i + 1) { print i; } }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, ComplexNestedProgramWithDeepSelfReferenceFails) {
+	auto stmt = assemble(
+		"{ var a = 1; if (a > 0) { for (var i = 0; i < a; i = i + 1) { var b = b + i; } } }");
 
 	Checker checker;
 
