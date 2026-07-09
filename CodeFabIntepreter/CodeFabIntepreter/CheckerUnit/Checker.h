@@ -60,6 +60,7 @@ private:
     void exitScope();
 
     void checkStatement(const Statement* stmt);
+    void checkStatementInNewScope(const Statement* stmt);
     void checkExpression(const Expression* expr);
     vector<string> collectIdentifierReferences(const Expression* expr);
 

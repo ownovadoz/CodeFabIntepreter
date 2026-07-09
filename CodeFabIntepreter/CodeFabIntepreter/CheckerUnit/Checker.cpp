@@ -61,14 +61,14 @@ void Checker::visitIfStmt(const IfStmt& stmt)
 
     // 분기별로 독립된 스코프를 부여해, 서로 배타적인 then/else 분기에서
     // 같은 이름을 선언해도 중복 선언으로 오검출되지 않도록 한다.
-    {
-        ScopeGuard then_scope(*this);
-        checkStatement(stmt.getThenBranch());
-    }
-    {
-        ScopeGuard else_scope(*this);
-        checkStatement(stmt.getElseBranch());
-    }
+    checkStatementInNewScope(stmt.getThenBranch());
+    checkStatementInNewScope(stmt.getElseBranch());
+}
+
+void Checker::checkStatementInNewScope(const Statement* stmt)
+{
+    ScopeGuard guard(*this);
+    checkStatement(stmt);
 }
 
 void Checker::visitBlockStmt(const BlockStmt& stmt)
