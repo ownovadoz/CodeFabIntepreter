@@ -41,6 +41,10 @@ unique_ptr<Statement> Parser::parseStatement() {
 		return parsePrintStmt();
 	case TokenType::FOR:
 		return parseForStmt();
+	case TokenType::FUNC:
+		return parseFunctionStmt();
+	case TokenType::RETURN:
+		return parseReturnStmt();
 	case TokenType::LEFT_PAREN:
 	case TokenType::BANG:
 	case TokenType::IDENTIFIER:
@@ -56,6 +60,7 @@ unique_ptr<Statement> Parser::parseStatement() {
 		return nullptr;
 	case TokenType::RIGHT_PAREN:
 	case TokenType::RIGHT_BRACE:
+	case TokenType::COMMA:
 	case TokenType::PLUS:
 	case TokenType::MINUS:
 	case TokenType::STAR:
@@ -98,6 +103,10 @@ unique_ptr<Statement> Parser::parseIfStmt() {
 unique_ptr<Statement> Parser::parseBlockStmt() {
 	advance();
 
+	return parseBlock();
+}
+
+unique_ptr<BlockStmt> Parser::parseBlock() {
 	auto block = make_unique<BlockStmt>();
 	while (!isAtEnd() && peek().getType() != TokenType::RIGHT_BRACE) {
 		block->addStatement(parseStatement());
@@ -153,6 +162,49 @@ unique_ptr<Statement> Parser::parseForStmt() {
 	unique_ptr<Statement> body = parseStatement();
 
 	return make_unique<ForStmt>(move(init), move(condition), move(increment), move(body));
+}
+
+unique_ptr<Statement> Parser::parseFunctionStmt() {
+	advance();
+
+	Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
+
+	consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
+	vector<Token> params = parseParameters();
+	consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+
+	consume(TokenType::LEFT_BRACE, "Expect '{' before function body.");
+	unique_ptr<BlockStmt> body = parseBlock();
+
+	return make_unique<FunctionStmt>(name, move(params), move(body));
+}
+
+vector<Token> Parser::parseParameters() {
+	vector<Token> params;
+
+	if (!check(TokenType::RIGHT_PAREN)) {
+		params.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+
+		while (check(TokenType::COMMA)) {
+			advance();
+			params.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+		}
+	}
+
+	return params;
+}
+
+unique_ptr<Statement> Parser::parseReturnStmt() {
+	Token keyword = advance();
+
+	unique_ptr<Expression> value = nullptr;
+	if (!check(TokenType::SEMICOLON)) {
+		value = parseExpression();
+	}
+
+	consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+
+	return make_unique<ReturnStmt>(keyword, move(value));
 }
 
 unique_ptr<Statement> Parser::parseExpressionStmt() {
@@ -240,7 +292,35 @@ unique_ptr<Expression> Parser::parseUnaryExpr() {
 		unique_ptr<Expression> operand = parseUnaryExpr();
 		return make_unique<UnaryExpr>(op, move(operand));
 	}
-	return parsePrimaryExpr();
+	return parseCallExpr();
+}
+
+unique_ptr<Expression> Parser::parseCallExpr() {
+	unique_ptr<Expression> expr = parsePrimaryExpr();
+
+	while (check(TokenType::LEFT_PAREN)) {
+		expr = finishCallExpr(move(expr));
+	}
+
+	return expr;
+}
+
+unique_ptr<Expression> Parser::finishCallExpr(unique_ptr<Expression> callee) {
+	advance();
+
+	vector<unique_ptr<Expression>> arguments;
+	if (!check(TokenType::RIGHT_PAREN)) {
+		arguments.push_back(parseExpression());
+
+		while (check(TokenType::COMMA)) {
+			advance();
+			arguments.push_back(parseExpression());
+		}
+	}
+
+	Token paren = consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
+
+	return make_unique<CallExpr>(move(callee), paren, move(arguments));
 }
 
 unique_ptr<Expression> Parser::parsePrimaryExpr() {

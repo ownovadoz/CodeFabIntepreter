@@ -55,6 +55,9 @@ private:
     void visitVarDeclareStmt(const VarDeclareStmt& stmt) override;
     void visitPrintStmt(const PrintStmt& stmt) override;
     void visitForStmt(const ForStmt& stmt) override;
+    // ExecutorUnit 담당자가 구현할 예정인 미구현 문장. 현재는 실행 시 예외를 던진다.
+    void visitFunctionStmt(const FunctionStmt& stmt) override;
+    void visitReturnStmt(const ReturnStmt& stmt) override;
 
     void visitLiteralExpr(const LiteralExpr& expr) override;
     void visitVariableExpr(const VariableExpr& expr) override;
@@ -63,6 +66,8 @@ private:
     void visitUnaryExpr(const UnaryExpr& expr) override;
     void visitGroupingExpr(const GroupingExpr& expr) override;
     void visitLogicalExpr(const LogicalExpr& expr) override;
+    // ExecutorUnit 담당자가 구현할 예정인 미구현 표현식. 현재는 평가 시 예외를 던진다.
+    void visitCallExpr(const CallExpr& expr) override;
 
     shared_ptr<Environment> globals;
     shared_ptr<Environment> environment;

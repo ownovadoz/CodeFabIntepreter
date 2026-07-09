@@ -155,6 +155,16 @@ void Interpreter::visitForStmt(const ForStmt& stmt)
     executeForStmt(const_cast<ForStmt*>(&stmt));
 }
 
+void Interpreter::visitFunctionStmt(const FunctionStmt& stmt)
+{
+    throw CodeFabException(stmt.getName(), "함수 선언은 아직 실행할 수 없습니다.");
+}
+
+void Interpreter::visitReturnStmt(const ReturnStmt& stmt)
+{
+    throw CodeFabException(stmt.getKeyword(), "return 문은 아직 실행할 수 없습니다.");
+}
+
 void Interpreter::visitLiteralExpr(const LiteralExpr& expr)
 {
     evaluation_result = evaluateLiteralExpr(&expr);
@@ -289,4 +299,9 @@ Value Interpreter::evaluateLogicalExpr(const LogicalExpr& expr)
     }
 
     return evaluate(expr.getRight());
+}
+
+void Interpreter::visitCallExpr(const CallExpr& expr)
+{
+    throw CodeFabException(expr.getParen(), "함수 호출은 아직 실행할 수 없습니다.");
 }

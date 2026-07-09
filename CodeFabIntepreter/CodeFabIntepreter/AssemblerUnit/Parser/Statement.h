@@ -108,6 +108,50 @@ private:
 	unique_ptr<Expression> expr;
 };
 
+class FunctionStmt : public Statement {
+public:
+	FunctionStmt(const Token& name, vector<Token> params, unique_ptr<BlockStmt> body)
+		: name{ name }, params{ move(params) }, body{ move(body) } {}
+
+	const Token& getName() const {
+		return name;
+	}
+
+	const vector<Token>& getParams() const {
+		return params;
+	}
+
+	const BlockStmt* getBody() const {
+		return body.get();
+	}
+
+	void accept(StmtVisitor& visitor) const override;
+
+private:
+	Token name;
+	vector<Token> params;
+	unique_ptr<BlockStmt> body;
+};
+
+class ReturnStmt : public Statement {
+public:
+	ReturnStmt(const Token& keyword, unique_ptr<Expression> value) : keyword{ keyword }, value{ move(value) } {}
+
+	const Token& getKeyword() const {
+		return keyword;
+	}
+
+	const Expression* getValue() const {
+		return value.get();
+	}
+
+	void accept(StmtVisitor& visitor) const override;
+
+private:
+	Token keyword;
+	unique_ptr<Expression> value;
+};
+
 class ForStmt : public Statement {
 public:
 	ForStmt(unique_ptr<VarDeclareStmt> init, unique_ptr<Expression> condition, unique_ptr<Expression> increment, unique_ptr<Statement> body)
