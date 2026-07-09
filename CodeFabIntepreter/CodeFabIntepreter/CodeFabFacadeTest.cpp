@@ -6,9 +6,12 @@
 #include "CodeFabException.h"
 
 #include <gmock/gmock.h>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+using std::ostringstream;
 using std::string;
 using std::vector;
 
@@ -173,6 +176,76 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateD
 	}
 	catch (const CodeFabException& exception) {
 		EXPECT_THAT(exception.what(), ::testing::HasSubstr("이미 해당 변수는 현재 스코프에서 사용중입니다"));
+	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteFunctionDefinitionAndCallPrintsReturnedValue) {
+	CodeFabFacade facade;
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("Func add(a, b) { return a + b; } print add(3, 4);");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "7\n");
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteRecursiveFunctionCallComputesFactorial) {
+	CodeFabFacade facade;
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("Func fact(n) { if (n <= 1) return 1; return n * fact(n - 1); } print fact(5);");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "120\n");
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealReturnOutsideFunctionError) {
+	CodeFabFacade facade;
+
+	try {
+		facade.execute("return 1;");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("함수 외부에서 return을 사용할 수 없습니다"));
+	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealDuplicateParameterNameError) {
+	CodeFabFacade facade;
+
+	try {
+		facade.execute("Func foo(a, a) { return a; }");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("이미 해당 변수는 현재 스코프에서 사용중입니다"));
+	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCallingNonCallableValueError) {
+	CodeFabFacade facade;
+
+	try {
+		facade.execute("var x = 10; x(1);");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("호출할 수 없는 대상입니다"));
+	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArgumentCountMismatchError) {
+	CodeFabFacade facade;
+
+	try {
+		facade.execute("Func foo(a, b, c) { return a; } foo(1, 2);");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("인자 개수가 일치하지 않습니다"));
 	}
 }
 #endif

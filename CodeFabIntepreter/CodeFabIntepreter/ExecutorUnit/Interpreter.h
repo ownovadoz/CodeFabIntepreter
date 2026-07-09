@@ -34,6 +34,10 @@ public:
     Value evaluate(const Expression* expr);
     Value getVariableValue(const string& name) const;
 
+    // CodeFabFunction이 함수 호출마다 파라미터 스코프를 새로 만들어 몸통을
+    // 실행할 때 사용하는 진입점.
+    void executeBlockWithEnvironment(const BlockStmt* block, shared_ptr<Environment> new_environment);
+
 private:
     void execute(Statement* stmt);
     void executeBlockStmt(BlockStmt* block);
@@ -42,6 +46,8 @@ private:
     void executePrintStmt(PrintStmt* stmt);
     void executeIfStmt(IfStmt* if_stmt);
     void executeForStmt(ForStmt* for_stmt);
+    void executeFunctionStmt(FunctionStmt* stmt);
+    void executeReturnStmt(ReturnStmt* stmt);
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
     Value evaluateVariableExpr(const VariableExpr* variable);
@@ -50,6 +56,7 @@ private:
     void ensureNumberOperands(const Token& op, const Value& left, const Value& right) const;
     Value evaluateUnaryExpr(const UnaryExpr& expr);
     Value evaluateLogicalExpr(const LogicalExpr& expr);
+    Value evaluateCallExpr(const CallExpr& expr);
     int resolveLine(const Expression* expr) const;
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
@@ -58,7 +65,6 @@ private:
     void visitVarDeclareStmt(const VarDeclareStmt& stmt) override;
     void visitPrintStmt(const PrintStmt& stmt) override;
     void visitForStmt(const ForStmt& stmt) override;
-    // ExecutorUnit 담당자가 구현할 예정인 미구현 문장. 현재는 실행 시 예외를 던진다.
     void visitFunctionStmt(const FunctionStmt& stmt) override;
     void visitReturnStmt(const ReturnStmt& stmt) override;
 
@@ -69,7 +75,6 @@ private:
     void visitUnaryExpr(const UnaryExpr& expr) override;
     void visitGroupingExpr(const GroupingExpr& expr) override;
     void visitLogicalExpr(const LogicalExpr& expr) override;
-    // ExecutorUnit 담당자가 구현할 예정인 미구현 표현식. 현재는 평가 시 예외를 던진다.
     void visitCallExpr(const CallExpr& expr) override;
 
     shared_ptr<Environment> globals;
