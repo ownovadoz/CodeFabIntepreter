@@ -3,6 +3,11 @@
 
 #include <gmock/gmock.h>
 
+#include <memory>
+
+using std::make_shared;
+using std::shared_ptr;
+
 class EnvironmentTestFixture : public testing::Test {
 public:
     Environment env;
@@ -47,43 +52,43 @@ TEST_F(EnvironmentTestFixture, AssignToExistingVariableUpdatesValue)
 
 class NestedEnvironmentTestFixture : public testing::Test {
 public:
-    Environment outer;
-    Environment inner{ &outer };
+    shared_ptr<Environment> outer = make_shared<Environment>();
+    shared_ptr<Environment> inner = make_shared<Environment>(outer);
 };
 
 TEST_F(NestedEnvironmentTestFixture, GetFindsVariableInEnclosingScope)
 {
-    outer.define("a", 3.0);
+    outer->define("a", 3.0);
 
-    auto value = inner.get("a");
+    auto value = inner->get("a");
 
     EXPECT_EQ(std::get<double>(value), 3.0);
 }
 
 TEST_F(NestedEnvironmentTestFixture, AssignUpdatesVariableInEnclosingScope)
 {
-    outer.define("a", 3.0);
+    outer->define("a", 3.0);
 
-    inner.assign("a", 5.0);
+    inner->assign("a", 5.0);
 
-    EXPECT_EQ(std::get<double>(outer.get("a")), 5.0);
+    EXPECT_EQ(std::get<double>(outer->get("a")), 5.0);
 }
 
 TEST_F(NestedEnvironmentTestFixture, DefineShadowsVariableInEnclosingScope)
 {
-    outer.define("a", 3.0);
+    outer->define("a", 3.0);
 
-    inner.define("a", 5.0);
+    inner->define("a", 5.0);
 
-    EXPECT_EQ(std::get<double>(inner.get("a")), 5.0);
+    EXPECT_EQ(std::get<double>(inner->get("a")), 5.0);
 }
 
 TEST_F(NestedEnvironmentTestFixture, GetUndefinedVariableThrowsThroughChain)
 {
-    EXPECT_THROW(inner.get("x"), CodeFabException);
+    EXPECT_THROW(inner->get("x"), CodeFabException);
 }
 
 TEST_F(NestedEnvironmentTestFixture, AssignUndefinedVariableThrowsThroughChain)
 {
-    EXPECT_THROW(inner.assign("x", 1.0), CodeFabException);
+    EXPECT_THROW(inner->assign("x", 1.0), CodeFabException);
 }

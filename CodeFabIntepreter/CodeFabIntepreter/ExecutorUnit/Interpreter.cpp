@@ -1,31 +1,16 @@
 #include "Interpreter.h"
 
 #include "../CodeFabException.h"
-
-namespace {
-class EnvironmentGuard {
-public:
-    EnvironmentGuard(Environment*& current, Environment* block_environment)
-        : current(current), previous(current)
-    {
-        current = block_environment;
-    }
-
-    ~EnvironmentGuard()
-    {
-        current = previous;
-    }
-
-private:
-    Environment*& current;
-    Environment* previous;
-};
-
-}
+#include <iostream>
+#include <memory>
+using std::cout;
+using std::make_shared;
 
 Interpreter::Interpreter()
-    : global_environment(nullptr), current_environment(&global_environment)
-{}
+{
+    globals = make_shared<Environment>();
+    environment = globals;
+}
 
 void Interpreter::interpret(Statement* stmt)
 {
@@ -34,7 +19,7 @@ void Interpreter::interpret(Statement* stmt)
 
 Value Interpreter::getVariableValue(const string& name) const
 {
-    return current_environment->get(name);
+    return environment->get(name);
 }
 
 void Interpreter::execute(Statement* stmt)
@@ -50,16 +35,37 @@ void Interpreter::execute(Statement* stmt)
         executeVarDeclareStmt(var_decl);
         return;
     }
+
+    if (ExpressionStmt* expr_stmt = dynamic_cast<ExpressionStmt*>(stmt)) {
+        executeExpressionStmt(expr_stmt);
+        return;
+    }
+
+    if (PrintStmt* print_stmt = dynamic_cast<PrintStmt*>(stmt)) {
+        executePrintStmt(print_stmt);
+        return;
+    }
+
+    if (IfStmt* if_stmt = dynamic_cast<IfStmt*>(stmt)) {
+        executeIfStmt(if_stmt);
+        return;
+    }
+
+    if (ForStmt* for_stmt = dynamic_cast<ForStmt*>(stmt)) {
+        executeForStmt(for_stmt);
+        return;
+    }
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
 {
-    Environment block_environment(current_environment);
-    EnvironmentGuard guard(current_environment, &block_environment);
+    shared_ptr<Environment> previous = environment;
+    environment = make_shared<Environment>(previous);
 
     for (const auto& stmt : block->getStatements()) {
         execute(stmt.get());
     }
+    environment = previous;
 }
 
 void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
@@ -69,7 +75,48 @@ void Interpreter::executeVarDeclareStmt(VarDeclareStmt* var_decl)
         value = evaluate(initializer);
     }
 
-    current_environment->define(var_decl->getName().getLexeme(), value);
+    environment->define(var_decl->getName().getLexeme(), value);
+}
+
+void Interpreter::executeExpressionStmt(ExpressionStmt* stmt)
+{
+    evaluate(stmt->getExpr());
+}
+
+void Interpreter::executePrintStmt(PrintStmt* stmt)
+{
+    Value value = evaluate(stmt->getExpr());
+    cout << stringify(value) << "\n";
+}
+
+void Interpreter::executeIfStmt(IfStmt* if_stmt)
+{
+    if (isTruthy(evaluate(if_stmt->getCondition()))) {
+        execute(const_cast<Statement*>(if_stmt->getThenBranch()));
+    }
+    else {
+        execute(const_cast<Statement*>(if_stmt->getElseBranch()));
+    }
+}
+
+void Interpreter::executeForStmt(ForStmt* for_stmt)
+{
+    shared_ptr<Environment> previous = environment;
+    environment = make_shared<Environment>(previous);
+
+    if (for_stmt->getInit() != nullptr) {
+        executeVarDeclareStmt(const_cast<VarDeclareStmt*>(for_stmt->getInit()));
+    }
+
+    while (for_stmt->getCondition() == nullptr || isTruthy(evaluate(for_stmt->getCondition()))) {
+        execute(const_cast<Statement*>(for_stmt->getBody()));
+
+        if (for_stmt->getIncrement() != nullptr) {
+            evaluate(for_stmt->getIncrement());
+        }
+    }
+
+    environment = previous;
 }
 
 Value Interpreter::evaluate(const Expression* expr)
