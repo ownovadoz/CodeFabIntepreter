@@ -8,7 +8,6 @@
 
 #include <gmock/gmock.h>
 #include <memory>
-#include <optional>
 #include <vector>
 
 using std::make_unique;
@@ -28,10 +27,9 @@ namespace {
 
 class CheckerTest : public ::testing::Test {
 protected:
-    void SetUp() override { guard.emplace(checker); }
-
+    // Checker의 생성자가 전역 스코프를 만들어 주므로, 테스트에서 별도로
+    // 스코프를 만들지 않아도 declareVariable을 바로 호출할 수 있다.
     Checker checker;
-    std::optional<Checker::ScopeGuard> guard;
 };
 
 TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
