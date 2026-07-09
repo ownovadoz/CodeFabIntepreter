@@ -56,8 +56,15 @@ private:
 };
 
 class GroupingExpr : public Expression {
+public:
+	explicit GroupingExpr(unique_ptr<Expression> expr) : expr{ move(expr) } {}
+
+	const Expression* getExpr() const {
+		return expr.get();
+	}
+
 private:
-	unique_ptr<Expression> expr;	// TODO: is it right?
+	unique_ptr<Expression> expr;
 };
 
 class LogicalExpr : public Expression {

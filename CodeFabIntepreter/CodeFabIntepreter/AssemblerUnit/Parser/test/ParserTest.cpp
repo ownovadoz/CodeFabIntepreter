@@ -68,6 +68,12 @@ protected:
 		EXPECT_THROW(parser.parse(tokens), CodeFabException);
 	}
 
+	void expectGrouping(const Expression* expr) {
+		const GroupingExpr* grouping = dynamic_cast<const GroupingExpr*>(expr);
+
+		EXPECT_NE(grouping, nullptr);
+	}
+
 	Parser parser;
 	unique_ptr<Statement> parsed;
 };
@@ -128,6 +134,83 @@ TEST_F(ParserTestFixture, VarDeclareStmtNegatedFalsePassed) {
 
 	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
 	ASSERT_NO_FATAL_FAILURE(expectUnary(stmt->getInitializer(), TokenType::BANG, "!", TokenType::FALSE, "false"));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtGroupedNumberPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectGrouping(stmt->getInitializer()));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtGroupedNegativeNumberPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::MINUS, "-", "-", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectGrouping(stmt->getInitializer()));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtNestedGroupingPassed) {
+	VarDeclareStmt* stmt = buildAndParseVarDeclareStmt({
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1}
+	});
+
+	ASSERT_NO_FATAL_FAILURE(expectDeclaredName(stmt, "a"));
+	ASSERT_NO_FATAL_FAILURE(expectGrouping(stmt->getInitializer()));
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtGroupingMissingClosingParenFailed) {
+	// var a = (10;
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtGroupingEmptyFailed) {
+	// var a = ();
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, VarDeclareStmtGroupingTrailingExtraParenFailed) {
+	// var a = (10));
+	expectParseThrows({
+		{TokenType::VAR, "var", "var", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
 }
 
 TEST_F(ParserTestFixture, VarDeclareStmtMissingIdentifierFailed) {
