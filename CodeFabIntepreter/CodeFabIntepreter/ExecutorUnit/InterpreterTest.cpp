@@ -164,6 +164,19 @@ TEST_F(InterpreterTestFixture, EvaluateVariableExprReturnsItsCurrentValue)
     EXPECT_EQ(get<double>(interpreter.evaluate(&variable)), 3.0);
 }
 
+TEST_F(InterpreterTestFixture, EvaluatingAssignExprUpdatesEnvironmentAndReturnsValue)
+{
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    VarDeclareStmt var_decl(name_token);
+    var_decl.setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+    interpreter.interpret(&var_decl);
+
+    AssignExpr assign(name_token, make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&assign)), 2.0);
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 2.0);
+}
+
 TEST_F(InterpreterTestFixture, BlockScopedVariableShadowsOuterVariableAndDoesNotLeakOut)
 {
     // var x = "global";
