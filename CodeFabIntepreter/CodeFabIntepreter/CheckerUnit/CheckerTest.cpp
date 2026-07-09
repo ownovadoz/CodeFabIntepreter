@@ -15,57 +15,10 @@ using std::move;
 using std::vector;
 
 namespace {
-	Token makeIdentifier(const string& name) {
-		return Token(TokenType::IDENTIFIER, name, name, 1);
-	}
-
 	unique_ptr<Statement> assemble(const string& source) {
 		AssemblerUnit assembler;
 		return assembler.assemble(source);
 	}
-}
-
-class CheckerTest : public ::testing::Test {
-protected:
-    // Checker의 생성자가 전역 스코프를 만들어 주므로, 테스트에서 별도로
-    // 스코프를 만들지 않아도 declareVariable을 바로 호출할 수 있다.
-    Checker checker;
-};
-
-TEST_F(CheckerTest, DeclaringNewVariableSucceeds) {
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
-}
-
-TEST_F(CheckerTest, DuplicateDeclarationInSameScopeFails) {
-    checker.declareVariable(makeIdentifier("a"), {});
-
-    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), {}), CodeFabException);
-}
-
-TEST_F(CheckerTest, SameNameInNestedScopeSucceeds) {
-    checker.declareVariable(makeIdentifier("a"), {});
-    Checker::ScopeGuard inner(checker);
-
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
-}
-
-TEST_F(CheckerTest, RedeclaringAfterScopeExitSucceeds) {
-    {
-        Checker::ScopeGuard inner(checker);
-        checker.declareVariable(makeIdentifier("a"), {});
-    }
-
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), {}));
-}
-
-TEST_F(CheckerTest, SelfReferenceInInitializerFails) {
-    EXPECT_THROW(checker.declareVariable(makeIdentifier("a"), { "a" }), CodeFabException);
-}
-
-TEST_F(CheckerTest, ReferencingOtherVariableInInitializerSucceeds) {
-    checker.declareVariable(makeIdentifier("b"), {});
-
-    EXPECT_NO_THROW(checker.declareVariable(makeIdentifier("a"), { "b" }));
 }
 
 TEST(CheckerTreeTest, ParsedVarDeclareStmtWithoutErrorSucceeds) {
@@ -136,6 +89,16 @@ TEST(CheckerTreeTest, SelfReferenceThroughLogicalExprInInitializerFails) {
 
 TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
 	auto stmt = assemble("var a = b + 1;");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(stmt.get()));
+}
+
+TEST(CheckerTreeTest, ReferencingAlreadyDefinedVariableInSameScopeSucceeds) {
+	// 'a'는 같은 스코프에서 이미 정의(define)가 끝난 뒤이므로,
+	// declare 상태(false)로 남아있는 'b' 자신과는 구분되어야 한다.
+	auto stmt = assemble("{ var a = 1; var b = a + 1; }");
 
 	Checker checker;
 
