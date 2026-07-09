@@ -116,6 +116,9 @@
     <ClInclude Include="FactoryShell\FileModeShell.h">
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
+    <ClInclude Include="FactoryShell\shell_exception_reporter.h">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClInclude>
     <ClInclude Include="FactoryShell\IShellMode.h">
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>

@@ -1,8 +1,8 @@
 #include "FileModeShell.h"
+#include "shell_exception_reporter.h"
 
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <utility>
 
@@ -45,16 +45,5 @@ string FileModeShell::defaultReadSource(const string& path) {
 }
 
 void FileModeShell::runSource(const string& source) {
-	try {
-		code_fab_facade.execute(source);
-	}
-	catch (const CodeFabException& exception) {
-		std::cerr << exception.what() << std::endl;
-	}
-	catch (const std::exception& exception) {
-		std::cerr << "[unexpected error] " << exception.what() << std::endl;
-	}
-	catch (...) {
-		std::cerr << "[unexpected error] unknown exception" << std::endl;
-	}
+	reportShellExceptions([&] { code_fab_facade.execute(source); });
 }

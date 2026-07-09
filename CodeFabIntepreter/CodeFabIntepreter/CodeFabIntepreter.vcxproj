@@ -190,6 +190,7 @@
     <ClInclude Include="InterfaceForCodeFabTest.h" />
     <ClInclude Include="AssemblerUnit\Parser\Node.h" />
     <ClInclude Include="FactoryShell\PromptShell.h" />
+    <ClInclude Include="FactoryShell\shell_exception_reporter.h" />
     <ClInclude Include="Visitor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
