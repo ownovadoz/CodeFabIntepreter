@@ -50,6 +50,11 @@ void Interpreter::execute(Statement* stmt)
         executeIfStmt(if_stmt);
         return;
     }
+
+    if (ForStmt* for_stmt = dynamic_cast<ForStmt*>(stmt)) {
+        executeForStmt(for_stmt);
+        return;
+    }
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
@@ -92,6 +97,26 @@ void Interpreter::executeIfStmt(IfStmt* if_stmt)
     else {
         execute(const_cast<Statement*>(if_stmt->getElseBranch()));
     }
+}
+
+void Interpreter::executeForStmt(ForStmt* for_stmt)
+{
+    shared_ptr<Environment> previous = environment;
+    environment = make_shared<Environment>(previous);
+
+    if (for_stmt->getInit() != nullptr) {
+        executeVarDeclareStmt(const_cast<VarDeclareStmt*>(for_stmt->getInit()));
+    }
+
+    while (for_stmt->getCondition() == nullptr || isTruthy(evaluate(for_stmt->getCondition()))) {
+        execute(const_cast<Statement*>(for_stmt->getBody()));
+
+        if (for_stmt->getIncrement() != nullptr) {
+            evaluate(for_stmt->getIncrement());
+        }
+    }
+
+    environment = previous;
 }
 
 Value Interpreter::evaluate(const Expression* expr)

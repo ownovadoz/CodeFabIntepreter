@@ -37,6 +37,7 @@ private:
     void executeExpressionStmt(ExpressionStmt* stmt);
     void executePrintStmt(PrintStmt* stmt);
     void executeIfStmt(IfStmt* if_stmt);
+    void executeForStmt(ForStmt* for_stmt);
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
 
