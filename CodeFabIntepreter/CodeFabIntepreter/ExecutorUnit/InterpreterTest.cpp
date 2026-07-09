@@ -194,6 +194,24 @@ TEST_F(InterpreterTestFixture, BlockScopedVariableShadowsOuterVariableAndDoesNot
     EXPECT_EQ(captured.str(), "inner\nglobal\n");
 }
 
+TEST_F(InterpreterTestFixture, AcceptOnVarDeclareStmtDispatchesToInterpreter)
+{
+    Token name_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    VarDeclareStmt var_decl(name_token);
+    var_decl.setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "7", 7.0, 1)));
+
+    var_decl.accept(interpreter);
+
+    EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 7.0);
+}
+
+TEST_F(InterpreterTestFixture, AcceptOnLiteralExprDoesNotThrow)
+{
+    LiteralExpr literal(Token(TokenType::NUMBER, "9", 9.0, 1));
+
+    EXPECT_NO_THROW(literal.accept(interpreter));
+}
+
 TEST_F(InterpreterTestFixture, ForStmtDoesNotExecuteBodyWhenConditionIsInitiallyFalsy)
 {
     auto init = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "i", monostate{}, 1));
