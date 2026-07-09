@@ -1,10 +1,10 @@
 #include "FileModeShell.h"
 
 #include <filesystem>
-#include <iostream>
+#include <fstream>
 #include <utility>
 
-using std::cout;
+using std::ifstream;
 using std::move;
 
 FileModeShell::FileModeShell(function<bool(const string&)> file_exists) : file_exists(move(file_exists)) {}
@@ -12,7 +12,12 @@ FileModeShell::FileModeShell(function<bool(const string&)> file_exists) : file_e
 void FileModeShell::run(const string& file_path) {
 	if (!file_exists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
-	cout << "[파일 모드] 실행 로직은 아직 구현되지 않았습니다: " << file_path << "\n";
+	ifstream file(file_path);
+	string input_line;
+	while (std::getline(file, input_line)) {
+		code_line = input_line;
+		code_fab_facade.execute(code_line);
+	}
 }
 
 bool FileModeShell::defaultFileExists(const string& path) {
