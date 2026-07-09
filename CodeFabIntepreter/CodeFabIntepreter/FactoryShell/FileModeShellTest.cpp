@@ -11,26 +11,28 @@ using std::string;
 using std::vector;
 using namespace testing;
 
-TEST(FileModeShellTest, RunWithMissingFileThrowsCodeFabException) {
-	FileModeShell shell([](const string&) { return false; });
+TEST(FileModeShellTest, EnterWithMissingFileThrowsCodeFabException) {
+	FileModeShell shell("missing.txt", [](const string&) { return false; });
 
-	EXPECT_THROW(shell.run("missing.txt"), CodeFabException);
+	EXPECT_THROW(shell.enter(), CodeFabException);
 }
 
-TEST(FileModeShellTest, RunWithNoLinesDoesNotThrow) {
+TEST(FileModeShellTest, EnterWithNoLinesDoesNotThrow) {
 	FileModeShell shell(
+		"script.txt",
 		[](const string&) { return true; },
 		[](const string&) { return vector<string>{}; });
 
-	EXPECT_NO_THROW(shell.run("script.txt"));
+	EXPECT_NO_THROW(shell.enter());
 }
 
-TEST(FileModeShellTest, RunExecutesEachLineAndTracksTheLastOne) {
+TEST(FileModeShellTest, EnterExecutesEachLineAndTracksTheLastOne) {
 	FileModeShell shell(
+		"script.txt",
 		[](const string&) { return true; },
 		[](const string&) { return vector<string>{"var a = 1;", "var b = 2;"}; });
 
-	shell.run("script.txt");
+	shell.enter();
 
 	EXPECT_EQ(shell.getLastLine(), "var b = 2;");
 }

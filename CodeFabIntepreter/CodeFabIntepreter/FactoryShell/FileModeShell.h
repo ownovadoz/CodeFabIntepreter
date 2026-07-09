@@ -1,4 +1,5 @@
 #pragma once
+#include "IShellMode.h"
 #include "../CodeFabException.h"
 #include "../CodeFabFacade.h"
 
@@ -16,20 +17,24 @@ using std::vector;
 using std::function;
 #endif
 
-class FileModeShell {
+class FileModeShell : public IShellMode {
 public:
 #ifdef _DEBUG
-	explicit FileModeShell(function<bool(const string&)> file_exists = defaultFileExists,
+	explicit FileModeShell(string file_path,
+		function<bool(const string&)> file_exists = defaultFileExists,
 		function<vector<string>(const string&)> read_lines = defaultReadLines);
+#else
+	explicit FileModeShell(string file_path);
 #endif
 
-	void run(const string& file_path);
+	void enter() override;
 	const string& getLastLine() const { return code_line; }
 
 private:
 	static bool defaultFileExists(const string& path);
 	static vector<string> defaultReadLines(const string& path);
 
+	string file_path;
 #ifdef _DEBUG
 	function<bool(const string&)> file_exists;
 	function<vector<string>(const string&)> read_lines;

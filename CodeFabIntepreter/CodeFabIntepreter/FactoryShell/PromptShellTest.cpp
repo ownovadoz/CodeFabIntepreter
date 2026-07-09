@@ -17,7 +17,7 @@ protected:
 	}
 	string runPromptTest(const std::string& input) {
 		feedInput(input);
-		shell.runPrompt();
+		shell.enter();
 		return shell.getLine();
 	}
 	void feedInput(const std::string& input) {

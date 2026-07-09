@@ -2,20 +2,17 @@
 
 #include <filesystem>
 #include <fstream>
-
-#ifdef _DEBUG
 #include <utility>
-using std::move;
-#endif
 
 using std::ifstream;
+using std::move;
 
 #ifdef _DEBUG
 
-FileModeShell::FileModeShell(function<bool(const string&)> file_exists, function<vector<string>(const string&)> read_lines)
-	: file_exists(move(file_exists)), read_lines(move(read_lines)) {}
+FileModeShell::FileModeShell(string file_path, function<bool(const string&)> file_exists, function<vector<string>(const string&)> read_lines)
+	: file_path(move(file_path)), file_exists(move(file_exists)), read_lines(move(read_lines)) {}
 
-void FileModeShell::run(const string& file_path) {
+void FileModeShell::enter() {
 	if (!file_exists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
 	for (const string& input_line : read_lines(file_path)) {
@@ -26,7 +23,9 @@ void FileModeShell::run(const string& file_path) {
 
 #else
 
-void FileModeShell::run(const string& file_path) {
+FileModeShell::FileModeShell(string file_path) : file_path(move(file_path)) {}
+
+void FileModeShell::enter() {
 	if (!defaultFileExists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
 	for (const string& input_line : defaultReadLines(file_path)) {

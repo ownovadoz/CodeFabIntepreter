@@ -6,7 +6,7 @@
 using std::cout;
 using std::string;
 
-void PromptShell::runPrompt() {
+void PromptShell::enter() {
     cout << "CodeFab Interpreter - Ctrl+D / Ctrl+Z / exit / EXIT 후 enter로 종료\n";
     cout << "> ";
 
