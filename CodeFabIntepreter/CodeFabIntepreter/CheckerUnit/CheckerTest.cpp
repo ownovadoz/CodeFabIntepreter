@@ -19,6 +19,11 @@ namespace {
 	Token makeIdentifier(const string& name) {
 		return Token(TokenType::IDENTIFIER, name, name, 1);
 	}
+
+	unique_ptr<Statement> assemble(const string& source) {
+		AssemblerUnit assembler;
+		return assembler.assemble(source);
+	}
 }
 
 class CheckerTest : public ::testing::Test {
@@ -100,9 +105,7 @@ TEST(CheckerTreeTest, DuplicateDeclarationInSameBlockFails) {
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughBinaryExprInInitializerFails) {
-	// var a = a + 1;
-	AssemblerUnit assembler;
-	auto stmt = assembler.assemble("var a = a + 1;");
+	auto stmt = assemble("var a = a + 1;");
 
 	Checker checker;
 
@@ -110,9 +113,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughBinaryExprInInitializerFails) {
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughUnaryExprInInitializerFails) {
-	// var a = -a;
-	AssemblerUnit assembler;
-	auto stmt = assembler.assemble("var a = -a;");
+	auto stmt = assemble("var a = -a;");
 
 	Checker checker;
 
@@ -120,9 +121,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughUnaryExprInInitializerFails) {
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughGroupingExprInInitializerFails) {
-	// var a = (a);
-	AssemblerUnit assembler;
-	auto stmt = assembler.assemble("var a = (a);");
+	auto stmt = assemble("var a = (a);");
 
 	Checker checker;
 
@@ -130,9 +129,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughGroupingExprInInitializerFails) {
 }
 
 TEST(CheckerTreeTest, SelfReferenceThroughLogicalExprInInitializerFails) {
-	// var a = a and true;
-	AssemblerUnit assembler;
-	auto stmt = assembler.assemble("var a = a and true;");
+	auto stmt = assemble("var a = a and true;");
 
 	Checker checker;
 
@@ -140,9 +137,7 @@ TEST(CheckerTreeTest, SelfReferenceThroughLogicalExprInInitializerFails) {
 }
 
 TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
-	// var a = b + 1;
-	AssemblerUnit assembler;
-	auto stmt = assembler.assemble("var a = b + 1;");
+	auto stmt = assemble("var a = b + 1;");
 
 	Checker checker;
 
@@ -150,9 +145,7 @@ TEST(CheckerTreeTest, ReferencingOtherVariableThroughBinaryExprSucceeds) {
 }
 
 TEST(CheckerTreeTest, LiteralInitializerWithoutReferenceSucceeds) {
-	// var a = 1 + 2;
-	AssemblerUnit assembler;
-	auto stmt = assembler.assemble("var a = 1 + 2;");
+	auto stmt = assemble("var a = 1 + 2;");
 
 	Checker checker;
 
