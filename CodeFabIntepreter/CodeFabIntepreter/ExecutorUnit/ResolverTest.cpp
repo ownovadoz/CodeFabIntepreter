@@ -134,3 +134,36 @@ TEST_F(ResolverTestFixture, SuperInsideOverridingMethodResolvesToDistanceTwo) {
     ASSERT_NE(distance, nullptr);
     EXPECT_EQ(*distance, 2);
 }
+
+TEST_F(ResolverTestFixture, UnaryExprOperandIsResolvedToEnclosingBlockDistance) {
+    // { var a = 1; print -a; }
+    vector<unique_ptr<Statement>> statements = assemble("{ var a = 1; print -a; }");
+    const BlockStmt* block = asBlock(statements[0].get());
+    const PrintStmt* print_stmt = asPrint(block->getStatements()[1].get());
+    const UnaryExpr* unary_expr = dynamic_cast<const UnaryExpr*>(print_stmt->getExpr());
+    ASSERT_NE(unary_expr, nullptr);
+
+    resolver.resolve(statements);
+
+    const int* distance = resolver.getDistance(unary_expr->getExpr());
+    ASSERT_NE(distance, nullptr);
+    EXPECT_EQ(*distance, 0);
+}
+
+TEST_F(ResolverTestFixture, LogicalExprOperandsAreResolvedToEnclosingBlockDistance) {
+    // { var a = true; var b = false; print a and b; }
+    vector<unique_ptr<Statement>> statements = assemble("{ var a = true; var b = false; print a and b; }");
+    const BlockStmt* block = asBlock(statements[0].get());
+    const PrintStmt* print_stmt = asPrint(block->getStatements()[2].get());
+    const LogicalExpr* logical_expr = dynamic_cast<const LogicalExpr*>(print_stmt->getExpr());
+    ASSERT_NE(logical_expr, nullptr);
+
+    resolver.resolve(statements);
+
+    const int* left_distance = resolver.getDistance(logical_expr->getLeft());
+    const int* right_distance = resolver.getDistance(logical_expr->getRight());
+    ASSERT_NE(left_distance, nullptr);
+    ASSERT_NE(right_distance, nullptr);
+    EXPECT_EQ(*left_distance, 0);
+    EXPECT_EQ(*right_distance, 0);
+}
