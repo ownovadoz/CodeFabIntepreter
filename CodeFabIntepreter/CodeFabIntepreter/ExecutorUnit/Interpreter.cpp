@@ -220,7 +220,11 @@ Value Interpreter::lookUpVariable(const Token& name, const Expression* expr) con
 
     if (found != locals.end()) return environment->getAt(found->second, name.getLexeme());
 
-    return globals->get(name);
+    // CodeFabFunction::call/bind처럼 Interpreter::interpret()을 거치지 않고 직접
+    // 만들어진 Environment 체인(테스트에서 흔함)에서는 ScopeResolver가 이 AST를
+    // 훑은 적이 없어 거리가 비어 있을 수 있다. 그런 경우에도 항상 정확한 값을
+    // 돌려주도록 기존 방식(현재 스코프부터 거슬러 올라가며 탐색)으로 되돌아간다.
+    return environment->get(name);
 }
 
 void Interpreter::visitExpressionStmt(const ExpressionStmt& stmt)
@@ -294,7 +298,7 @@ Value Interpreter::evaluateAssignExpr(const AssignExpr& expr)
     auto found = locals.find(&expr);
 
     if (found != locals.end()) environment->assignAt(found->second, expr.getIdentifier().getLexeme(), value);
-    else globals->assign(expr.getIdentifier(), value);
+    else environment->assign(expr.getIdentifier(), value);
 
     return value;
 }
@@ -494,18 +498,27 @@ void Interpreter::visitSuperExpr(const SuperExpr& expr)
 
 Value Interpreter::evaluateSuperExpr(const SuperExpr& expr)
 {
-    // ScopeResolver::visitClassStmt는 "super" 스코프를 연 바로 다음에 "this" 스코프를
-    // 열므로, "super"까지의 거리보다 정확히 1 가까운 거리에 "this"가 있다.
-    int distance = scope_resolver.getLocals().at(&expr);
+    int line = expr.getKeyword().getLine();
+    Token super_token(TokenType::IDENTIFIER, "super", Value(), line);
+    Token this_token(TokenType::IDENTIFIER, "this", Value(), line);
 
-    Value super_value = environment->getAt(distance, "super");
+    // ScopeResolver::visitClassStmt는 "super" 스코프를 연 바로 다음에 "this" 스코프를
+    // 열므로, "super"까지의 거리보다 정확히 1 가까운 거리에 "this"가 있다. 다만
+    // CodeFabClass::call/CodeFabFunction::bind처럼 Interpreter::interpret()을 거치지
+    // 않고 직접 만들어진 Environment(테스트에서 흔함)에서는 ScopeResolver가 이 AST를
+    // 훑은 적이 없어 거리가 비어 있을 수 있으므로, 그런 경우 기존 방식(현재 스코프부터
+    // 거슬러 올라가며 탐색)으로 되돌아간다.
+    const auto& locals = scope_resolver.getLocals();
+    auto found = locals.find(&expr);
+
+    Value super_value = found != locals.end() ? environment->getAt(found->second, "super") : environment->get(super_token);
     shared_ptr<Callable>* super_callable = std::get_if<shared_ptr<Callable>>(&super_value);
     shared_ptr<CodeFabClass> superclass = super_callable ? dynamic_pointer_cast<CodeFabClass>(*super_callable) : nullptr;
 
     shared_ptr<CodeFabFunction> method = superclass->findMethod(expr.getMethod().getLexeme());
     if (!method) throw CodeFabException(expr.getMethod(), "존재하지 않는 메서드입니다: '" + expr.getMethod().getLexeme() + "'");
 
-    Value this_value = environment->getAt(distance - 1, "this");
+    Value this_value = found != locals.end() ? environment->getAt(found->second - 1, "this") : environment->get(this_token);
     shared_ptr<Callable>* this_callable = std::get_if<shared_ptr<Callable>>(&this_value);
     shared_ptr<CodeFabInstance> instance = this_callable ? dynamic_pointer_cast<CodeFabInstance>(*this_callable) : nullptr;
 
