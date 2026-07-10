@@ -445,3 +445,289 @@ IShellMode(인터페이스: enter())
   `Interpreter::evaluateCallExpr`의 "호출 직전 걸러내기" 목록에 새 타입을 추가해야 합니다 —
   그렇지 않으면 `x()`처럼 잘못 호출했을 때 `CodeFabException` 대신 처리되지 않은
   `std::logic_error`로 죽습니다.
+
+## 11. 클래스 다이어그램
+
+GitHub/대부분의 마크다운 뷰어에서 렌더링되는 [Mermaid](https://mermaid.js.org/) 문법으로
+작성했습니다. `o--`는 소유(멤버로 보관), `-->`는 참조(포인터/`shared_ptr`), `<|--`는 상속,
+`<|..`는 인터페이스 구현을 뜻합니다.
+
+### 11.1 AST와 Visitor
+
+새 노드 타입을 추가하면 `ExprVisitor`/`StmtVisitor`에 메서드가 하나 늘고, 그 순간 아래 다섯
+구현체 전부가 그 메서드를 구현하지 않으면 컴파일이 실패합니다(2장/9장에서 설명한 설계 의도).
+
+```mermaid
+classDiagram
+    class StatementOrExpression {
+        <<abstract>>
+    }
+    class Statement {
+        <<abstract>>
+        +accept(StmtVisitor&) void
+    }
+    class Expression {
+        <<abstract>>
+        +accept(ExprVisitor&) void
+    }
+    StatementOrExpression <|-- Statement
+    StatementOrExpression <|-- Expression
+
+    Statement <|-- ExpressionStmt
+    Statement <|-- IfStmt
+    Statement <|-- BlockStmt
+    Statement <|-- VarDeclareStmt
+    Statement <|-- PrintStmt
+    Statement <|-- ForStmt
+    Statement <|-- FunctionStmt
+    Statement <|-- ReturnStmt
+    Statement <|-- ClassStmt
+    Statement <|-- ImportStmt
+
+    Expression <|-- LiteralExpr
+    Expression <|-- VariableExpr
+    Expression <|-- AssignExpr
+    Expression <|-- BinaryExpr
+    Expression <|-- UnaryExpr
+    Expression <|-- GroupingExpr
+    Expression <|-- LogicalExpr
+    Expression <|-- CallExpr
+    Expression <|-- GetExpr
+    Expression <|-- SetExpr
+    Expression <|-- ThisExpr
+    Expression <|-- SuperExpr
+    Expression <|-- InstanceOfExpr
+    Expression <|-- ArrayExpr
+    Expression <|-- IndexExpr
+    Expression <|-- IndexSetExpr
+
+    BlockStmt o-- "0..*" Statement : statements
+    IfStmt o-- Expression : condition
+    IfStmt o-- Statement : thenBranch/elseBranch
+    ForStmt o-- VarDeclareStmt : init
+    ForStmt o-- Statement : body
+    FunctionStmt o-- BlockStmt : body
+    ClassStmt o-- "0..*" FunctionStmt : methods
+    ClassStmt o-- VariableExpr : superclass
+    AssignExpr o-- Expression : value
+    CallExpr o-- "0..*" Expression : arguments
+
+    class ExprVisitor {
+        <<interface>>
+        +visitLiteralExpr(LiteralExpr&) void
+        +visitVariableExpr(VariableExpr&) void
+        +visitAssignExpr(AssignExpr&) void
+        +... (노드 타입 수만큼)
+    }
+    class StmtVisitor {
+        <<interface>>
+        +visitExpressionStmt(ExpressionStmt&) void
+        +visitImportStmt(ImportStmt&) void
+        +... (노드 타입 수만큼)
+    }
+
+    ExprVisitor <|.. Checker
+    ExprVisitor <|.. Interpreter
+    ExprVisitor <|.. Resolver
+    ExprVisitor <|.. ConstantFolder
+    ExprVisitor <|.. LineResolver
+    StmtVisitor <|.. Checker
+    StmtVisitor <|.. Interpreter
+    StmtVisitor <|.. Resolver
+    StmtVisitor <|.. ConstantFolder
+    StmtVisitor <|.. LineResolver
+```
+
+### 11.2 값(Value)과 Callable 계층
+
+`Value`는 클래스가 아니라 `std::variant`이므로 다이어그램에는 `Callable`을 구현하는 네 타입과
+`CodeFabArray`(별도 슬롯)만 나타납니다. `CodeFabInstance`/`CodeFabNamespace`는 `Callable`을
+구현하지만 실제로는 호출할 수 없는 "이름→값 가방"이라는 점이 같습니다(10장 확장 체크리스트 참고).
+
+```mermaid
+classDiagram
+    class Value {
+        <<variant>>
+        monostate | bool | double | string | shared_ptr~Callable~ | shared_ptr~CodeFabArray~
+    }
+    class Callable {
+        <<interface>>
+        +arity() int
+        +call(Interpreter&, vector~Value~) Value
+        +toString() string
+    }
+    Callable <|.. CodeFabFunction
+    Callable <|.. CodeFabClass
+    Callable <|.. CodeFabInstance
+    Callable <|.. CodeFabNamespace
+
+    class CodeFabFunction {
+        -declaration : FunctionStmt*
+        -closure : shared_ptr~Environment~
+        -is_initializer : bool
+        +bind(shared_ptr~CodeFabInstance~) shared_ptr~CodeFabFunction~
+    }
+    class CodeFabClass {
+        -name : string
+        -superclass : shared_ptr~CodeFabClass~
+        -methods : unordered_map~string, shared_ptr~CodeFabFunction~~
+        +findMethod(string) shared_ptr~CodeFabFunction~
+        +isSubclassOf(CodeFabClass*) bool
+    }
+    class CodeFabInstance {
+        -klass : shared_ptr~CodeFabClass~
+        -fields : unordered_map~string, Value~
+        +get(Token&) Value
+        +set(Token&, Value&) void
+    }
+    class CodeFabNamespace {
+        -members : unordered_map~string, Value~
+        +get(Token&) Value
+        +define(string, Value&) void
+    }
+    class CodeFabArray {
+        -elements : vector~Value~
+        +get(int) Value
+        +set(int, Value&) void
+    }
+    class Environment
+
+    CodeFabClass o-- "0..*" CodeFabFunction : methods
+    CodeFabClass --> CodeFabClass : superclass(nullable)
+    CodeFabInstance --> CodeFabClass : klass
+    CodeFabFunction --> Environment : closure
+```
+
+### 11.3 파이프라인 핵심 클래스
+
+`CodeFabFacade`가 세 유닛을 조합하고, `Interpreter`가 `Environment` 체인 위에서 `Resolver`/
+`ConstantFolder`/`LineResolver`를 내부 협력자로 부립니다.
+
+```mermaid
+classDiagram
+    class CodeFabFacade {
+        -assembler_unit : AssemblerUnit
+        -checker : Checker
+        -executor : Interpreter
+        -retained_statements : vector~vector~Statement~~
+        +execute(string) void
+        +setBeforeStatementHook(function) void
+        +inspectVariables() vector~VariableSnapshot~
+    }
+    class AssemblerUnit {
+        +assemble(string) vector~Statement~
+    }
+    class Lexer {
+        +scanTokens() vector~Token~
+    }
+    class Parser {
+        +parse(vector~Token~) vector~Statement~
+    }
+    class Checker {
+        -scope_stack : vector~unordered_map~string,bool~~
+        -function_depth : int
+        -loop_depth : int
+        -class_stack : vector~ClassContext~
+        +check(vector~Statement~) void
+    }
+    class Interpreter {
+        -globals : shared_ptr~Environment~
+        -environment : shared_ptr~Environment~
+        -resolver : Resolver
+        -constant_folder : ConstantFolder
+        -line_resolver : LineResolver
+        -import_stack : vector~string~
+        -imported_statements : vector~vector~Statement~~
+        +interpret(vector~Statement~) void
+        +evaluate(Expression*) Value
+        +executeImportStmt(ImportStmt*) void
+    }
+    class Resolver {
+        -scopes : vector~unordered_map~string,bool~~
+        -locals : unordered_map~Expression*, int~
+        +resolve(vector~Statement~) void
+        +getDistance(Expression*) int*
+    }
+    class ConstantFolder {
+        -folded : unordered_map~Expression*, Value~
+        +fold(vector~Statement~) void
+    }
+    class LineResolver {
+        +resolve(Expression*) int
+        +resolve(Statement*) int
+    }
+    class Environment {
+        -enclosing : shared_ptr~Environment~
+        -values : unordered_map~string, Value~
+        +get(Token&) Value
+        +assign(Token&, Value&) void
+        +getAt(int, string) Value
+        +assignAt(int, string, Value&) void
+    }
+
+    CodeFabFacade o-- AssemblerUnit
+    CodeFabFacade o-- Checker
+    CodeFabFacade o-- Interpreter
+    AssemblerUnit o-- Lexer
+    AssemblerUnit o-- Parser
+    Interpreter o-- Resolver
+    Interpreter o-- ConstantFolder
+    Interpreter o-- LineResolver
+    Interpreter --> Environment : globals/environment
+    Environment --> Environment : enclosing(nullable)
+    ConstantFolder --> Interpreter : evaluate() 재사용
+```
+
+### 11.4 FactoryShell
+
+```mermaid
+classDiagram
+    class IShellMode {
+        <<interface>>
+        +enter() void
+    }
+    class FileBackedShell {
+        #code_fab_facade : CodeFabFacade
+        #loaded_lines : vector~string~
+        +enter() void
+        #afterLoad(string) void
+        #beforeExecute() void
+    }
+    IShellMode <|.. PromptShell
+    IShellMode <|.. FileBackedShell
+    FileBackedShell <|-- FileModeShell
+    FileBackedShell <|-- DebugModeShell
+
+    class DebugModeShell {
+        -breakpoints : set~int~
+        -watched_variables : set~string~
+        -mode : Mode
+        -commands : unordered_map~string, DebugCommand~
+        +onBeforeStatement(int) void
+    }
+    class DebugCommand {
+        <<interface>>
+        +execute(DebugModeShell&, istringstream&) bool
+    }
+    DebugCommand <|.. StepCommand
+    DebugCommand <|.. NextCommand
+    DebugCommand <|.. ContinueCommand
+    DebugCommand <|.. BreakCommand
+    DebugCommand <|.. RemoveBreakpointCommand
+    DebugCommand <|.. BreakpointsCommand
+    DebugCommand <|.. WatchCommand
+    DebugCommand <|.. UnwatchCommand
+    DebugCommand <|.. WatchesCommand
+    DebugCommand <|.. InspectCommand
+
+    DebugModeShell o-- "0..*" DebugCommand : commands
+
+    class ArgumentParser {
+        +parse(vector~string~)$ ParsedArguments
+    }
+    class ParsedArguments {
+        +mode : ShellMode
+        +file_path : string
+    }
+    ArgumentParser --> ParsedArguments : creates
+```
