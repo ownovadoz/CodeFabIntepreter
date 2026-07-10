@@ -432,3 +432,164 @@ TEST_F(InterpreterTestFixture, LogicalOrEvaluatesRightWhenLeftIsFalsy)
 
     EXPECT_EQ(get<double>(interpreter.evaluate(&logical)), 5.0);
 }
+
+TEST_F(InterpreterTestFixture, FunctionStmtDefinesCallableVariable)
+{
+    Token name_token(TokenType::IDENTIFIER, "add", monostate{}, 1);
+    Token a_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    Token b_token(TokenType::IDENTIFIER, "b", monostate{}, 1);
+
+    auto body = make_unique<BlockStmt>();
+    body->addStatement(make_unique<ReturnStmt>(
+        Token(TokenType::RETURN, "return", monostate{}, 1),
+        make_unique<BinaryExpr>(make_unique<VariableExpr>(a_token), Token(TokenType::PLUS, "+", monostate{}, 1), make_unique<VariableExpr>(b_token))));
+
+    auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token, b_token }, move(body));
+    interpreter.interpret(single(move(function_stmt)));
+
+    EXPECT_TRUE(isCallable(interpreter.getVariableValue("add")));
+}
+
+TEST_F(InterpreterTestFixture, CallExprInvokesFunctionAndReturnsValue)
+{
+    Token name_token(TokenType::IDENTIFIER, "add", monostate{}, 1);
+    Token a_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    Token b_token(TokenType::IDENTIFIER, "b", monostate{}, 1);
+
+    auto body = make_unique<BlockStmt>();
+    body->addStatement(make_unique<ReturnStmt>(
+        Token(TokenType::RETURN, "return", monostate{}, 1),
+        make_unique<BinaryExpr>(make_unique<VariableExpr>(a_token), Token(TokenType::PLUS, "+", monostate{}, 1), make_unique<VariableExpr>(b_token))));
+
+    auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token, b_token }, move(body));
+    interpreter.interpret(single(move(function_stmt)));
+
+    vector<unique_ptr<Expression>> arguments;
+    arguments.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+    arguments.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "4", 4.0, 1)));
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), move(arguments));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&call)), 7.0);
+}
+
+TEST_F(InterpreterTestFixture, FunctionWithoutReturnStatementReturnsNil)
+{
+    Token name_token(TokenType::IDENTIFIER, "noop", monostate{}, 1);
+
+    auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{}, make_unique<BlockStmt>());
+    interpreter.interpret(single(move(function_stmt)));
+
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), {});
+
+    EXPECT_TRUE(holds_alternative<monostate>(interpreter.evaluate(&call)));
+}
+
+TEST_F(InterpreterTestFixture, CallingNonCallableValueThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "x", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "10", 10.0, 1)));
+    interpreter.interpret(single(move(var_decl)));
+
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), {});
+
+    EXPECT_THROW(interpreter.evaluate(&call), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, CallingStringValueThrowsCodeFabExceptionWithExpectedMessage)
+{
+    // var x = "hello"; x();
+    Token name_token(TokenType::IDENTIFIER, "x", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::STRING, "hello", string("hello"), 1)));
+    interpreter.interpret(single(move(var_decl)));
+
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::RIGHT_PAREN, ")", monostate{}, 1), {});
+
+    try {
+        interpreter.evaluate(&call);
+        FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+    }
+    catch (const CodeFabException& exception) {
+        EXPECT_THAT(exception.what(), testing::HasSubstr("호출할 수 없는 대상입니다"));
+    }
+}
+
+TEST_F(InterpreterTestFixture, CallingFunctionWithWrongArgumentCountThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "add", monostate{}, 1);
+    Token a_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    Token b_token(TokenType::IDENTIFIER, "b", monostate{}, 1);
+
+    auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token, b_token }, make_unique<BlockStmt>());
+    interpreter.interpret(single(move(function_stmt)));
+
+    vector<unique_ptr<Expression>> arguments;
+    arguments.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), move(arguments));
+
+    EXPECT_THROW(interpreter.evaluate(&call), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, ClosureCapturesEnclosingEnvironmentVariable)
+{
+    Token base_token(TokenType::IDENTIFIER, "base", monostate{}, 1);
+    auto base_decl = make_unique<VarDeclareStmt>(base_token);
+    base_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "10", 10.0, 1)));
+    interpreter.interpret(single(move(base_decl)));
+
+    Token name_token(TokenType::IDENTIFIER, "addBase", monostate{}, 1);
+    Token a_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+
+    auto body = make_unique<BlockStmt>();
+    body->addStatement(make_unique<ReturnStmt>(
+        Token(TokenType::RETURN, "return", monostate{}, 1),
+        make_unique<BinaryExpr>(make_unique<VariableExpr>(a_token), Token(TokenType::PLUS, "+", monostate{}, 1), make_unique<VariableExpr>(base_token))));
+
+    auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token }, move(body));
+    interpreter.interpret(single(move(function_stmt)));
+
+    vector<unique_ptr<Expression>> arguments;
+    arguments.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), move(arguments));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&call)), 15.0);
+}
+
+TEST_F(InterpreterTestFixture, RecursiveFunctionCallComputesFactorial)
+{
+    // Func fact(n) { if (n <= 1) return 1; return n * fact(n - 1); }
+    Token name_token(TokenType::IDENTIFIER, "fact", monostate{}, 1);
+    Token n_token(TokenType::IDENTIFIER, "n", monostate{}, 1);
+
+    auto base_condition = make_unique<BinaryExpr>(
+        make_unique<VariableExpr>(n_token),
+        Token(TokenType::LESS_EQUAL, "<=", monostate{}, 1),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+    auto base_return = make_unique<ReturnStmt>(
+        Token(TokenType::RETURN, "return", monostate{}, 1),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    auto body = make_unique<BlockStmt>();
+    body->addStatement(make_unique<IfStmt>(move(base_condition), move(base_return), nullptr));
+
+    vector<unique_ptr<Expression>> recursive_args;
+    recursive_args.push_back(make_unique<BinaryExpr>(
+        make_unique<VariableExpr>(n_token),
+        Token(TokenType::MINUS, "-", monostate{}, 1),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1))));
+    auto recursive_call = make_unique<CallExpr>(
+        make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), move(recursive_args));
+    auto recursive_value = make_unique<BinaryExpr>(
+        make_unique<VariableExpr>(n_token), Token(TokenType::STAR, "*", monostate{}, 1), move(recursive_call));
+    body->addStatement(make_unique<ReturnStmt>(Token(TokenType::RETURN, "return", monostate{}, 1), move(recursive_value)));
+
+    auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ n_token }, move(body));
+    interpreter.interpret(single(move(function_stmt)));
+
+    vector<unique_ptr<Expression>> call_args;
+    call_args.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+    CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), move(call_args));
+
+    EXPECT_EQ(get<double>(interpreter.evaluate(&call)), 120.0);
+}
