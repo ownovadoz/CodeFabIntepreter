@@ -297,4 +297,138 @@ TEST(CodeFabFacadeDefaultConstructorTest, FunctionDeclaredOnOnePreviousLineCanBe
 
 	EXPECT_EQ(captured.str(), "10\n");
 }
+
+namespace {
+	// print로 출력된 내용을 캡처하기 위해 std::cout의 streambuf를 잠깐 바꿔치기한다.
+	string captureStdout(CodeFabFacade& facade, const string& code) {
+		ostringstream captured;
+		std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+		facade.execute(code);
+		std::cout.rdbuf(original_buf);
+		return captured.str();
+	}
+}
+
+TEST(CodeFabFacadeClassTest, InstantiatingClassLikeAFunctionCreatesInstance) {
+	CodeFabFacade facade;
+
+	EXPECT_NO_THROW(facade.execute("Class Robot {} var r = Robot();"));
+}
+
+TEST(CodeFabFacadeClassTest, FieldsCanBeWrittenAndReadDynamically) {
+	CodeFabFacade facade;
+	facade.execute("Class Robot {} var r = Robot(); r.name = \"SpeedRobot\"; r.speed = 10;");
+
+	EXPECT_EQ(captureStdout(facade, "print r.name;"), "SpeedRobot\n");
+	EXPECT_EQ(captureStdout(facade, "print r.speed;"), "10\n");
+}
+
+TEST(CodeFabFacadeClassTest, FieldCanBeUpdatedFromItsOwnPreviousValue) {
+	CodeFabFacade facade;
+	facade.execute("Class Robot {} var r = Robot(); r.speed = 10; r.speed = r.speed + 5;");
+
+	EXPECT_EQ(captureStdout(facade, "print r.speed;"), "15\n");
+}
+
+TEST(CodeFabFacadeClassTest, ReadingUndefinedFieldThrowsRuntimeError) {
+	CodeFabFacade facade;
+	facade.execute("Class Robot {} var r = Robot();");
+
+	EXPECT_THROW(facade.execute("print r.power;"), CodeFabException);
+}
+
+TEST(CodeFabFacadeClassTest, MethodUsesThisToReadAndWriteFieldsAndCallOtherMethods) {
+	CodeFabFacade facade;
+	facade.execute(
+		"Class Robot {"
+		"  move(dist) { this.position = this.position + dist; }"
+		"  report() { print this.position; }"
+		"}"
+		"var r = Robot(); r.position = 0; r.move(5);");
+
+	EXPECT_EQ(captureStdout(facade, "r.report();"), "5\n");
+}
+
+TEST(CodeFabFacadeClassTest, InitIsCalledAutomaticallyOnInstantiationAndAlwaysReturnsInstance) {
+	CodeFabFacade facade;
+	facade.execute(
+		"Class Robot { init(name, speed) { this.name = name; this.speed = speed; } }"
+		"var r = Robot(\"AndOr\", 10);");
+
+	EXPECT_EQ(captureStdout(facade, "print r.name;"), "AndOr\n");
+	EXPECT_EQ(captureStdout(facade, "print r.speed;"), "10\n");
+}
+
+TEST(CodeFabFacadeClassTest, ReturnInsideInitIsRejectedByChecker) {
+	CodeFabFacade facade;
+
+	EXPECT_THROW(facade.execute("Class Robot { init() { return 5; } }"), CodeFabException);
+}
+
+TEST(CodeFabFacadeClassTest, SubclassInheritsAndCanOverrideAndCallSuperMethod) {
+	CodeFabFacade facade;
+	facade.execute(
+		"Class Robot { move(dist) { print \"move\"; } }"
+		"Class SpeedRobot : Robot {"
+		"  move(dist) { Super.move(dist); print \"Speeeed!\"; }"
+		"}");
+
+	EXPECT_EQ(captureStdout(facade, "SpeedRobot().move(3);"), "move\nSpeeeed!\n");
+}
+
+TEST(CodeFabFacadeClassTest, InstanceOfIsTrueForOwnClassAndAncestorClass) {
+	CodeFabFacade facade;
+	facade.execute(
+		"Class Robot { init(name) { this.name = name; } }"
+		"Class SpeedRobot : Robot { init(name) { Super.init(name); } }"
+		"var w = SpeedRobot(\"Sam\");");
+
+	EXPECT_EQ(captureStdout(facade, "print (w instanceof SpeedRobot);"), "true\n");
+	EXPECT_EQ(captureStdout(facade, "print (w instanceof Robot);"), "true\n");
+}
+
+TEST(CodeFabFacadeClassTest, InstanceOfIsFalseForUnrelatedClass) {
+	CodeFabFacade facade;
+	facade.execute("Class Robot {} Class Cat {} var r = Robot();");
+
+	EXPECT_EQ(captureStdout(facade, "print (r instanceof Cat);"), "false\n");
+}
+
+TEST(CodeFabFacadeClassTest, ThisOutsideClassIsRejectedByChecker) {
+	CodeFabFacade facade;
+
+	EXPECT_THROW(facade.execute("print this;"), CodeFabException);
+}
+
+TEST(CodeFabFacadeClassTest, SuperOutsideClassIsRejectedByChecker) {
+	CodeFabFacade facade;
+
+	EXPECT_THROW(facade.execute("Super.move();"), CodeFabException);
+}
+
+TEST(CodeFabFacadeClassTest, SuperInClassWithoutParentIsRejectedByChecker) {
+	CodeFabFacade facade;
+
+	EXPECT_THROW(facade.execute("Class Robot { move() { Super.move(); } }"), CodeFabException);
+}
+
+TEST(CodeFabFacadeClassTest, SelfInheritanceIsRejectedByChecker) {
+	CodeFabFacade facade;
+
+	EXPECT_THROW(facade.execute("Class Robot : Robot {}"), CodeFabException);
+}
+
+TEST(CodeFabFacadeClassTest, InheritingFromNonClassValueThrowsRuntimeError) {
+	CodeFabFacade facade;
+	facade.execute("var x = 10;");
+
+	EXPECT_THROW(facade.execute("Class Robot : x {}"), CodeFabException);
+}
+
+TEST(CodeFabFacadeClassTest, AccessingFieldOnNonInstanceThrowsRuntimeError) {
+	CodeFabFacade facade;
+	facade.execute("var x = \"hello\";");
+
+	EXPECT_THROW(facade.execute("x.field = 1;"), CodeFabException);
+}
 #endif

@@ -27,7 +27,9 @@ private:
 	unique_ptr<Statement> parsePrintStmt();
 	unique_ptr<Statement> parseForStmt();
 	unique_ptr<Statement> parseFunctionStmt();
+	unique_ptr<FunctionStmt> finishFunctionDecl(const Token& name);
 	unique_ptr<Statement> parseReturnStmt();
+	unique_ptr<Statement> parseClassStmt();
 	unique_ptr<Statement> parseExpressionStmt();
 
 	unique_ptr<BlockStmt> parseBlock();
@@ -38,6 +40,7 @@ private:
 	unique_ptr<Expression> parseLogicOr();
 	unique_ptr<Expression> parseLogicAnd();
 	unique_ptr<Expression> parseEquality();
+	unique_ptr<Expression> parseInstanceOf();
 	unique_ptr<Expression> parseComparison();
 	unique_ptr<Expression> parseTerm();
 	unique_ptr<Expression> parseFactor();

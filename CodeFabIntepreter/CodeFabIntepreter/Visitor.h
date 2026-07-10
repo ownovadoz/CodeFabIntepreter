@@ -14,6 +14,11 @@ public:
 	virtual void visitGroupingExpr(const GroupingExpr& expr) = 0;
 	virtual void visitLogicalExpr(const LogicalExpr& expr) = 0;
 	virtual void visitCallExpr(const CallExpr& expr) = 0;
+	virtual void visitGetExpr(const GetExpr& expr) = 0;
+	virtual void visitSetExpr(const SetExpr& expr) = 0;
+	virtual void visitThisExpr(const ThisExpr& expr) = 0;
+	virtual void visitSuperExpr(const SuperExpr& expr) = 0;
+	virtual void visitInstanceOfExpr(const InstanceOfExpr& expr) = 0;
 };
 
 class StmtVisitor {
@@ -27,4 +32,5 @@ public:
 	virtual void visitForStmt(const ForStmt& stmt) = 0;
 	virtual void visitFunctionStmt(const FunctionStmt& stmt) = 0;
 	virtual void visitReturnStmt(const ReturnStmt& stmt) = 0;
+	virtual void visitClassStmt(const ClassStmt& stmt) = 0;
 };

@@ -267,3 +267,55 @@ TEST_F(LexerTestFixture, UnexpectedCharacterThrows)
 {
     EXPECT_THROW(scan("@"), CodeFabException);
 }
+
+TEST_F(LexerTestFixture, DotAndColonTokens)
+{
+    auto tokens = scan(". :");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::DOT);
+    EXPECT_EQ(tokens[1].getType(), TokenType::COLON);
+    EXPECT_EQ(tokens[2].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordClass)
+{
+    auto tokens = scan("Class");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::CLASS);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordThis)
+{
+    auto tokens = scan("this");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::THIS);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordSuper)
+{
+    auto tokens = scan("Super");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::SUPER);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, KeywordInstanceof)
+{
+    auto tokens = scan("instanceof");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::INSTANCEOF);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, ClassDeclarationTokenSequence)
+{
+    auto tokens = scan("Class SpeedRobot : Robot { move(d) { Super.move(d); } }");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::CLASS);
+    EXPECT_EQ(tokens[1].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[2].getType(), TokenType::COLON);
+    EXPECT_EQ(tokens[3].getType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(tokens[4].getType(), TokenType::LEFT_BRACE);
+}

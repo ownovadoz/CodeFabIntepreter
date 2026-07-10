@@ -988,3 +988,148 @@ TEST_F(ParserTestFixture, RecursiveFunctionDeclarationPassed) {
 	ASSERT_NE(function_stmt, nullptr);
 	ASSERT_EQ(function_stmt->getBody()->getStatements().size(), 2u);
 }
+
+TEST_F(ParserTestFixture, GetExprPassed) {
+	// print r.speed;
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "speed", "speed", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+	const GetExpr* get = dynamic_cast<const GetExpr*>(print_stmt->getExpr());
+	ASSERT_NE(get, nullptr);
+	EXPECT_EQ(get->getName().getLexeme(), "speed");
+}
+
+TEST_F(ParserTestFixture, SetExprPassed) {
+	// r.speed = 10;
+	const auto& program = buildAndParseProgram({
+		{TokenType::IDENTIFIER, "r", "r", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "speed", "speed", 1},
+		{TokenType::EQUAL, "=", "=", 1},
+		{TokenType::NUMBER, "10", 10.0, 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+	const SetExpr* set = dynamic_cast<const SetExpr*>(expr_stmt->getExpr());
+	ASSERT_NE(set, nullptr);
+	EXPECT_EQ(set->getName().getLexeme(), "speed");
+}
+
+TEST_F(ParserTestFixture, ClassStmtWithSuperclassAndMethodsPassed) {
+	// Class SpeedRobot : Robot { move(dist) { } }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "SpeedRobot", "SpeedRobot", 1},
+		{TokenType::COLON, ":", ":", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::IDENTIFIER, "move", "move", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "dist", "dist", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassStmt* class_stmt = dynamic_cast<const ClassStmt*>(program[0].get());
+	ASSERT_NE(class_stmt, nullptr);
+	EXPECT_EQ(class_stmt->getName().getLexeme(), "SpeedRobot");
+	ASSERT_NE(class_stmt->getSuperclass(), nullptr);
+	EXPECT_EQ(class_stmt->getSuperclass()->getToken().getLexeme(), "Robot");
+	ASSERT_EQ(class_stmt->getMethods().size(), 1u);
+	EXPECT_EQ(class_stmt->getMethods()[0]->getName().getLexeme(), "move");
+}
+
+TEST_F(ParserTestFixture, ClassStmtWithoutSuperclassPassed) {
+	// Class Robot { }
+	const auto& program = buildAndParseProgram({
+		{TokenType::CLASS, "Class", "Class", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::LEFT_BRACE, "{", "{", 1},
+		{TokenType::RIGHT_BRACE, "}", "}", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ClassStmt* class_stmt = dynamic_cast<const ClassStmt*>(program[0].get());
+	ASSERT_NE(class_stmt, nullptr);
+	EXPECT_EQ(class_stmt->getSuperclass(), nullptr);
+	EXPECT_EQ(class_stmt->getMethods().size(), 0u);
+}
+
+TEST_F(ParserTestFixture, ThisExprPassed) {
+	// print this;
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::THIS, "this", "this", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+	EXPECT_NE(dynamic_cast<const ThisExpr*>(print_stmt->getExpr()), nullptr);
+}
+
+TEST_F(ParserTestFixture, SuperExprPassed) {
+	// Super.move(dist);
+	const auto& program = buildAndParseProgram({
+		{TokenType::SUPER, "Super", "Super", 1},
+		{TokenType::DOT, ".", ".", 1},
+		{TokenType::IDENTIFIER, "move", "move", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "dist", "dist", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(program[0].get());
+	ASSERT_NE(expr_stmt, nullptr);
+	const CallExpr* call = dynamic_cast<const CallExpr*>(expr_stmt->getExpr());
+	ASSERT_NE(call, nullptr);
+	const SuperExpr* super_expr = dynamic_cast<const SuperExpr*>(call->getCallee());
+	ASSERT_NE(super_expr, nullptr);
+	EXPECT_EQ(super_expr->getMethod().getLexeme(), "move");
+}
+
+TEST_F(ParserTestFixture, InstanceOfExprPassed) {
+	// print (w instanceof Robot);
+	const auto& program = buildAndParseProgram({
+		{TokenType::PRINT, "print", "print", 1},
+		{TokenType::LEFT_PAREN, "(", "(", 1},
+		{TokenType::IDENTIFIER, "w", "w", 1},
+		{TokenType::INSTANCEOF, "instanceof", "instanceof", 1},
+		{TokenType::IDENTIFIER, "Robot", "Robot", 1},
+		{TokenType::RIGHT_PAREN, ")", ")", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(program[0].get());
+	ASSERT_NE(print_stmt, nullptr);
+	const GroupingExpr* grouping = dynamic_cast<const GroupingExpr*>(print_stmt->getExpr());
+	ASSERT_NE(grouping, nullptr);
+	const InstanceOfExpr* instance_of = dynamic_cast<const InstanceOfExpr*>(grouping->getExpr());
+	ASSERT_NE(instance_of, nullptr);
+	EXPECT_EQ(instance_of->getClassName().getLexeme(), "Robot");
+}

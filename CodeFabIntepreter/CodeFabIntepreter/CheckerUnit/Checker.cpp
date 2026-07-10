@@ -121,10 +121,10 @@ void Checker::visitFunctionStmt(const FunctionStmt& stmt)
     resolveFunction(stmt);
 }
 
-void Checker::resolveFunction(const FunctionStmt& stmt)
+void Checker::resolveFunction(const FunctionStmt& stmt, bool is_initializer)
 {
     ScopeGuard scope_guard(*this);
-    FunctionGuard function_guard(*this);
+    FunctionGuard function_guard(*this, is_initializer);
 
     for (const Token& param : stmt.getParams())
     {
@@ -141,7 +141,31 @@ void Checker::visitReturnStmt(const ReturnStmt& stmt)
     if (function_depth == 0)
         throw CodeFabException(stmt.getKeyword(), "함수 외부에서 return을 사용할 수 없습니다.");
 
+    if (in_initializer)
+        throw CodeFabException(stmt.getKeyword(), "생성자(init)에서는 return을 사용할 수 없습니다.");
+
     resolveExpr(stmt.getValue());
+}
+
+void Checker::visitClassStmt(const ClassStmt& stmt)
+{
+    declare(stmt.getName());
+    define(stmt.getName());
+
+    const VariableExpr* superclass = stmt.getSuperclass();
+    if (superclass != nullptr)
+    {
+        if (superclass->getToken().getLexeme() == stmt.getName().getLexeme())
+            throw CodeFabException(superclass->getToken(), "클래스는 자기 자신을 상속할 수 없습니다: '" + stmt.getName().getLexeme() + "'");
+
+        // 상속 대상이 실제로 클래스인지(변수/함수가 아닌지)는 값의 타입을 알아야 하는
+        // 런타임 검사이므로, 여기서는 참조 자체만 검사하고 최종 판단은 Executor가 내린다.
+        resolveExpr(superclass);
+    }
+
+    ClassGuard class_guard(*this, superclass != nullptr);
+    for (const auto& method : stmt.getMethods())
+        resolveFunction(*method, method->isInitializer());
 }
 
 void Checker::resolveExpr(const Expression* expr)
@@ -199,4 +223,36 @@ void Checker::visitCallExpr(const CallExpr& expr)
 
     for (const auto& argument : expr.getArguments())
         resolveExpr(argument.get());
+}
+
+void Checker::visitGetExpr(const GetExpr& expr)
+{
+    // 필드/메서드 이름 자체는 변수가 아니므로 검사 대상이 아니다. 실제 존재 여부는 런타임에 확인한다.
+    resolveExpr(expr.getObject());
+}
+
+void Checker::visitSetExpr(const SetExpr& expr)
+{
+    resolveExpr(expr.getValue());
+    resolveExpr(expr.getObject());
+}
+
+void Checker::visitThisExpr(const ThisExpr& expr)
+{
+    if (class_stack.empty())
+        throw CodeFabException(expr.getKeyword(), "클래스 외부에서 this를 사용할 수 없습니다.");
+}
+
+void Checker::visitSuperExpr(const SuperExpr& expr)
+{
+    if (class_stack.empty())
+        throw CodeFabException(expr.getKeyword(), "클래스 외부에서 Super를 사용할 수 없습니다.");
+
+    if (!class_stack.back().has_superclass)
+        throw CodeFabException(expr.getKeyword(), "부모 클래스가 없는 클래스에서는 Super를 사용할 수 없습니다.");
+}
+
+void Checker::visitInstanceOfExpr(const InstanceOfExpr& expr)
+{
+    resolveExpr(expr.getObject());
 }

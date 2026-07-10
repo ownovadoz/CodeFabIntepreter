@@ -39,11 +39,38 @@ public:
     class FunctionGuard
     {
     public:
-        explicit FunctionGuard(Checker& checker) : checker(checker) { checker.function_depth++; }
-        ~FunctionGuard() { checker.function_depth--; }
+        explicit FunctionGuard(Checker& checker, bool is_initializer = false)
+            : checker(checker), previous_in_initializer(checker.in_initializer)
+        {
+            checker.function_depth++;
+            checker.in_initializer = is_initializer;
+        }
+        ~FunctionGuard()
+        {
+            checker.function_depth--;
+            checker.in_initializer = previous_in_initializer;
+        }
 
         FunctionGuard(const FunctionGuard&) = delete;
         FunctionGuard& operator=(const FunctionGuard&) = delete;
+
+    private:
+        Checker& checker;
+        bool previous_in_initializer;
+    };
+
+    // 클래스 본문을 검사하는 동안 this/Super 사용 가능 여부를 추적한다.
+    class ClassGuard
+    {
+    public:
+        ClassGuard(Checker& checker, bool has_superclass) : checker(checker)
+        {
+            checker.class_stack.push_back(ClassContext{ has_superclass });
+        }
+        ~ClassGuard() { checker.class_stack.pop_back(); }
+
+        ClassGuard(const ClassGuard&) = delete;
+        ClassGuard& operator=(const ClassGuard&) = delete;
 
     private:
         Checker& checker;
@@ -63,6 +90,11 @@ public:
     void visitGroupingExpr(const GroupingExpr& expr) override;
     void visitLogicalExpr(const LogicalExpr& expr) override;
     void visitCallExpr(const CallExpr& expr) override;
+    void visitGetExpr(const GetExpr& expr) override;
+    void visitSetExpr(const SetExpr& expr) override;
+    void visitThisExpr(const ThisExpr& expr) override;
+    void visitSuperExpr(const SuperExpr& expr) override;
+    void visitInstanceOfExpr(const InstanceOfExpr& expr) override;
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;
@@ -72,8 +104,14 @@ public:
     void visitForStmt(const ForStmt& stmt) override;
     void visitFunctionStmt(const FunctionStmt& stmt) override;
     void visitReturnStmt(const ReturnStmt& stmt) override;
+    void visitClassStmt(const ClassStmt& stmt) override;
 
 private:
+    struct ClassContext
+    {
+        bool has_superclass;
+    };
+
     void beginScope();
     void endScope();
 
@@ -83,7 +121,7 @@ private:
     void resolveStmt(const Statement* stmt);
     void resolveStmtInNewScope(const Statement* stmt);
     void resolveExpr(const Expression* expr);
-    void resolveFunction(const FunctionStmt& stmt);
+    void resolveFunction(const FunctionStmt& stmt, bool is_initializer = false);
 
     // 스코프 내 각 변수 이름은 declare 시 false(선언됨, 아직 정의되지 않음)로,
     // define 시 true(정의 완료)로 표시된다. 초기화식을 검사하는 시점에는
@@ -93,4 +131,8 @@ private:
 
     // return문이 함수 몸통 내부에서 사용됐는지 판단하기 위한 중첩 함수 개수.
     int function_depth = 0;
+    // 현재 검사 중인 함수가 생성자(init)인지 여부. init 안에서는 return 자체가 금지된다.
+    bool in_initializer = false;
+    // 현재 검사 중인 클래스(중첩 시 가장 안쪽)의 문맥. this/Super 사용 가능 여부를 검사한다.
+    vector<ClassContext> class_stack;
 };

@@ -37,6 +37,8 @@ void Lexer::scanToken()
         case '}': addToken(TokenType::RIGHT_BRACE); break;
         case ';': addToken(TokenType::SEMICOLON);   break;
         case ',': addToken(TokenType::COMMA);       break;
+        case '.': addToken(TokenType::DOT);         break;
+        case ':': addToken(TokenType::COLON);       break;
         case '+': addToken(TokenType::PLUS);        break;
         case '-': addToken(TokenType::MINUS);       break;
         case '*': addToken(TokenType::STAR);        break;
@@ -142,17 +144,21 @@ void Lexer::scanIdentifier()
         advance();
 
     static const unordered_map<string_view, TokenType> keywords = {
-        {"and",    TokenType::AND},
-        {"else",   TokenType::ELSE},
-        {"false",  TokenType::FALSE},
-        {"for",    TokenType::FOR},
-        {"Func",   TokenType::FUNC},
-        {"if",     TokenType::IF},
-        {"or",     TokenType::OR},
-        {"print",  TokenType::PRINT},
-        {"return", TokenType::RETURN},
-        {"true",   TokenType::TRUE},
-        {"var",    TokenType::VAR},
+        {"and",        TokenType::AND},
+        {"else",       TokenType::ELSE},
+        {"false",      TokenType::FALSE},
+        {"for",        TokenType::FOR},
+        {"Func",       TokenType::FUNC},
+        {"if",         TokenType::IF},
+        {"or",         TokenType::OR},
+        {"print",      TokenType::PRINT},
+        {"return",     TokenType::RETURN},
+        {"true",       TokenType::TRUE},
+        {"var",        TokenType::VAR},
+        {"Class",      TokenType::CLASS},
+        {"this",       TokenType::THIS},
+        {"Super",      TokenType::SUPER},
+        {"instanceof", TokenType::INSTANCEOF},
     };
 
     string_view text(source.data() + start, current - start);

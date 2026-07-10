@@ -125,6 +125,11 @@ public:
 		return body.get();
 	}
 
+	// init은 클래스 생성자를 나타내는 예약된 메서드 이름이다(별도 키워드 없이 이름으로 식별).
+	bool isInitializer() const {
+		return name.getLexeme() == "init";
+	}
+
 	void accept(StmtVisitor& visitor) const override;
 
 private:
@@ -150,6 +155,31 @@ public:
 private:
 	Token keyword;
 	unique_ptr<Expression> value;
+};
+
+class ClassStmt : public Statement {
+public:
+	ClassStmt(const Token& name, unique_ptr<VariableExpr> superclass, vector<unique_ptr<FunctionStmt>> methods)
+		: name{ name }, superclass{ move(superclass) }, methods{ move(methods) } {}
+
+	const Token& getName() const {
+		return name;
+	}
+
+	const VariableExpr* getSuperclass() const {
+		return superclass.get();
+	}
+
+	const vector<unique_ptr<FunctionStmt>>& getMethods() const {
+		return methods;
+	}
+
+	void accept(StmtVisitor& visitor) const override;
+
+private:
+	Token name;
+	unique_ptr<VariableExpr> superclass;
+	vector<unique_ptr<FunctionStmt>> methods;
 };
 
 class ForStmt : public Statement {
