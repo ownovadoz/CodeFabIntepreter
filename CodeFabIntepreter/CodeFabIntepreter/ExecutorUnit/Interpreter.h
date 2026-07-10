@@ -44,6 +44,14 @@ public:
     void setBeforeStatementHook(function<void(int line)> hook);
 #endif
 
+    // 현재(가장 안쪽) 스코프부터 전역까지 거슬러 올라가며 보이는 모든 변수를
+    // 열거한다. watch/inspect가 디버그 정지 시점에 값을 조회하는 데 사용한다.
+#ifdef _DEBUG
+    vector<VariableSnapshot> inspectVariables() const override;
+#else
+    vector<VariableSnapshot> inspectVariables() const;
+#endif
+
 private:
     void execute(Statement* stmt);
     int resolveStatementLine(const Statement* stmt) const;

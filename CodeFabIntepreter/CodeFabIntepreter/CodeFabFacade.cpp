@@ -33,6 +33,10 @@ void CodeFabFacade::setBeforeStatementHook(function<void(int line)> hook) {
     executor->setBeforeStatementHook(std::move(hook));
 }
 
+vector<VariableSnapshot> CodeFabFacade::inspectVariables() const {
+    return executor->inspectVariables();
+}
+
 #else
 
 void CodeFabFacade::execute(const string& code_line) {
@@ -43,6 +47,10 @@ void CodeFabFacade::execute(const string& code_line) {
 
 void CodeFabFacade::setBeforeStatementHook(function<void(int line)> hook) {
     executor.setBeforeStatementHook(std::move(hook));
+}
+
+vector<VariableSnapshot> CodeFabFacade::inspectVariables() const {
+    return executor.inspectVariables();
 }
 
 #endif

@@ -30,6 +30,20 @@ void Interpreter::setBeforeStatementHook(function<void(int line)> hook)
     before_statement_hook = std::move(hook);
 }
 
+vector<VariableSnapshot> Interpreter::inspectVariables() const
+{
+    vector<VariableSnapshot> snapshot;
+
+    for (shared_ptr<Environment> scope = environment; scope != nullptr; scope = scope->getEnclosing()) {
+        bool is_global = scope->isGlobal();
+        for (const auto& [name, value] : scope->getOwnVariables()) {
+            snapshot.push_back({ name, value, is_global });
+        }
+    }
+
+    return snapshot;
+}
+
 void Interpreter::execute(Statement* stmt)
 {
     if (stmt == nullptr) return;

@@ -15,6 +15,7 @@ public:
 
 	const vector<string>& getLoadedLines() const { return loaded_lines; }
 	const set<int>& getBreakpoints() const { return breakpoints; }
+	const set<string>& getWatchedVariables() const { return watched_variables; }
 
 protected:
 	void afterLoad(const string& path) override;
@@ -31,7 +32,10 @@ private:
 	void onBeforeStatement(int line);
 	bool processCommand(const string& raw_command);
 	void printPauseMessage(int line, bool is_breakpoint_hit);
+	void printWatchedVariables();
+	void printInspect();
 
 	set<int> breakpoints;
+	set<string> watched_variables;
 	Mode mode = Mode::Step;
 };

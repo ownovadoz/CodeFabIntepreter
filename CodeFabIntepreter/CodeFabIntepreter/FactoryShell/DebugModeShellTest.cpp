@@ -139,6 +139,90 @@ TEST_F(DebugModeShellTestFixture, RemoveCommandUnregistersBreakpoint) {
 	EXPECT_THAT(shell.getBreakpoints(), IsEmpty());
 }
 
+TEST_F(DebugModeShellTestFixture, WatchCommandAddsVariableToWatchedSet) {
+	feedCommands("watch a\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(shell.getWatchedVariables(), UnorderedElementsAre("a"));
+}
+
+TEST_F(DebugModeShellTestFixture, UnwatchCommandRemovesVariableFromWatchedSet) {
+	feedCommands("watch a\nunwatch a\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(shell.getWatchedVariables(), IsEmpty());
+}
+
+TEST_F(DebugModeShellTestFixture, WatchedVariableValueIsAutoPrintedOnEachSubsequentPause) {
+	// watch 등록 시점엔 아직 값이 없어 출력되지 않고, 그 다음 정지부터 자동 출력된다.
+	feedCommands("watch a\nstep\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;", "a = 2;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[WATCH] 'a' 감시 등록"));
+	EXPECT_THAT(output(), HasSubstr("[WATCH] a = 1"));
+}
+
+TEST_F(DebugModeShellTestFixture, UnwatchStopsFurtherAutoPrintingOfThatVariable) {
+	feedCommands("watch a\nstep\nunwatch a\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;", "var b = 2;", "print b;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[WATCH] 'a' 감시 해제"));
+
+	size_t watch_value_count = 0;
+	size_t pos = 0;
+	while ((pos = output().find("[WATCH] a =", pos)) != string::npos) {
+		watch_value_count++;
+		pos++;
+	}
+	EXPECT_EQ(watch_value_count, 1u);
+}
+
+TEST_F(DebugModeShellTestFixture, WatchesCommandPrintsCurrentValuesOfAllWatchedVariables) {
+	feedCommands("watch a\nwatch b\nstep\nstep\nwatches\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;", "var b = 2;", "print a;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[WATCH] a = 1"));
+	EXPECT_THAT(output(), HasSubstr("[WATCH] b = 2"));
+}
+
+TEST_F(DebugModeShellTestFixture, InspectCommandListsLocalAndGlobalVariablesWithTypeTags) {
+	feedCommands("step\nstep\ninspect\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var g = 1;", "{ var b = 2; print b; }"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[로컬] b = 2 (Number)"));
+	EXPECT_THAT(output(), HasSubstr("[전역] g = 1 (Number)"));
+}
+
 TEST_F(DebugModeShellTestFixture, MultipleStatementsOnOneLineEachPauseSeparately) {
 	// 실제 Interpreter 훅으로 연결되어 있어, 한 줄에 문장이 여러 개(세미콜론으로 구분)
 	// 있어도 문장 단위로 각각 멈춘다. 이전 "한 줄 = 한 Stmt" 가정으로는 불가능했던 부분이다.

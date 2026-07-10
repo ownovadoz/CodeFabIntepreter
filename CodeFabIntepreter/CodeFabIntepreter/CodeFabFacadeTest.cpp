@@ -34,6 +34,7 @@ class MockExecutor : public IExecutor {
 public:
 	MOCK_METHOD(void, interpret, (const vector<unique_ptr<Statement>>& statements), (override));
 	MOCK_METHOD(void, setBeforeStatementHook, (function<void(int line)> hook), (override));
+	MOCK_METHOD(vector<VariableSnapshot>, inspectVariables, (), (const, override));
 };
 
 class CodeFabFacadeTestFixture : public ::testing::Test {

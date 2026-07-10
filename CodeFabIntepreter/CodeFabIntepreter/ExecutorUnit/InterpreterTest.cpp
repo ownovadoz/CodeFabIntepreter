@@ -483,3 +483,57 @@ TEST_F(InterpreterTestFixture, InterpretWithoutRegisteringHookStillExecutesNorma
     EXPECT_NO_THROW(interpreter.interpret(single(move(var_decl))));
     EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 3.0);
 }
+
+TEST_F(InterpreterTestFixture, InspectVariablesAfterTopLevelDeclarationReturnsItAsGlobal)
+{
+    auto var_decl = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "a", monostate{}, 1));
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    interpreter.interpret(single(move(var_decl)));
+
+    vector<VariableSnapshot> snapshot = interpreter.inspectVariables();
+
+    ASSERT_EQ(snapshot.size(), 1u);
+    EXPECT_EQ(snapshot[0].name, "a");
+    EXPECT_EQ(get<double>(snapshot[0].value), 3.0);
+    EXPECT_TRUE(snapshot[0].is_global);
+}
+
+TEST_F(InterpreterTestFixture, InspectVariablesInsideBlockTagsInnerAsLocalAndOuterAsGlobal)
+{
+    auto global_decl = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "g", monostate{}, 1));
+    global_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    auto inner_decl = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "b", monostate{}, 2));
+    inner_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 2)));
+
+    auto print_stmt = make_unique<PrintStmt>(make_unique<VariableExpr>(Token(TokenType::IDENTIFIER, "b", monostate{}, 3)));
+
+    auto block = make_unique<BlockStmt>();
+    block->addStatement(move(inner_decl));
+    block->addStatement(move(print_stmt));
+
+    vector<unique_ptr<Statement>> statements;
+    statements.push_back(move(global_decl));
+    statements.push_back(move(block));
+
+    // print 문(줄 3) 직전, 즉 블록 내부 스코프가 살아있는 시점에 스냅샷을 떠본다.
+    vector<VariableSnapshot> captured;
+    interpreter.setBeforeStatementHook([&](int line) {
+        if (line == 3) captured = interpreter.inspectVariables();
+    });
+
+    ostringstream captured_stdout;
+    std::streambuf* original_buf = std::cout.rdbuf(captured_stdout.rdbuf());
+    interpreter.interpret(statements);
+    std::cout.rdbuf(original_buf);
+
+    bool found_local_b = false;
+    bool found_global_g = false;
+    for (const auto& entry : captured) {
+        if (entry.name == "b" && !entry.is_global && get<double>(entry.value) == 2.0) found_local_b = true;
+        if (entry.name == "g" && entry.is_global && get<double>(entry.value) == 1.0) found_global_g = true;
+    }
+    EXPECT_TRUE(found_local_b);
+    EXPECT_TRUE(found_global_g);
+}
