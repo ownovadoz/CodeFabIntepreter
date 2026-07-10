@@ -74,7 +74,7 @@ void DebugModeShell::onBeforeStatement(int line) {
 	bool should_pause = mode != Mode::Continue || is_breakpoint;
 	if (!should_pause) return;
 
-	printPauseMessage(line, mode == Mode::Continue && is_breakpoint);
+	printPauseMessage(line, is_breakpoint);
 	while (!processCommand(defaultReadCommand())) {}
 }
 

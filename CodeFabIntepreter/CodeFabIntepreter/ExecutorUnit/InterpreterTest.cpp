@@ -470,9 +470,9 @@ TEST_F(InterpreterTestFixture, BeforeStatementHookIsCalledForStatementsNestedIns
 
     interpreter.interpret(single(move(block)));
 
-    // 블록 자신도 하나의 Stmt이므로 첫 내부 문장의 줄 번호로 한 번,
-    // 이어서 내부 문장 각각에 대해 한 번씩 총 3번 호출된다.
-    EXPECT_THAT(observed_lines, testing::ElementsAre(5, 5, 6));
+    // BlockStmt 자신은 실행 지점이 아니므로 훅이 호출되지 않고,
+    // 내부 문장 각각에 대해서만 한 번씩 호출된다.
+    EXPECT_THAT(observed_lines, testing::ElementsAre(5, 6));
 }
 
 TEST_F(InterpreterTestFixture, InterpretWithoutRegisteringHookStillExecutesNormally)

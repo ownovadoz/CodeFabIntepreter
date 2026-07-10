@@ -113,6 +113,20 @@ TEST_F(DebugModeShellTestFixture, BreakThenContinueStopsAtBreakpointLine) {
 	EXPECT_THAT(output(), HasSubstr("[DEBUG] 3번째 줄에서 정지 (breakpoint) → print a;"));
 }
 
+TEST_F(DebugModeShellTestFixture, SteppingOntoABreakpointLineStillShowsTheBreakpointTag) {
+	// continue로 도달했을 때뿐 아니라, step으로 그냥 지나가다 breakpoint가
+	// 걸린 줄에 도착해도 (breakpoint) 표시가 나와야 한다.
+	feedCommands("break 2\nstep\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;", "var b = 2;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[DEBUG] 2번째 줄에서 정지 (breakpoint) → var b = 2;"));
+}
+
 TEST_F(DebugModeShellTestFixture, RemoveCommandUnregistersBreakpoint) {
 	feedCommands("break 2\nremove 2\nstep\nstep\n");
 	DebugModeShell shell(

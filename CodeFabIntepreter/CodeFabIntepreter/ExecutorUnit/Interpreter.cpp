@@ -34,7 +34,12 @@ void Interpreter::execute(Statement* stmt)
 {
     if (stmt == nullptr) return;
 
-    if (before_statement_hook) before_statement_hook(resolveStatementLine(stmt));
+    // BlockStmt 자신은 컨테이너일 뿐 실행 지점이 아니다. 훅을 여기서도 부르면
+    // executeBlockStmt가 이어서 첫 내부 문장에 대해 다시 훅을 불러 같은 줄에서
+    // 두 번 멈추게 된다.
+    if (before_statement_hook && dynamic_cast<const BlockStmt*>(stmt) == nullptr) {
+        before_statement_hook(resolveStatementLine(stmt));
+    }
 
     stmt->accept(*this);
 }
