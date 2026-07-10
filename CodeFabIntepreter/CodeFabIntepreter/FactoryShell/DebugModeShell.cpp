@@ -4,11 +4,13 @@
 
 #include <iostream>
 #include <sstream>
+#include <utility>
 #include <variant>
 
 using std::cin;
 using std::cout;
 using std::istringstream;
+using std::make_unique;
 
 namespace {
 	string valueTypeName(const Value& value) {
@@ -16,6 +18,13 @@ namespace {
 		if (std::holds_alternative<double>(value)) return "Number";
 		if (std::holds_alternative<string>(value)) return "String";
 		return "Nil";
+	}
+
+	void printSection(const string& tag, const vector<VariableSnapshot>& snapshot, bool is_global) {
+		for (const auto& entry : snapshot) {
+			if (entry.is_global != is_global) continue;
+			cout << tag << " " << entry.name << " = " << stringify(entry.value) << " (" << valueTypeName(entry.value) << ")\n";
+		}
 	}
 }
 
@@ -57,6 +66,21 @@ void DebugModeShell::printPauseMessage(int line, bool is_breakpoint_hit) {
 	cout << message << "\n";
 }
 
+unordered_map<string, unique_ptr<DebugCommand>> DebugModeShell::createCommandTable() {
+	unordered_map<string, unique_ptr<DebugCommand>> table;
+	table["step"] = make_unique<StepCommand>();
+	table["next"] = make_unique<NextCommand>();
+	table["continue"] = make_unique<ContinueCommand>();
+	table["break"] = make_unique<BreakCommand>();
+	table["remove"] = make_unique<RemoveBreakpointCommand>();
+	table["breakpoints"] = make_unique<BreakpointsCommand>();
+	table["watch"] = make_unique<WatchCommand>();
+	table["unwatch"] = make_unique<UnwatchCommand>();
+	table["watches"] = make_unique<WatchesCommand>();
+	table["inspect"] = make_unique<InspectCommand>();
+	return table;
+}
+
 bool DebugModeShell::processCommand(const string& raw_command) {
 	istringstream iss(raw_command);
 	string command;
@@ -67,75 +91,48 @@ bool DebugModeShell::processCommand(const string& raw_command) {
 		mode = Mode::Continue;
 		return true;
 	}
-	if (command == "step") {
-		mode = Mode::Step;
-		return true;
-	}
-	if (command == "next") {
-		mode = Mode::Next;
-		return true;
-	}
-	if (command == "continue") {
-		mode = Mode::Continue;
-		return true;
-	}
-	if (command == "break") {
-		int line_number;
-		if (iss >> line_number) {
-			breakpoints.insert(line_number);
-			cout << "[DEBUG] " << line_number << "번째 줄에 breakpoint 설정\n";
-		}
-		return false;
-	}
-	if (command == "remove") {
-		int line_number;
-		if (iss >> line_number) {
-			breakpoints.erase(line_number);
-			cout << "[DEBUG] " << line_number << "번째 줄의 breakpoint 해제\n";
-		}
-		return false;
-	}
-	if (command == "breakpoints") {
-		if (breakpoints.empty()) {
-			cout << "[DEBUG] 설정된 breakpoint가 없습니다\n";
-		}
-		else {
-			string joined;
-			for (int bp : breakpoints) {
-				if (!joined.empty()) joined += ", ";
-				joined += std::to_string(bp);
-			}
-			cout << "[DEBUG] breakpoints: " << joined << "\n";
-		}
-		return false;
-	}
-	if (command == "watch") {
-		string name;
-		if (iss >> name) {
-			watched_variables.insert(name);
-			cout << "[WATCH] '" << name << "' 감시 등록\n";
-		}
-		return false;
-	}
-	if (command == "unwatch") {
-		string name;
-		if (iss >> name) {
-			watched_variables.erase(name);
-			cout << "[WATCH] '" << name << "' 감시 해제\n";
-		}
-		return false;
-	}
-	if (command == "watches") {
-		printWatchedVariables();
-		return false;
-	}
-	if (command == "inspect") {
-		printInspect();
+
+	auto found = commands.find(command);
+	if (found == commands.end()) {
+		cout << "[DEBUG] 알 수 없는 명령어: " << raw_command << "\n";
 		return false;
 	}
 
-	cout << "[DEBUG] 알 수 없는 명령어: " << raw_command << "\n";
-	return false;
+	return found->second->execute(*this, iss);
+}
+
+void DebugModeShell::addBreakpoint(int line) {
+	breakpoints.insert(line);
+	cout << "[DEBUG] " << line << "번째 줄에 breakpoint 설정\n";
+}
+
+void DebugModeShell::removeBreakpoint(int line) {
+	breakpoints.erase(line);
+	cout << "[DEBUG] " << line << "번째 줄의 breakpoint 해제\n";
+}
+
+void DebugModeShell::printBreakpoints() {
+	if (breakpoints.empty()) {
+		cout << "[DEBUG] 설정된 breakpoint가 없습니다\n";
+		return;
+	}
+
+	string joined;
+	for (int bp : breakpoints) {
+		if (!joined.empty()) joined += ", ";
+		joined += std::to_string(bp);
+	}
+	cout << "[DEBUG] breakpoints: " << joined << "\n";
+}
+
+void DebugModeShell::addWatch(const string& name) {
+	watched_variables.insert(name);
+	cout << "[WATCH] '" << name << "' 감시 등록\n";
+}
+
+void DebugModeShell::removeWatch(const string& name) {
+	watched_variables.erase(name);
+	cout << "[WATCH] '" << name << "' 감시 해제\n";
 }
 
 void DebugModeShell::printWatchedVariables() {
@@ -155,12 +152,6 @@ void DebugModeShell::printInspect() {
 	cout << "—— 현재 스코프 변수 ————————————————\n";
 
 	vector<VariableSnapshot> snapshot = code_fab_facade.inspectVariables();
-	for (const auto& entry : snapshot) {
-		if (entry.is_global) continue;
-		cout << "[로컬] " << entry.name << " = " << stringify(entry.value) << " (" << valueTypeName(entry.value) << ")\n";
-	}
-	for (const auto& entry : snapshot) {
-		if (!entry.is_global) continue;
-		cout << "[전역] " << entry.name << " = " << stringify(entry.value) << " (" << valueTypeName(entry.value) << ")\n";
-	}
+	printSection("[로컬]", snapshot, false);
+	printSection("[전역]", snapshot, true);
 }
