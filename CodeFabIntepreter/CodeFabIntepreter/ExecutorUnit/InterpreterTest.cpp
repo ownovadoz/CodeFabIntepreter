@@ -444,8 +444,11 @@ TEST_F(InterpreterTestFixture, FunctionStmtDefinesCallableVariable)
         Token(TokenType::RETURN, "return", monostate{}, 1),
         make_unique<BinaryExpr>(make_unique<VariableExpr>(a_token), Token(TokenType::PLUS, "+", monostate{}, 1), make_unique<VariableExpr>(b_token))));
 
+    // CodeFabFunction이 이 FunctionStmt를 raw pointer로 계속 참조하므로, 아래에서
+    // 함수를 실행할 때까지 그 AST가 살아있도록 statements를 지역 변수로 유지한다.
     auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token, b_token }, move(body));
-    interpreter.interpret(single(move(function_stmt)));
+    vector<unique_ptr<Statement>> statements = single(move(function_stmt));
+    interpreter.interpret(statements);
 
     EXPECT_TRUE(isCallable(interpreter.getVariableValue("add")));
 }
@@ -461,8 +464,11 @@ TEST_F(InterpreterTestFixture, CallExprInvokesFunctionAndReturnsValue)
         Token(TokenType::RETURN, "return", monostate{}, 1),
         make_unique<BinaryExpr>(make_unique<VariableExpr>(a_token), Token(TokenType::PLUS, "+", monostate{}, 1), make_unique<VariableExpr>(b_token))));
 
+    // CodeFabFunction이 이 FunctionStmt를 raw pointer로 계속 참조하므로, 아래에서
+    // 함수를 실행할 때까지 그 AST가 살아있도록 statements를 지역 변수로 유지한다.
     auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token, b_token }, move(body));
-    interpreter.interpret(single(move(function_stmt)));
+    vector<unique_ptr<Statement>> statements = single(move(function_stmt));
+    interpreter.interpret(statements);
 
     vector<unique_ptr<Expression>> arguments;
     arguments.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
@@ -477,7 +483,8 @@ TEST_F(InterpreterTestFixture, FunctionWithoutReturnStatementReturnsNil)
     Token name_token(TokenType::IDENTIFIER, "noop", monostate{}, 1);
 
     auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{}, make_unique<BlockStmt>());
-    interpreter.interpret(single(move(function_stmt)));
+    vector<unique_ptr<Statement>> statements = single(move(function_stmt));
+    interpreter.interpret(statements);
 
     CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), {});
 
@@ -522,7 +529,8 @@ TEST_F(InterpreterTestFixture, CallingFunctionWithWrongArgumentCountThrowsCodeFa
     Token b_token(TokenType::IDENTIFIER, "b", monostate{}, 1);
 
     auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token, b_token }, make_unique<BlockStmt>());
-    interpreter.interpret(single(move(function_stmt)));
+    vector<unique_ptr<Statement>> statements = single(move(function_stmt));
+    interpreter.interpret(statements);
 
     vector<unique_ptr<Expression>> arguments;
     arguments.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
@@ -547,7 +555,8 @@ TEST_F(InterpreterTestFixture, ClosureCapturesEnclosingEnvironmentVariable)
         make_unique<BinaryExpr>(make_unique<VariableExpr>(a_token), Token(TokenType::PLUS, "+", monostate{}, 1), make_unique<VariableExpr>(base_token))));
 
     auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ a_token }, move(body));
-    interpreter.interpret(single(move(function_stmt)));
+    vector<unique_ptr<Statement>> statements = single(move(function_stmt));
+    interpreter.interpret(statements);
 
     vector<unique_ptr<Expression>> arguments;
     arguments.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
@@ -585,7 +594,8 @@ TEST_F(InterpreterTestFixture, RecursiveFunctionCallComputesFactorial)
     body->addStatement(make_unique<ReturnStmt>(Token(TokenType::RETURN, "return", monostate{}, 1), move(recursive_value)));
 
     auto function_stmt = make_unique<FunctionStmt>(name_token, vector<Token>{ n_token }, move(body));
-    interpreter.interpret(single(move(function_stmt)));
+    vector<unique_ptr<Statement>> statements = single(move(function_stmt));
+    interpreter.interpret(statements);
 
     vector<unique_ptr<Expression>> call_args;
     call_args.push_back(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
