@@ -519,4 +519,29 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArraySizeTypeErro
 		EXPECT_THAT(exception.what(), ::testing::HasSubstr("배열 크기는 숫자여야 합니다"));
 	}
 }
+
+TEST(CodeFabFacadeDefaultConstructorTest, LiteralOnlyExpressionStillEvaluatesCorrectlyAfterConstantFolding) {
+	CodeFabFacade facade;
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("print 1 + 2 * 3 - (4 / 2);");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "5\n");
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, LiteralOnlyDivisionByZeroStillThrowsAtRuntimeRatherThanBeingFolded) {
+	// 상수 폴딩이 0으로 나누기 같은 실행 오류를 미리 접어서 삼켜버리면 안 되고,
+	// 실제 실행 시점에 원래와 동일한 예외가 나야 한다.
+	CodeFabFacade facade;
+
+	try {
+		facade.execute("print 1 / 0;");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("0으로 나눌 수 없습니다"));
+	}
+}
 #endif

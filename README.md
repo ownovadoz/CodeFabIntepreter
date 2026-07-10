@@ -8,8 +8,9 @@ CodeFab이라는 팀 전용 스크립트 언어를 파싱하고 실행하는 C++
 ## 진행 상황
 
 기본기능 과제(Custom Language + Code Fab Interpreter + Prompt Shell)와, 추가기능 과제 중
-함수(Chapter 2)·클래스(Chapter 3)·정적 배열·파일 모드·디버그 모드(Chapter 7) 요구사항이 모두
-구현되어 단위 테스트로 검증되었습니다. 실행 전 최적화, import는 아직 착수 전입니다.
+함수(Chapter 2)·클래스(Chapter 3)·정적 배열·파일 모드·디버그 모드(Chapter 7)·실행 전 최적화 중
+상수 폴딩(Chapter 5) 요구사항이 모두 구현되어 단위 테스트로 검증되었습니다. 정적 바인딩,
+import는 아직 착수 전입니다.
 
 ### 기본기능 (완료)
 
@@ -59,7 +60,7 @@ CodeFab이라는 팀 전용 스크립트 언어를 파싱하고 실행하는 C++
 | 파일 모드 | `factory run <경로>`로 스크립트 실행 | ✅ |
 | 디버그 모드 | `factory debug <경로>`로 진입, step/next/break/watch/inspect 동작 | ✅ |
 | 실행 전 최적화 - 정적 바인딩 | 변수 접근이 스코프 탐색 없이 O(1)로 동작 (테스트로 검증) | ⬜ |
-| 실행 전 최적화 - 상수 폴딩 | 리터럴로만 이뤄진 연산식이 실행 전에 계산됨 (테스트로 검증) | ⬜ |
+| 실행 전 최적화 - 상수 폴딩 | 리터럴로만 이뤄진 연산식이 실행 전에 계산됨 (테스트로 검증) | ✅ |
 | import | `import "a.txt" alias a;`로 함수 가져와 `a.func()` 호출 | ⬜ |
 
 **예외처리**
@@ -126,6 +127,12 @@ CodeFab이라는 팀 전용 스크립트 언어를 파싱하고 실행하는 C++
     Expression/Statement의 모든 구체 타입을 `dynamic_cast`로 하나씩 확인했는데, `ExprVisitor`/`StmtVisitor`의
     세 번째 구현체로 분리해 새 노드 타입이 추가되면 컴파일러가 누락을 잡아주도록 했습니다. 예외 메시지와
     디버그 모드의 정지 위치 표시에 쓰입니다.
+  - `ConstantFolder` — `interpret()` 실행 직전에 AST를 한 번 훑어, 리터럴로만 이뤄진 연산식
+    (`+`/`-`/`*`/`/`, 비교, `and`/`or`, 단항, 그룹)의 값을 미리 계산해두는 전용 Visitor입니다. 연산
+    로직을 새로 베끼지 않고 `Interpreter::evaluate`를 그대로 재사용해 계산하므로 실제 실행 결과와
+    항상 같고, 0으로 나누기처럼 실행 중 오류가 나는 연산은 접지 않고 그대로 두어 실행 시점에 동일한
+    예외가 나도록 합니다. `Interpreter::evaluate`는 여기서 계산해둔 값이 있으면 재계산 없이 즉시
+    돌려줍니다.
   - `Environment` — 블록 진입/종료마다 생성·소멸하는 지역 스코프 체인이며, 변수 조회는 가장 안쪽
     스코프부터 전역 스코프까지 거슬러 올라가며 탐색합니다.
   - `Callable`(`Value.h`) — 함수·클래스·인스턴스처럼 CodeFab 코드에서 호출 가능한(혹은 그 슬롯을
@@ -173,7 +180,7 @@ CodeFabIntepreter/                 (레포 루트)
         │   ├── Tokenizer/         # Lexer, Token, Value(+ Callable 인터페이스)
         │   └── Parser/            # Parser, Node, Statement, Expression (+ ParserTest)
         ├── CheckerUnit/           # Checker (+ CheckerTest)
-        ├── ExecutorUnit/          # Interpreter, LineResolver, Environment, CodeFabFunction,
+        ├── ExecutorUnit/          # Interpreter, LineResolver, ConstantFolder, Environment, CodeFabFunction,
         │                          # CodeFabClass, CodeFabInstance (+ 각 Test)
         ├── FactoryShell/          # PromptShell, FileBackedShell, FileModeShell,
         │                          # DebugModeShell, DebugCommand, ArgumentParser (+ 각 Test)

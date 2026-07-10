@@ -16,7 +16,7 @@ using std::dynamic_pointer_cast;
 using std::make_shared;
 using std::unordered_map;
 
-Interpreter::Interpreter()
+Interpreter::Interpreter() : constant_folder(*this)
 {
     globals = make_shared<Environment>();
     environment = globals;
@@ -24,6 +24,8 @@ Interpreter::Interpreter()
 
 void Interpreter::interpret(const vector<unique_ptr<Statement>>& statements)
 {
+    constant_folder.fold(statements);
+
     for (const auto& statement : statements)
         execute(statement.get());
 }
@@ -188,6 +190,10 @@ void Interpreter::executeForStmt(ForStmt* for_stmt)
 
 Value Interpreter::evaluate(const Expression* expr)
 {
+    const auto& folded_values = constant_folder.getFoldedValues();
+    auto found = folded_values.find(expr);
+    if (found != folded_values.end()) return found->second;
+
     has_evaluation_result = false;
     expr->accept(*this);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ConstantFolder.h"
 #include "Environment.h"
 #include "LineResolver.h"
 
@@ -126,4 +127,8 @@ private:
     // resolveLine/resolveStatementLine이 위임하는 순수 조회용 Visitor. 스스로
     // 관찰 가능한 상태를 갖지 않으므로 const 메서드에서도 안전하게 사용한다.
     mutable LineResolver line_resolver;
+
+    // interpret()이 실행 직전에 호출해, 리터럴로만 이뤄진 연산식의 값을 미리
+    // 계산해두는 Visitor. evaluate()는 여기 값이 있으면 재계산 없이 즉시 돌려준다.
+    ConstantFolder constant_folder;
 };
