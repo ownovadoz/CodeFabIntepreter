@@ -24,6 +24,11 @@ class ScopeResolver : public ExprVisitor, public StmtVisitor {
 public:
     void resolve(const vector<unique_ptr<Statement>>& statements);
 
+    // CodeFabFunction/CodeFabClass를 Interpreter::interpret() 없이 직접 만들어
+    // call()/bind()를 호출하는 경우(단위 테스트에서 흔함)에도 대상 선언 하나만
+    // 미리 훑어둘 수 있도록 raw pointer 버전도 제공한다.
+    void resolve(const Statement* stmt);
+
     // VariableExpr/AssignExpr/ThisExpr/SuperExpr에서만 채워진다. 못 찾으면
     // 전역 변수로 간주하고 아무 항목도 남기지 않는다(Interpreter는 이 경우
     // globals에서 바로 조회한다).

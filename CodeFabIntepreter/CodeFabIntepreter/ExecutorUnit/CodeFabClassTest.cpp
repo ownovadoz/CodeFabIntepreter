@@ -104,6 +104,7 @@ TEST_F(CodeFabClassTestFixture, CallCreatesInstanceAndInvokesInitializer) {
 
     auto robot = make_shared<CodeFabClass>("Robot", nullptr, unordered_map<string, shared_ptr<CodeFabFunction>>{ { "init", init_fn } });
 
+    interpreter.resolve(&init_decl);
     Value result = robot->call(interpreter, { string("Sam") });
 
     auto* callable = std::get_if<shared_ptr<Callable>>(&result);

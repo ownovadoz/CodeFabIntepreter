@@ -52,6 +52,7 @@ TEST_F(CodeFabFunctionTestFixture, CallReturnsValueFromReturnStmt) {
     FunctionStmt declaration(identifier("identity"), params, move(body));
 
     CodeFabFunction function(&declaration, globals);
+    interpreter.resolve(&declaration);
     Value result = function.call(interpreter, { 3.0 });
 
     EXPECT_EQ(get<double>(result), 3.0);

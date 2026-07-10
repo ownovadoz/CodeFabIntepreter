@@ -58,6 +58,11 @@ public:
     // 실행할 때 사용하는 진입점.
     void executeBlockWithEnvironment(const BlockStmt* block, shared_ptr<Environment> new_environment);
 
+    // CodeFabFunction/CodeFabClass의 call()/bind()를 interpret() 없이 직접 호출하는
+    // 경우(단위 테스트에서 흔함)에도 그 선언 안의 변수 참조가 O(1)로 해석되도록,
+    // 대상 선언 하나만 먼저 미리 훑어둘 수 있게 한다.
+    void resolve(const Statement* declaration);
+
 private:
     void execute(Statement* stmt);
     int resolveStatementLine(const Statement* stmt) const;

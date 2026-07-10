@@ -30,6 +30,11 @@ void Interpreter::interpret(const vector<unique_ptr<Statement>>& statements)
         execute(statement.get());
 }
 
+void Interpreter::resolve(const Statement* declaration)
+{
+    scope_resolver.resolve(declaration);
+}
+
 Value Interpreter::getVariableValue(const string& name) const
 {
     return environment->get(Token(TokenType::IDENTIFIER, name, Value(), 0));
@@ -220,11 +225,12 @@ Value Interpreter::lookUpVariable(const Token& name, const Expression* expr) con
 
     if (found != locals.end()) return environment->getAt(found->second, name.getLexeme());
 
-    // CodeFabFunction::call/bind처럼 Interpreter::interpret()을 거치지 않고 직접
-    // 만들어진 Environment 체인(테스트에서 흔함)에서는 ScopeResolver가 이 AST를
-    // 훑은 적이 없어 거리가 비어 있을 수 있다. 그런 경우에도 항상 정확한 값을
-    // 돌려주도록 기존 방식(현재 스코프부터 거슬러 올라가며 탐색)으로 되돌아간다.
-    return environment->get(name);
+    // 거리 정보가 없다는 것은 ScopeResolver가 훑은 어떤 지역 스코프에도 이 이름이
+    // 없었다는 뜻이므로 전역 변수다. 현재 Environment부터 거슬러 올라가며 찾으면,
+    // 클로저가 선언된 시점 이후에 같은 이름으로 새로 선언된 지역 변수를 잘못 찾아낼
+    // 수 있으므로(사용자 변수는 나중에 같은 이름으로 가려질 수 있다) 반드시 globals를
+    // 직접 조회해야 한다.
+    return globals->get(name);
 }
 
 void Interpreter::visitExpressionStmt(const ExpressionStmt& stmt)
@@ -297,8 +303,9 @@ Value Interpreter::evaluateAssignExpr(const AssignExpr& expr)
     const auto& locals = scope_resolver.getLocals();
     auto found = locals.find(&expr);
 
+    // 조회와 같은 이유로, 거리 정보가 없는 대상은 반드시 globals에 바로 대입한다.
     if (found != locals.end()) environment->assignAt(found->second, expr.getIdentifier().getLexeme(), value);
-    else environment->assign(expr.getIdentifier(), value);
+    else globals->assign(expr.getIdentifier(), value);
 
     return value;
 }
@@ -487,7 +494,18 @@ void Interpreter::visitThisExpr(const ThisExpr& expr)
 
 Value Interpreter::evaluateThisExpr(const ThisExpr& expr)
 {
-    return lookUpVariable(expr.getKeyword(), &expr);
+    // this는 Checker가 클래스 몸통 밖에서는 쓰지 못하게 막는 컴파일러 합성
+    // 바인딩이라 사용자 변수처럼 나중에 같은 이름으로 가려질 수 없다. 그래서
+    // lookUpVariable(전역 변수 판정용)과 달리, CodeFabFunction::bind처럼
+    // Interpreter::interpret()을 거치지 않고 직접 만들어진 Environment(테스트에서
+    // 흔함)에서 ScopeResolver가 훑은 적이 없어 거리 정보가 없는 경우에도, 현재
+    // Environment부터 거슬러 올라가면 항상 정확한 바인딩을 찾을 수 있다.
+    const auto& locals = scope_resolver.getLocals();
+    auto found = locals.find(&expr);
+
+    if (found != locals.end()) return environment->getAt(found->second, expr.getKeyword().getLexeme());
+
+    return environment->get(expr.getKeyword());
 }
 
 void Interpreter::visitSuperExpr(const SuperExpr& expr)

@@ -6,6 +6,11 @@ void ScopeResolver::resolve(const vector<unique_ptr<Statement>>& statements)
         resolveStmt(statement.get());
 }
 
+void ScopeResolver::resolve(const Statement* stmt)
+{
+    resolveStmt(stmt);
+}
+
 void ScopeResolver::beginScope()
 {
     scopes.emplace_back();
