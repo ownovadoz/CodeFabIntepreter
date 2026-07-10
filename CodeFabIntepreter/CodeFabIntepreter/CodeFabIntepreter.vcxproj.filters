@@ -138,6 +138,9 @@
     <ClCompile Include="ExecutorUnit\LineResolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExecutorUnit\LineResolverTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ExecutorUnit\ConstantFolder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

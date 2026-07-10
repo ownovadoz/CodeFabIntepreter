@@ -173,6 +173,7 @@
     <ClCompile Include="ExecutorUnit\CodeFabNamespace.cpp" />
     <ClCompile Include="ExecutorUnit\CodeFabNamespaceTest.cpp" />
     <ClCompile Include="ExecutorUnit\LineResolver.cpp" />
+    <ClCompile Include="ExecutorUnit\LineResolverTest.cpp" />
     <ClCompile Include="ExecutorUnit\ConstantFolder.cpp" />
     <ClCompile Include="ExecutorUnit\ConstantFolderTest.cpp" />
     <ClCompile Include="ExecutorUnit\Resolver.cpp" />

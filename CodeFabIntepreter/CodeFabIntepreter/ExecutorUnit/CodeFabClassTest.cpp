@@ -52,6 +52,25 @@ TEST_F(CodeFabClassTestFixture, FindMethodReturnsOwnMethodWhenPresent) {
     EXPECT_EQ(robot.findMethod("move"), move_fn);
 }
 
+TEST_F(CodeFabClassTestFixture, GetSuperclassReturnsTheClassPassedAtConstruction) {
+    auto robot = make_shared<CodeFabClass>("Robot", nullptr, unordered_map<string, shared_ptr<CodeFabFunction>>{});
+    CodeFabClass speed_robot("SpeedRobot", robot, unordered_map<string, shared_ptr<CodeFabFunction>>{});
+
+    EXPECT_EQ(speed_robot.getSuperclass(), robot);
+}
+
+TEST_F(CodeFabClassTestFixture, GetSuperclassIsNullWhenThereIsNoParent) {
+    CodeFabClass robot("Robot", nullptr, unordered_map<string, shared_ptr<CodeFabFunction>>{});
+
+    EXPECT_EQ(robot.getSuperclass(), nullptr);
+}
+
+TEST_F(CodeFabClassTestFixture, ToStringReturnsTheClassName) {
+    CodeFabClass robot("Robot", nullptr, unordered_map<string, shared_ptr<CodeFabFunction>>{});
+
+    EXPECT_EQ(robot.toString(), "Robot");
+}
+
 TEST_F(CodeFabClassTestFixture, FindMethodFallsBackToSuperclassWhenNotOverridden) {
     FunctionStmt move_decl(identifier("move"), {}, make_unique<BlockStmt>());
     auto move_fn = make_shared<CodeFabFunction>(&move_decl, globalEnvironment());
