@@ -79,4 +79,5 @@ Stmt 단위로 멈춰가며 점검합니다(`step`/`next`/`break`/`continue`/`wa
 ## 기여 가이드
 
 - 코드 스타일 및 컨벤션: [code_convention.md](code_convention.md)
+- 적용된 디자인 패턴과 그 이유: [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md)
 - PR 작성 시 [PR 템플릿](.github/pull_request_template.md)에 따라 요구사항, 주요 변경점, 테스트 결과, 체크리스트를 작성해 주세요.

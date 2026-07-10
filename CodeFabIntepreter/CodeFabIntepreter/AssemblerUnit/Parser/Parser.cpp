@@ -399,11 +399,7 @@ unique_ptr<Expression> Parser::finishIndexExpr(unique_ptr<Expression> array) {
 	advance();
 
 	unique_ptr<Expression> index = parseExpression();
-
-	const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(index.get());
-	if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
-		throw CodeFabException(literal->getToken(), "배열 인덱스는 숫자여야 합니다.");
-	}
+	rejectNonNumericLiteral(index.get(), "배열 인덱스는 숫자여야 합니다.");
 
 	consume(TokenType::RIGHT_BRACKET, "Expect ']' after index.");
 
@@ -448,13 +444,16 @@ unique_ptr<Expression> Parser::parseArrayExpr() {
 	consume(TokenType::LEFT_PAREN, "Expect '(' after 'Array'.");
 
 	unique_ptr<Expression> size = parseExpression();
-
-	const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(size.get());
-	if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
-		throw CodeFabException(literal->getToken(), "배열 크기는 숫자여야 합니다.");
-	}
+	rejectNonNumericLiteral(size.get(), "배열 크기는 숫자여야 합니다.");
 
 	consume(TokenType::RIGHT_PAREN, "Expect ')' after array size.");
 
 	return make_unique<ArrayExpr>(move(size));
+}
+
+void Parser::rejectNonNumericLiteral(const Expression* expr, const string& message) {
+	const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(expr);
+	if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
+		throw CodeFabException(literal->getToken(), message);
+	}
 }

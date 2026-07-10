@@ -50,6 +50,7 @@ private:
 	unique_ptr<Expression> finishIndexExpr(unique_ptr<Expression> array);
 	unique_ptr<Expression> parsePrimaryExpr();
 	unique_ptr<Expression> parseArrayExpr();
+	void rejectNonNumericLiteral(const Expression* expr, const string& message);
 
 	using ExprFactory = unique_ptr<Expression> (*)(unique_ptr<Expression>, const Token&, unique_ptr<Expression>);
 

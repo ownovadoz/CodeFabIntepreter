@@ -1,8 +1,8 @@
-#include "../Statement.h"
-#include "../Expression.h"
-#include "../Parser.h"
-#include "../../Tokenizer/Token.h"
-#include "../../../CodeFabException.h"
+#include "Statement.h"
+#include "Expression.h"
+#include "Parser.h"
+#include "../Tokenizer/Token.h"
+#include "../../CodeFabException.h"
 
 #include <gmock/gmock.h>
 #include <memory>

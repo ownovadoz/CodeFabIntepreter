@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Environment.h"
+#include "LineResolver.h"
 
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Parser/Statement.h"
@@ -121,4 +122,8 @@ private:
     bool has_evaluation_result = false;
 
     function<void(int line)> before_statement_hook;
+
+    // resolveLine/resolveStatementLine이 위임하는 순수 조회용 Visitor. 스스로
+    // 관찰 가능한 상태를 갖지 않으므로 const 메서드에서도 안전하게 사용한다.
+    mutable LineResolver line_resolver;
 };

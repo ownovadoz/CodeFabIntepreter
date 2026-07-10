@@ -154,7 +154,7 @@
     <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp" />
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
-    <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp" />
+    <ClCompile Include="AssemblerUnit\Parser\ParserTest.cpp" />
     <ClCompile Include="AssemblerUnit\Tokenizer\Lexer.cpp" />
     <ClCompile Include="AssemblerUnit\Tokenizer\LexerTest.cpp" />
     <ClCompile Include="CheckerUnit\Checker.cpp" />
@@ -169,6 +169,7 @@
     <ClCompile Include="ExecutorUnit\CodeFabClassTest.cpp" />
     <ClCompile Include="ExecutorUnit\CodeFabInstance.cpp" />
     <ClCompile Include="ExecutorUnit\CodeFabInstanceTest.cpp" />
+    <ClCompile Include="ExecutorUnit\LineResolver.cpp" />
     <ClCompile Include="CodeFabExceptionTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
@@ -203,6 +204,7 @@
     <ClInclude Include="ExecutorUnit\CodeFabClass.h" />
     <ClInclude Include="ExecutorUnit\CodeFabInstance.h" />
     <ClInclude Include="ExecutorUnit\ReturnSignal.h" />
+    <ClInclude Include="ExecutorUnit\LineResolver.h" />
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />
     <ClInclude Include="AssemblerUnit\Parser\Node.h" />
