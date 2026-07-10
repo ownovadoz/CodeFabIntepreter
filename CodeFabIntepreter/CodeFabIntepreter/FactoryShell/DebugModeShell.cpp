@@ -3,11 +3,13 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <memory>
+#include <sstream>
 #include <utility>
 
+using std::cin;
+using std::cout;
 using std::ifstream;
-using std::make_unique;
+using std::istringstream;
 using std::move;
 
 #ifdef _DEBUG
@@ -19,7 +21,7 @@ void DebugModeShell::enter() {
 	if (!file_exists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
 	loaded_lines = read_lines(file_path);
-	std::cout << "[DEBUG] 소스코드 로딩: " << file_path << "\n";
+	cout << "[DEBUG] 소스코드 로딩: " << file_path << "\n";
 
 	runLines(loaded_lines);
 }
@@ -32,7 +34,7 @@ void DebugModeShell::enter() {
 	if (!defaultFileExists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
 
 	loaded_lines = defaultReadLines(file_path);
-	std::cout << "[DEBUG] 소스코드 로딩: " << file_path << "\n";
+	cout << "[DEBUG] 소스코드 로딩: " << file_path << "\n";
 
 	runLines(loaded_lines);
 }
@@ -40,15 +42,14 @@ void DebugModeShell::enter() {
 #endif
 
 void DebugModeShell::runLines(const vector<string>& lines) {
-	// Executor가 아직 Stmt 단위 콜백을 제공하지 않으므로, 현재의 "한 줄 = 한 Stmt"
-	// 실행 모델을 그대로 이용해 줄 단위로 DebugSession의 콜백을 호출한다.
-	// Executor가 실제 Stmt 콜백을 제공하게 되면 이 호출 지점만 옮기면 된다.
-	debug_session = make_unique<DebugSession>(lines);
-
 	int line_number = 0;
 	for (const string& input_line : lines) {
 		line_number++;
-		debug_session->beforeStatement(line_number);
+
+		// AssemblerUnit은 execute() 호출마다 새로 렉싱하므로, 훅이 넘겨주는 줄 번호는
+		// 이번 호출 문자열 안에서의 상대 줄 번호(항상 1)일 뿐이다. 파일 전체 기준
+		// 절대 줄 번호는 이 루프가 알고 있으므로, 매 호출마다 그 값으로 다시 바인딩한다.
+		code_fab_facade.setBeforeStatementHook([this, line_number](int) { onBeforeStatement(line_number); });
 
 		try {
 			code_fab_facade.execute(input_line);
@@ -66,6 +67,89 @@ void DebugModeShell::runLines(const vector<string>& lines) {
 			return;
 		}
 	}
+}
+
+void DebugModeShell::onBeforeStatement(int line) {
+	bool is_breakpoint = breakpoints.count(line) > 0;
+	bool should_pause = mode != Mode::Continue || is_breakpoint;
+	if (!should_pause) return;
+
+	printPauseMessage(line, mode == Mode::Continue && is_breakpoint);
+	while (!processCommand(defaultReadCommand())) {}
+}
+
+string DebugModeShell::defaultReadCommand() {
+	cout << "> ";
+	string line;
+	if (!std::getline(cin, line)) return "";
+	return line;
+}
+
+void DebugModeShell::printPauseMessage(int line, bool is_breakpoint_hit) {
+	string text = (line >= 1 && static_cast<size_t>(line) <= loaded_lines.size()) ? loaded_lines[line - 1] : "";
+
+	string message = "[DEBUG] " + std::to_string(line) + "번째 줄에서 정지";
+	if (is_breakpoint_hit) message += " (breakpoint)";
+	message += " → " + text;
+
+	cout << message << "\n";
+}
+
+bool DebugModeShell::processCommand(const string& raw_command) {
+	istringstream iss(raw_command);
+	string command;
+	iss >> command;
+
+	if (command.empty()) {
+		// 입력 스트림 종료(EOF)를 무한 대기 대신 continue로 취급한다.
+		mode = Mode::Continue;
+		return true;
+	}
+	if (command == "step") {
+		mode = Mode::Step;
+		return true;
+	}
+	if (command == "next") {
+		mode = Mode::Next;
+		return true;
+	}
+	if (command == "continue") {
+		mode = Mode::Continue;
+		return true;
+	}
+	if (command == "break") {
+		int line_number;
+		if (iss >> line_number) {
+			breakpoints.insert(line_number);
+			cout << "[DEBUG] " << line_number << "번째 줄에 breakpoint 설정\n";
+		}
+		return false;
+	}
+	if (command == "remove") {
+		int line_number;
+		if (iss >> line_number) {
+			breakpoints.erase(line_number);
+			cout << "[DEBUG] " << line_number << "번째 줄의 breakpoint 해제\n";
+		}
+		return false;
+	}
+	if (command == "breakpoints") {
+		if (breakpoints.empty()) {
+			cout << "[DEBUG] 설정된 breakpoint가 없습니다\n";
+		}
+		else {
+			string joined;
+			for (int bp : breakpoints) {
+				if (!joined.empty()) joined += ", ";
+				joined += std::to_string(bp);
+			}
+			cout << "[DEBUG] breakpoints: " << joined << "\n";
+		}
+		return false;
+	}
+
+	cout << "[DEBUG] 알 수 없는 명령어: " << raw_command << "\n";
+	return false;
 }
 
 bool DebugModeShell::defaultFileExists(const string& path) {
