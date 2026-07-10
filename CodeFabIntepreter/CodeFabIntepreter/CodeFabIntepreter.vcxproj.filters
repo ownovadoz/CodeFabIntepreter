@@ -19,9 +19,6 @@
     <Filter Include="Header Files\Tokenizer">
       <UniqueIdentifier>{c01acd2f-a986-4227-8700-8d7e43f59cbc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Parser\test">
-      <UniqueIdentifier>{8e37e947-c8d4-4a07-a29e-304754492059}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\FactoryShell">
       <UniqueIdentifier>{d1a2f3b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b}</UniqueIdentifier>
     </Filter>
@@ -126,8 +123,11 @@
     <ClCompile Include="ExecutorUnit\CodeFabInstanceTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp">
-      <Filter>Header Files\Parser\test</Filter>
+    <ClCompile Include="ExecutorUnit\LineResolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AssemblerUnit\Parser\ParserTest.cpp">
+      <Filter>Header Files\Parser</Filter>
     </ClCompile>
     <ClCompile Include="CodeFabExceptionTest.cpp">
       <Filter>Source Files</Filter>
@@ -210,6 +210,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExecutorUnit\ReturnSignal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecutorUnit\LineResolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Visitor.h">

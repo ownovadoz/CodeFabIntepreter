@@ -68,27 +68,7 @@ void Interpreter::execute(Statement* stmt)
 
 int Interpreter::resolveStatementLine(const Statement* stmt) const
 {
-    if (const ExpressionStmt* expr_stmt = dynamic_cast<const ExpressionStmt*>(stmt)) return resolveLine(expr_stmt->getExpr());
-    if (const PrintStmt* print_stmt = dynamic_cast<const PrintStmt*>(stmt)) return resolveLine(print_stmt->getExpr());
-    if (const VarDeclareStmt* var_decl = dynamic_cast<const VarDeclareStmt*>(stmt)) return var_decl->getName().getLine();
-    if (const IfStmt* if_stmt = dynamic_cast<const IfStmt*>(stmt)) return resolveLine(if_stmt->getCondition());
-
-    if (const BlockStmt* block = dynamic_cast<const BlockStmt*>(stmt)) {
-        for (const auto& inner : block->getStatements()) {
-            int line = resolveStatementLine(inner.get());
-            if (line != 0) return line;
-        }
-        return 0;
-    }
-
-    if (const ForStmt* for_stmt = dynamic_cast<const ForStmt*>(stmt)) {
-        if (for_stmt->getInit() != nullptr) return resolveStatementLine(for_stmt->getInit());
-        if (for_stmt->getCondition() != nullptr) return resolveLine(for_stmt->getCondition());
-        if (for_stmt->getIncrement() != nullptr) return resolveLine(for_stmt->getIncrement());
-        return resolveStatementLine(for_stmt->getBody());
-    }
-
-    return 0;
+    return line_resolver.resolve(stmt);
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
@@ -228,24 +208,7 @@ Value Interpreter::evaluateVariableExpr(const VariableExpr* variable)
 
 int Interpreter::resolveLine(const Expression* expr) const
 {
-    if (const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(expr)) return literal->getToken().getLine();
-    if (const VariableExpr* variable = dynamic_cast<const VariableExpr*>(expr)) return variable->getToken().getLine();
-    if (const AssignExpr* assign = dynamic_cast<const AssignExpr*>(expr)) return assign->getIdentifier().getLine();
-    if (const BinaryExpr* binary = dynamic_cast<const BinaryExpr*>(expr)) return binary->getOperator().getLine();
-    if (const UnaryExpr* unary = dynamic_cast<const UnaryExpr*>(expr)) return unary->getOperator().getLine();
-    if (const LogicalExpr* logical = dynamic_cast<const LogicalExpr*>(expr)) return logical->getOperator().getLine();
-    if (const GroupingExpr* grouping = dynamic_cast<const GroupingExpr*>(expr)) return resolveLine(grouping->getExpr());
-    if (const CallExpr* call = dynamic_cast<const CallExpr*>(expr)) return call->getParen().getLine();
-    if (const GetExpr* get = dynamic_cast<const GetExpr*>(expr)) return get->getName().getLine();
-    if (const SetExpr* set = dynamic_cast<const SetExpr*>(expr)) return set->getName().getLine();
-    if (const ThisExpr* this_expr = dynamic_cast<const ThisExpr*>(expr)) return this_expr->getKeyword().getLine();
-    if (const SuperExpr* super_expr = dynamic_cast<const SuperExpr*>(expr)) return super_expr->getKeyword().getLine();
-    if (const InstanceOfExpr* instance_of = dynamic_cast<const InstanceOfExpr*>(expr)) return instance_of->getKeyword().getLine();
-    if (const ArrayExpr* array_expr = dynamic_cast<const ArrayExpr*>(expr)) return resolveLine(array_expr->getSize());
-    if (const IndexExpr* index_expr = dynamic_cast<const IndexExpr*>(expr)) return resolveLine(index_expr->getArray());
-    if (const IndexSetExpr* index_set_expr = dynamic_cast<const IndexSetExpr*>(expr)) return resolveLine(index_set_expr->getArray());
-
-    return 0;
+    return line_resolver.resolve(expr);
 }
 
 void Interpreter::visitExpressionStmt(const ExpressionStmt& stmt)
