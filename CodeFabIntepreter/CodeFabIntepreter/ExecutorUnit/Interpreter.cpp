@@ -1,14 +1,20 @@
 #include "Interpreter.h"
 
+#include "CodeFabClass.h"
 #include "CodeFabFunction.h"
+#include "CodeFabInstance.h"
 #include "ReturnSignal.h"
 #include "../CodeFabException.h"
 #include <iostream>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 using std::cout;
+using std::dynamic_pointer_cast;
 using std::make_shared;
+using std::unordered_map;
 
 Interpreter::Interpreter()
 {
@@ -152,6 +158,34 @@ void Interpreter::executeReturnStmt(ReturnStmt* stmt)
     throw ReturnSignal(value);
 }
 
+void Interpreter::executeClassStmt(ClassStmt* stmt)
+{
+    shared_ptr<CodeFabClass> superclass = nullptr;
+    if (stmt->getSuperclass() != nullptr) {
+        Value superclass_value = evaluate(stmt->getSuperclass());
+        shared_ptr<Callable>* callable = std::get_if<shared_ptr<Callable>>(&superclass_value);
+        superclass = callable ? dynamic_pointer_cast<CodeFabClass>(*callable) : nullptr;
+
+        if (!superclass)
+            throw CodeFabException(stmt->getSuperclass()->getToken(), "클래스가 아닌 대상은 상속할 수 없습니다: '" + stmt->getSuperclass()->getToken().getLexeme() + "'");
+    }
+
+    // 상속받은 메서드들이 Super.xxx()로 부모 클래스를 찾을 수 있도록, "super"라는
+    // 이름으로 부모 클래스를 바인딩한 환경을 만들어 그 클래스의 모든 메서드가 공유하게 한다.
+    shared_ptr<Environment> method_environment = environment;
+    if (superclass) {
+        method_environment = make_shared<Environment>(environment);
+        method_environment->define("super", superclass);
+    }
+
+    unordered_map<string, shared_ptr<CodeFabFunction>> methods;
+    for (const auto& method : stmt->getMethods())
+        methods[method->getName().getLexeme()] = make_shared<CodeFabFunction>(method.get(), method_environment, method->isInitializer());
+
+    auto klass = make_shared<CodeFabClass>(stmt->getName().getLexeme(), superclass, move(methods));
+    environment->define(stmt->getName().getLexeme(), klass);
+}
+
 void Interpreter::executeForStmt(ForStmt* for_stmt)
 {
     shared_ptr<Environment> previous = environment;
@@ -202,6 +236,11 @@ int Interpreter::resolveLine(const Expression* expr) const
     if (const LogicalExpr* logical = dynamic_cast<const LogicalExpr*>(expr)) return logical->getOperator().getLine();
     if (const GroupingExpr* grouping = dynamic_cast<const GroupingExpr*>(expr)) return resolveLine(grouping->getExpr());
     if (const CallExpr* call = dynamic_cast<const CallExpr*>(expr)) return call->getParen().getLine();
+    if (const GetExpr* get = dynamic_cast<const GetExpr*>(expr)) return get->getName().getLine();
+    if (const SetExpr* set = dynamic_cast<const SetExpr*>(expr)) return set->getName().getLine();
+    if (const ThisExpr* this_expr = dynamic_cast<const ThisExpr*>(expr)) return this_expr->getKeyword().getLine();
+    if (const SuperExpr* super_expr = dynamic_cast<const SuperExpr*>(expr)) return super_expr->getKeyword().getLine();
+    if (const InstanceOfExpr* instance_of = dynamic_cast<const InstanceOfExpr*>(expr)) return instance_of->getKeyword().getLine();
 
     return 0;
 }
@@ -244,6 +283,11 @@ void Interpreter::visitFunctionStmt(const FunctionStmt& stmt)
 void Interpreter::visitReturnStmt(const ReturnStmt& stmt)
 {
     executeReturnStmt(const_cast<ReturnStmt*>(&stmt));
+}
+
+void Interpreter::visitClassStmt(const ClassStmt& stmt)
+{
+    executeClassStmt(const_cast<ClassStmt*>(&stmt));
 }
 
 void Interpreter::visitLiteralExpr(const LiteralExpr& expr)
@@ -399,9 +443,108 @@ Value Interpreter::evaluateCallExpr(const CallExpr& expr)
 
     shared_ptr<Callable> callable = std::get<shared_ptr<Callable>>(callee);
 
+    // 인스턴스도 Callable을 구현하지만(Value가 객체 슬롯을 하나만 가지므로) 실제로
+    // 호출할 수 있는 대상은 아니므로, CodeFabInstance::call()에 도달하기 전에 걸러낸다.
+    if (dynamic_pointer_cast<CodeFabInstance>(callable))
+        throw CodeFabException(expr.getParen(), "호출할 수 없는 대상입니다.");
+
     if (static_cast<int>(arguments.size()) != callable->arity())
         throw CodeFabException(expr.getParen(), "인자 개수가 일치하지 않습니다. 필요한 개수: "
             + std::to_string(callable->arity()) + ", 전달된 개수: " + std::to_string(arguments.size()));
 
     return callable->call(*this, arguments);
+}
+
+void Interpreter::visitGetExpr(const GetExpr& expr)
+{
+    evaluation_result = evaluateGetExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateGetExpr(const GetExpr& expr)
+{
+    Value object = evaluate(expr.getObject());
+    shared_ptr<Callable>* callable = std::get_if<shared_ptr<Callable>>(&object);
+    shared_ptr<CodeFabInstance> instance = callable ? dynamic_pointer_cast<CodeFabInstance>(*callable) : nullptr;
+
+    if (!instance) throw CodeFabException(expr.getName(), "인스턴스만 필드에 접근할 수 있습니다.");
+
+    return instance->get(expr.getName());
+}
+
+void Interpreter::visitSetExpr(const SetExpr& expr)
+{
+    evaluation_result = evaluateSetExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateSetExpr(const SetExpr& expr)
+{
+    Value object = evaluate(expr.getObject());
+    shared_ptr<Callable>* callable = std::get_if<shared_ptr<Callable>>(&object);
+    shared_ptr<CodeFabInstance> instance = callable ? dynamic_pointer_cast<CodeFabInstance>(*callable) : nullptr;
+
+    if (!instance) throw CodeFabException(expr.getName(), "인스턴스만 필드에 접근할 수 있습니다.");
+
+    Value value = evaluate(expr.getValue());
+    instance->set(expr.getName(), value);
+    return value;
+}
+
+void Interpreter::visitThisExpr(const ThisExpr& expr)
+{
+    evaluation_result = evaluateThisExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateThisExpr(const ThisExpr& expr)
+{
+    return environment->get(Token(TokenType::IDENTIFIER, "this", Value(), expr.getKeyword().getLine()));
+}
+
+void Interpreter::visitSuperExpr(const SuperExpr& expr)
+{
+    evaluation_result = evaluateSuperExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateSuperExpr(const SuperExpr& expr)
+{
+    int line = expr.getKeyword().getLine();
+
+    Value super_value = environment->get(Token(TokenType::IDENTIFIER, "super", Value(), line));
+    shared_ptr<Callable>* super_callable = std::get_if<shared_ptr<Callable>>(&super_value);
+    shared_ptr<CodeFabClass> superclass = super_callable ? dynamic_pointer_cast<CodeFabClass>(*super_callable) : nullptr;
+
+    shared_ptr<CodeFabFunction> method = superclass->findMethod(expr.getMethod().getLexeme());
+    if (!method) throw CodeFabException(expr.getMethod(), "존재하지 않는 메서드입니다: '" + expr.getMethod().getLexeme() + "'");
+
+    Value this_value = environment->get(Token(TokenType::IDENTIFIER, "this", Value(), line));
+    shared_ptr<Callable>* this_callable = std::get_if<shared_ptr<Callable>>(&this_value);
+    shared_ptr<CodeFabInstance> instance = this_callable ? dynamic_pointer_cast<CodeFabInstance>(*this_callable) : nullptr;
+
+    return method->bind(instance);
+}
+
+void Interpreter::visitInstanceOfExpr(const InstanceOfExpr& expr)
+{
+    evaluation_result = evaluateInstanceOfExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateInstanceOfExpr(const InstanceOfExpr& expr)
+{
+    Value object = evaluate(expr.getObject());
+    shared_ptr<Callable>* object_callable = std::get_if<shared_ptr<Callable>>(&object);
+    shared_ptr<CodeFabInstance> instance = object_callable ? dynamic_pointer_cast<CodeFabInstance>(*object_callable) : nullptr;
+
+    if (!instance) return false;
+
+    Value class_value = environment->get(expr.getClassName());
+    shared_ptr<Callable>* class_callable = std::get_if<shared_ptr<Callable>>(&class_value);
+    shared_ptr<CodeFabClass> klass = class_callable ? dynamic_pointer_cast<CodeFabClass>(*class_callable) : nullptr;
+
+    if (!klass) throw CodeFabException(expr.getClassName(), "클래스가 아닙니다: '" + expr.getClassName().getLexeme() + "'");
+
+    return instance->getClass()->isSubclassOf(klass.get());
 }

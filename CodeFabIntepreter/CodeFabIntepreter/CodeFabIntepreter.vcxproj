@@ -164,6 +164,11 @@
     <ClCompile Include="ExecutorUnit\Interpreter.cpp" />
     <ClCompile Include="ExecutorUnit\InterpreterTest.cpp" />
     <ClCompile Include="ExecutorUnit\CodeFabFunction.cpp" />
+    <ClCompile Include="ExecutorUnit\CodeFabFunctionTest.cpp" />
+    <ClCompile Include="ExecutorUnit\CodeFabClass.cpp" />
+    <ClCompile Include="ExecutorUnit\CodeFabClassTest.cpp" />
+    <ClCompile Include="ExecutorUnit\CodeFabInstance.cpp" />
+    <ClCompile Include="ExecutorUnit\CodeFabInstanceTest.cpp" />
     <ClCompile Include="CodeFabExceptionTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
@@ -195,6 +200,8 @@
     <ClInclude Include="ExecutorUnit\Environment.h" />
     <ClInclude Include="ExecutorUnit\Interpreter.h" />
     <ClInclude Include="ExecutorUnit\CodeFabFunction.h" />
+    <ClInclude Include="ExecutorUnit\CodeFabClass.h" />
+    <ClInclude Include="ExecutorUnit\CodeFabInstance.h" />
     <ClInclude Include="ExecutorUnit\ReturnSignal.h" />
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />

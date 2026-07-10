@@ -412,3 +412,69 @@ TEST(CheckerTreeTest, NullStatementEntryInVectorIsSkipped) {
 
 	EXPECT_NO_THROW(checker.check(statements));
 }
+
+TEST(CheckerTreeTest, ClassDeclarationWithMethodsSucceeds) {
+	auto stmt = assemble("Class Robot { move(dist) { this.position = this.position + dist; } }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, InitializerSucceedsWithoutReturn) {
+	auto stmt = assemble("Class Robot { init(name) { this.name = name; } }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, ReturnInsideInitializerFails) {
+	auto stmt = assemble("Class Robot { init() { return 5; } }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, ThisOutsideClassFails) {
+	auto stmt = assemble("print this;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SuperOutsideClassFails) {
+	auto stmt = assemble("Super.move();");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SuperInClassWithoutSuperclassFails) {
+	auto stmt = assemble("Class Robot { move() { Super.move(); } }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, SuperInClassWithSuperclassSucceeds) {
+	vector<unique_ptr<Statement>> statements;
+	statements.push_back(assemble("Class Robot { move() { } }"));
+	statements.push_back(assemble("Class SpeedRobot : Robot { move() { Super.move(); } }"));
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(statements));
+}
+
+TEST(CheckerTreeTest, SelfInheritanceFails) {
+	auto stmt = assemble("Class Robot : Robot { }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}

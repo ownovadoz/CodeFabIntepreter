@@ -67,6 +67,7 @@ private:
     void executeForStmt(ForStmt* for_stmt);
     void executeFunctionStmt(FunctionStmt* stmt);
     void executeReturnStmt(ReturnStmt* stmt);
+    void executeClassStmt(ClassStmt* stmt);
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
     Value evaluateVariableExpr(const VariableExpr* variable);
@@ -76,6 +77,11 @@ private:
     Value evaluateUnaryExpr(const UnaryExpr& expr);
     Value evaluateLogicalExpr(const LogicalExpr& expr);
     Value evaluateCallExpr(const CallExpr& expr);
+    Value evaluateGetExpr(const GetExpr& expr);
+    Value evaluateSetExpr(const SetExpr& expr);
+    Value evaluateThisExpr(const ThisExpr& expr);
+    Value evaluateSuperExpr(const SuperExpr& expr);
+    Value evaluateInstanceOfExpr(const InstanceOfExpr& expr);
     int resolveLine(const Expression* expr) const;
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
@@ -86,6 +92,7 @@ private:
     void visitForStmt(const ForStmt& stmt) override;
     void visitFunctionStmt(const FunctionStmt& stmt) override;
     void visitReturnStmt(const ReturnStmt& stmt) override;
+    void visitClassStmt(const ClassStmt& stmt) override;
 
     void visitLiteralExpr(const LiteralExpr& expr) override;
     void visitVariableExpr(const VariableExpr& expr) override;
@@ -95,6 +102,11 @@ private:
     void visitGroupingExpr(const GroupingExpr& expr) override;
     void visitLogicalExpr(const LogicalExpr& expr) override;
     void visitCallExpr(const CallExpr& expr) override;
+    void visitGetExpr(const GetExpr& expr) override;
+    void visitSetExpr(const SetExpr& expr) override;
+    void visitThisExpr(const ThisExpr& expr) override;
+    void visitSuperExpr(const SuperExpr& expr) override;
+    void visitInstanceOfExpr(const InstanceOfExpr& expr) override;
 
     shared_ptr<Environment> globals;
     shared_ptr<Environment> environment;

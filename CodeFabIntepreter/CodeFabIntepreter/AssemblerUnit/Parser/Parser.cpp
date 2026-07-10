@@ -45,6 +45,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 		return parseFunctionStmt();
 	case TokenType::RETURN:
 		return parseReturnStmt();
+	case TokenType::CLASS:
+		return parseClassStmt();
 	case TokenType::LEFT_PAREN:
 	case TokenType::BANG:
 	case TokenType::IDENTIFIER:
@@ -52,6 +54,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::NUMBER:
 	case TokenType::FALSE:
 	case TokenType::TRUE:
+	case TokenType::THIS:
+	case TokenType::SUPER:
 		return parseExpressionStmt();
 	case TokenType::SEMICOLON:
 		advance();
@@ -61,6 +65,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::RIGHT_PAREN:
 	case TokenType::RIGHT_BRACE:
 	case TokenType::COMMA:
+	case TokenType::DOT:
+	case TokenType::COLON:
 	case TokenType::PLUS:
 	case TokenType::MINUS:
 	case TokenType::STAR:
@@ -75,6 +81,7 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::AND:
 	case TokenType::OR:
 	case TokenType::ELSE:
+	case TokenType::INSTANCEOF:
 		throw CodeFabException(token, "Unexpected token.");
 	}
 	return nullptr;
@@ -169,6 +176,12 @@ unique_ptr<Statement> Parser::parseFunctionStmt() {
 
 	Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
 
+	return finishFunctionDecl(name);
+}
+
+// `(params) { body }` 부분을 읽어 FunctionStmt를 만든다. `Func name` 선언문과
+// 클래스 메서드 선언(이름 뒤에 바로 괄호가 온다) 양쪽에서 공유한다.
+unique_ptr<FunctionStmt> Parser::finishFunctionDecl(const Token& name) {
 	consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
 	vector<Token> params = parseParameters();
 	consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
@@ -207,6 +220,30 @@ unique_ptr<Statement> Parser::parseReturnStmt() {
 	return make_unique<ReturnStmt>(keyword, move(value));
 }
 
+unique_ptr<Statement> Parser::parseClassStmt() {
+	advance();
+
+	Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
+
+	unique_ptr<VariableExpr> superclass = nullptr;
+	if (check(TokenType::COLON)) {
+		advance();
+		superclass = make_unique<VariableExpr>(consume(TokenType::IDENTIFIER, "Expect superclass name."));
+	}
+
+	consume(TokenType::LEFT_BRACE, "Expect '{' before class body.");
+
+	vector<unique_ptr<FunctionStmt>> methods;
+	while (!isAtEnd() && !check(TokenType::RIGHT_BRACE)) {
+		Token method_name = consume(TokenType::IDENTIFIER, "Expect method name.");
+		methods.push_back(finishFunctionDecl(method_name));
+	}
+
+	consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
+
+	return make_unique<ClassStmt>(name, move(superclass), move(methods));
+}
+
 unique_ptr<Statement> Parser::parseExpressionStmt() {
 	unique_ptr<Expression> expr = parseExpression();
 
@@ -224,14 +261,17 @@ unique_ptr<Expression> Parser::parseAssignExpr() {
 
 	if (peek().getType() == TokenType::EQUAL) {
 		Token equals = advance();
-
-		VariableExpr* variable = dynamic_cast<VariableExpr*>(left.get());
-		if (variable == nullptr) throw CodeFabException(equals, "Invalid assignment target.");
-
-		Token identifier = variable->getToken();
 		unique_ptr<Expression> value = parseAssignExpr();
 
-		return make_unique<AssignExpr>(identifier, move(value));
+		if (VariableExpr* variable = dynamic_cast<VariableExpr*>(left.get())) {
+			return make_unique<AssignExpr>(variable->getToken(), move(value));
+		}
+
+		if (GetExpr* get = dynamic_cast<GetExpr*>(left.get())) {
+			return make_unique<SetExpr>(get->releaseObject(), get->getName(), move(value));
+		}
+
+		throw CodeFabException(equals, "Invalid assignment target.");
 	}
 
 	return left;
@@ -250,9 +290,21 @@ unique_ptr<Expression> Parser::parseLogicAnd() {
 }
 
 unique_ptr<Expression> Parser::parseEquality() {
-	return parseLeftAssocExpr(&Parser::parseComparison, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
+	return parseLeftAssocExpr(&Parser::parseInstanceOf, { TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL }, [](unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right) -> unique_ptr<Expression> {
 		return make_unique<BinaryExpr>(move(left), op, move(right));
 	});
+}
+
+unique_ptr<Expression> Parser::parseInstanceOf() {
+	unique_ptr<Expression> expr = parseComparison();
+
+	while (check(TokenType::INSTANCEOF)) {
+		Token keyword = advance();
+		Token class_name = consume(TokenType::IDENTIFIER, "Expect class name after 'instanceof'.");
+		expr = make_unique<InstanceOfExpr>(move(expr), keyword, class_name);
+	}
+
+	return expr;
 }
 
 unique_ptr<Expression> Parser::parseComparison() {
@@ -298,8 +350,18 @@ unique_ptr<Expression> Parser::parseUnaryExpr() {
 unique_ptr<Expression> Parser::parseCallExpr() {
 	unique_ptr<Expression> expr = parsePrimaryExpr();
 
-	while (check(TokenType::LEFT_PAREN)) {
-		expr = finishCallExpr(move(expr));
+	while (true) {
+		if (check(TokenType::LEFT_PAREN)) {
+			expr = finishCallExpr(move(expr));
+		}
+		else if (check(TokenType::DOT)) {
+			advance();
+			Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
+			expr = make_unique<GetExpr>(move(expr), name);
+		}
+		else {
+			break;
+		}
 	}
 
 	return expr;
@@ -332,6 +394,14 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 		return make_unique<LiteralExpr>(advance());
 	case TokenType::IDENTIFIER:
 		return make_unique<VariableExpr>(advance());
+	case TokenType::THIS:
+		return make_unique<ThisExpr>(advance());
+	case TokenType::SUPER: {
+		Token keyword = advance();
+		consume(TokenType::DOT, "Expect '.' after 'Super'.");
+		Token method = consume(TokenType::IDENTIFIER, "Expect superclass method name.");
+		return make_unique<SuperExpr>(keyword, method);
+	}
 	case TokenType::LEFT_PAREN: {
 		advance();
 		unique_ptr<Expression> expr = parseExpression();
