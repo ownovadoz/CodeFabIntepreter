@@ -82,6 +82,9 @@ private:
     Value evaluateThisExpr(const ThisExpr& expr);
     Value evaluateSuperExpr(const SuperExpr& expr);
     Value evaluateInstanceOfExpr(const InstanceOfExpr& expr);
+    Value evaluateArrayExpr(const ArrayExpr& expr);
+    Value evaluateIndexExpr(const IndexExpr& expr);
+    Value evaluateIndexSetExpr(const IndexSetExpr& expr);
     int resolveLine(const Expression* expr) const;
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
@@ -107,6 +110,9 @@ private:
     void visitThisExpr(const ThisExpr& expr) override;
     void visitSuperExpr(const SuperExpr& expr) override;
     void visitInstanceOfExpr(const InstanceOfExpr& expr) override;
+    void visitArrayExpr(const ArrayExpr& expr) override;
+    void visitIndexExpr(const IndexExpr& expr) override;
+    void visitIndexSetExpr(const IndexSetExpr& expr) override;
 
     shared_ptr<Environment> globals;
     shared_ptr<Environment> environment;

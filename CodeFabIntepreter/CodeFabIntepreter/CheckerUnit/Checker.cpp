@@ -256,3 +256,21 @@ void Checker::visitInstanceOfExpr(const InstanceOfExpr& expr)
 {
     resolveExpr(expr.getObject());
 }
+
+void Checker::visitArrayExpr(const ArrayExpr& expr)
+{
+    resolveExpr(expr.getSize());
+}
+
+void Checker::visitIndexExpr(const IndexExpr& expr)
+{
+    resolveExpr(expr.getArray());
+    resolveExpr(expr.getIndex());
+}
+
+void Checker::visitIndexSetExpr(const IndexSetExpr& expr)
+{
+    resolveExpr(expr.getArray());
+    resolveExpr(expr.getIndex());
+    resolveExpr(expr.getValue());
+}

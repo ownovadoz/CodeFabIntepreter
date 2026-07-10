@@ -56,6 +56,7 @@ unique_ptr<Statement> Parser::parseStatement() {
 	case TokenType::TRUE:
 	case TokenType::THIS:
 	case TokenType::SUPER:
+	case TokenType::ARRAY:
 		return parseExpressionStmt();
 	case TokenType::SEMICOLON:
 		advance();
@@ -64,6 +65,8 @@ unique_ptr<Statement> Parser::parseStatement() {
 		return nullptr;
 	case TokenType::RIGHT_PAREN:
 	case TokenType::RIGHT_BRACE:
+	case TokenType::LEFT_BRACKET:
+	case TokenType::RIGHT_BRACKET:
 	case TokenType::COMMA:
 	case TokenType::DOT:
 	case TokenType::COLON:
@@ -271,6 +274,10 @@ unique_ptr<Expression> Parser::parseAssignExpr() {
 			return make_unique<SetExpr>(get->releaseObject(), get->getName(), move(value));
 		}
 
+		if (IndexExpr* index_expr = dynamic_cast<IndexExpr*>(left.get())) {
+			return make_unique<IndexSetExpr>(index_expr->releaseArray(), index_expr->releaseIndex(), move(value));
+		}
+
 		throw CodeFabException(equals, "Invalid assignment target.");
 	}
 
@@ -354,6 +361,9 @@ unique_ptr<Expression> Parser::parseCallExpr() {
 		if (check(TokenType::LEFT_PAREN)) {
 			expr = finishCallExpr(move(expr));
 		}
+		else if (check(TokenType::LEFT_BRACKET)) {
+			expr = finishIndexExpr(move(expr));
+		}
 		else if (check(TokenType::DOT)) {
 			advance();
 			Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
@@ -385,6 +395,21 @@ unique_ptr<Expression> Parser::finishCallExpr(unique_ptr<Expression> callee) {
 	return make_unique<CallExpr>(move(callee), paren, move(arguments));
 }
 
+unique_ptr<Expression> Parser::finishIndexExpr(unique_ptr<Expression> array) {
+	advance();
+
+	unique_ptr<Expression> index = parseExpression();
+
+	const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(index.get());
+	if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
+		throw CodeFabException(literal->getToken(), "배열 인덱스는 숫자여야 합니다.");
+	}
+
+	consume(TokenType::RIGHT_BRACKET, "Expect ']' after index.");
+
+	return make_unique<IndexExpr>(move(array), move(index));
+}
+
 unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	switch (peek().getType()) {
 	case TokenType::NUMBER:
@@ -402,6 +427,8 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 		Token method = consume(TokenType::IDENTIFIER, "Expect superclass method name.");
 		return make_unique<SuperExpr>(keyword, method);
 	}
+	case TokenType::ARRAY:
+		return parseArrayExpr();
 	case TokenType::LEFT_PAREN: {
 		advance();
 		unique_ptr<Expression> expr = parseExpression();
@@ -413,4 +440,21 @@ unique_ptr<Expression> Parser::parsePrimaryExpr() {
 	default:
 		throw CodeFabException(peek(), "Expect expression.");
 	}
+}
+
+unique_ptr<Expression> Parser::parseArrayExpr() {
+	advance();
+
+	consume(TokenType::LEFT_PAREN, "Expect '(' after 'Array'.");
+
+	unique_ptr<Expression> size = parseExpression();
+
+	const LiteralExpr* literal = dynamic_cast<const LiteralExpr*>(size.get());
+	if (literal != nullptr && literal->getToken().getType() != TokenType::NUMBER) {
+		throw CodeFabException(literal->getToken(), "배열 크기는 숫자여야 합니다.");
+	}
+
+	consume(TokenType::RIGHT_PAREN, "Expect ')' after array size.");
+
+	return make_unique<ArrayExpr>(move(size));
 }

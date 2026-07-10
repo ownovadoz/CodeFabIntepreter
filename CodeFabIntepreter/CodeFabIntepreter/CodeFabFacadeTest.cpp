@@ -431,4 +431,92 @@ TEST(CodeFabFacadeClassTest, AccessingFieldOnNonInstanceThrowsRuntimeError) {
 
 	EXPECT_THROW(facade.execute("x.field = 1;"), CodeFabException);
 }
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayCreationAndIndexReadWriteSucceeds) {
+	// var arr = Array(3); arr[0] = 10; arr[1] = 20; arr[2] = 30; print arr[0];
+	CodeFabFacade facade;
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("var arr = Array(3); arr[0] = 10; arr[1] = 20; arr[2] = 30; print arr[0];");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "10\n");
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayIndexWithComputedExpressionSucceeds) {
+	// var arr = Array(3); var i = 2; arr[i - 1] = 7; print arr[1];
+	CodeFabFacade facade;
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("var arr = Array(3); var i = 2; arr[i - 1] = 7; print arr[1];");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "7\n");
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayCreatedOnOneLineCanBeIndexedOnALaterLine) {
+	// REPL 여러 줄에 걸쳐도 Array가 정상 동작해야 한다 (이번에 리포트된 실제 버그 시나리오).
+	CodeFabFacade facade;
+	facade.execute("var b = Array(3);");
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("b[0] = 1; print b[0];");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "1\n");
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArrayIndexOutOfRangeError) {
+	CodeFabFacade facade;
+	facade.execute("var arr = Array(3);");
+
+	try {
+		facade.execute("print arr[5];");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("배열 범위를 벗어났습니다"));
+	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArrayIndexTypeError) {
+	CodeFabFacade facade;
+	facade.execute("var arr = Array(3);");
+
+	try {
+		facade.execute("print arr[\"hello\"];");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("배열 인덱스는 숫자여야 합니다"));
+	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealNonArrayIndexingError) {
+	CodeFabFacade facade;
+	facade.execute("var x = 10;");
+
+	try {
+		facade.execute("print x[0];");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("배열이 아닌 값에는 인덱스로 접근할 수 없습니다"));
+	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArraySizeTypeError) {
+	CodeFabFacade facade;
+
+	try {
+		facade.execute("var brr = Array(\"hi\");");
+		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
+	}
+	catch (const CodeFabException& exception) {
+		EXPECT_THAT(exception.what(), ::testing::HasSubstr("배열 크기는 숫자여야 합니다"));
+	}
+}
 #endif

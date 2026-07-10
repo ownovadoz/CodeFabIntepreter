@@ -13,6 +13,9 @@ void SetExpr::accept(ExprVisitor& visitor) const { visitor.visitSetExpr(*this); 
 void ThisExpr::accept(ExprVisitor& visitor) const { visitor.visitThisExpr(*this); }
 void SuperExpr::accept(ExprVisitor& visitor) const { visitor.visitSuperExpr(*this); }
 void InstanceOfExpr::accept(ExprVisitor& visitor) const { visitor.visitInstanceOfExpr(*this); }
+void ArrayExpr::accept(ExprVisitor& visitor) const { visitor.visitArrayExpr(*this); }
+void IndexExpr::accept(ExprVisitor& visitor) const { visitor.visitIndexExpr(*this); }
+void IndexSetExpr::accept(ExprVisitor& visitor) const { visitor.visitIndexSetExpr(*this); }
 
 void ExpressionStmt::accept(StmtVisitor& visitor) const { visitor.visitExpressionStmt(*this); }
 void IfStmt::accept(StmtVisitor& visitor) const { visitor.visitIfStmt(*this); }

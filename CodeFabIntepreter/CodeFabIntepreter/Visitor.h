@@ -19,6 +19,9 @@ public:
 	virtual void visitThisExpr(const ThisExpr& expr) = 0;
 	virtual void visitSuperExpr(const SuperExpr& expr) = 0;
 	virtual void visitInstanceOfExpr(const InstanceOfExpr& expr) = 0;
+	virtual void visitArrayExpr(const ArrayExpr& expr) = 0;
+	virtual void visitIndexExpr(const IndexExpr& expr) = 0;
+	virtual void visitIndexSetExpr(const IndexSetExpr& expr) = 0;
 };
 
 class StmtVisitor {

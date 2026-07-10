@@ -18,6 +18,7 @@ using std::make_unique;
 using std::monostate;
 using std::move;
 using std::ostringstream;
+using std::shared_ptr;
 using std::string;
 using std::vector;
 using std::get;
@@ -707,4 +708,118 @@ TEST_F(InterpreterTestFixture, RecursiveFunctionCallComputesFactorial)
     CallExpr call(make_unique<VariableExpr>(name_token), Token(TokenType::LEFT_PAREN, "(", monostate{}, 1), move(call_args));
 
     EXPECT_EQ(get<double>(interpreter.evaluate(&call)), 120.0);
+}
+
+TEST_F(InterpreterTestFixture, ArrayExprCreatesArrayOfGivenSizeWithNilElements)
+{
+    ArrayExpr array_expr(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)));
+
+    Value value = interpreter.evaluate(&array_expr);
+
+    ASSERT_TRUE(isArray(value));
+    EXPECT_EQ(get<shared_ptr<CodeFabArray>>(value)->size(), 3);
+    EXPECT_TRUE(holds_alternative<monostate>(get<shared_ptr<CodeFabArray>>(value)->get(0)));
+}
+
+TEST_F(InterpreterTestFixture, ArrayExprNonNumberSizeThrowsCodeFabException)
+{
+    ArrayExpr array_expr(make_unique<LiteralExpr>(Token(TokenType::STRING, "hi", string("hi"), 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&array_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, ArrayExprNegativeSizeThrowsCodeFabException)
+{
+    ArrayExpr array_expr(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "-1", -1.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&array_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, IndexSetExprWritesValueAndIndexExprReadsItBack)
+{
+    // var arr = Array(3); arr[1] = 42; arr[1];
+    Token name_token(TokenType::IDENTIFIER, "arr", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<ArrayExpr>(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1))));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexSetExpr set_expr(
+        make_unique<VariableExpr>(name_token),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "42", 42.0, 1)));
+    EXPECT_EQ(get<double>(interpreter.evaluate(&set_expr)), 42.0);
+
+    IndexExpr get_expr(make_unique<VariableExpr>(name_token), make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+    EXPECT_EQ(get<double>(interpreter.evaluate(&get_expr)), 42.0);
+}
+
+TEST_F(InterpreterTestFixture, IndexExprOutOfRangeThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "arr", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<ArrayExpr>(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1))));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexExpr index_expr(make_unique<VariableExpr>(name_token), make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&index_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, IndexExprNegativeIndexThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "arr", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<ArrayExpr>(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1))));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexExpr index_expr(make_unique<VariableExpr>(name_token), make_unique<LiteralExpr>(Token(TokenType::NUMBER, "-1", -1.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&index_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, IndexExprNonNumberIndexThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "arr", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<ArrayExpr>(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1))));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexExpr index_expr(make_unique<VariableExpr>(name_token), make_unique<LiteralExpr>(Token(TokenType::STRING, "hello", string("hello"), 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&index_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, IndexingNonArrayValueThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "x", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "10", 10.0, 1)));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexExpr index_expr(make_unique<VariableExpr>(name_token), make_unique<LiteralExpr>(Token(TokenType::NUMBER, "0", 0.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&index_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, AssigningArrayToAnotherVariableSharesSameArray)
+{
+    // var a = Array(1); var b = a; b[0] = 5; a[0]; (== 5, 참조 공유)
+    Token a_token(TokenType::IDENTIFIER, "a", monostate{}, 1);
+    auto a_decl = make_unique<VarDeclareStmt>(a_token);
+    a_decl->setExpression(make_unique<ArrayExpr>(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1))));
+    interpreter.interpret(single(move(a_decl)));
+
+    Token b_token(TokenType::IDENTIFIER, "b", monostate{}, 1);
+    auto b_decl = make_unique<VarDeclareStmt>(b_token);
+    b_decl->setExpression(make_unique<VariableExpr>(a_token));
+    interpreter.interpret(single(move(b_decl)));
+
+    IndexSetExpr set_via_b(
+        make_unique<VariableExpr>(b_token),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "0", 0.0, 1)),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+    interpreter.evaluate(&set_via_b);
+
+    IndexExpr get_via_a(make_unique<VariableExpr>(a_token), make_unique<LiteralExpr>(Token(TokenType::NUMBER, "0", 0.0, 1)));
+    EXPECT_EQ(get<double>(interpreter.evaluate(&get_via_a)), 5.0);
 }
