@@ -1,0 +1,7 @@
+// Executor 런타임 오류 데모: 배열 인덱스가 숫자가 아님
+// 리터럴 인덱스의 타입은 Parser가 파싱 시점에 미리 검사하므로, Interpreter의
+// 런타임 검사 경로를 타도록 일부러 변수(계산된 인덱스)에 문자열을 담아 사용한다.
+var arr = Array(3);
+var idx = "0";
+print "start"; // expect: start
+print arr[idx]; // expect error: [line 7] Error: 배열 인덱스는 숫자여야 합니다.

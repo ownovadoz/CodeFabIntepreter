@@ -1,0 +1,4 @@
+// Executor 런타임 오류 데모: 숫자와 문자열 간 잘못된 연산
+var a = 3;
+print a; // expect: 3
+print a - "hello"; // expect error: [line 4] Type : MINUS, Lexeme : -, literal : nil, message : 피연산자는 반드시 숫자여야 합니다.

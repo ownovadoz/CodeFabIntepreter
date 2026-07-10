@@ -1,0 +1,4 @@
+// Executor 런타임 오류 데모: 선언되지 않은 변수 참조
+var a = 1;
+print a; // expect: 1
+x = 5; // expect error: [line 4] Type : IDENTIFIER, Lexeme : x, literal : nil, message : Undefined variable 'x'.

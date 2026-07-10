@@ -1,0 +1,6 @@
+// for 반복문 데모
+for (var i = 0; i < 5; i = i + 1) { print i; } // expect: 0, 1, 2, 3, 4 (5줄 출력)
+var total = 0;
+for (var i = 1; i <= 10; i = i + 1) { total = total + i; }
+print total; // expect: 55
+for (var i = 0; i < 3; i = i + 1) { if (i == 1) { print "one"; } else { print "not one"; } } // expect: not one, one, not one (3줄 출력)

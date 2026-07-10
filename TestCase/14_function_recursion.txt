@@ -1,0 +1,5 @@
+// 재귀 호출 데모: 팩토리얼, 피보나치
+Func fact(n) { if (n <= 1) { return 1; } return n * fact(n - 1); }
+print fact(5); // expect: 120
+Func fib(n) { if (n <= 1) { return n; } return fib(n - 1) + fib(n - 2); }
+print fib(10); // expect: 55

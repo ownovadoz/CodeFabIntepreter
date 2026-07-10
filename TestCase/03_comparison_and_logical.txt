@@ -1,0 +1,12 @@
+// 비교 연산자, 논리 연산자(and/or), 논리 부정(!) 데모
+var a = 10;
+var b = 3;
+print a > b; // expect: true
+print a < b; // expect: false
+print a >= 10; // expect: true
+print a <= 3; // expect: false
+print a == 10; // expect: true
+print a != b; // expect: true
+print (a > b) and (b > 0); // expect: true
+print (a < b) or (b > 0); // expect: true
+print !(a < b); // expect: true

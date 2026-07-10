@@ -1,0 +1,11 @@
+// 정적 배열 생성, nil 초기화, 인덱스 읽기/쓰기(리터럴/계산된 인덱스) 데모
+var arr = Array(3);
+print arr[0]; // expect: nil
+arr[0] = 10;
+arr[1] = 20;
+arr[2] = 30;
+print arr[0]; // expect: 10
+var i = 2;
+arr[i - 1] = 7;
+print arr[1]; // expect: 7
+print arr[2]; // expect: 30

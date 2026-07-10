@@ -1,0 +1,27 @@
+// 클래스 상속, 메서드 오버라이딩, Super 호출, instanceof 데모
+Class Robot {
+    init(name, speed) {
+        this.name = name;
+        this.speed = speed;
+    }
+    move(dist) {
+        this.speed = this.speed + dist;
+    }
+}
+
+Class SpeedRobot : Robot {
+    move(dist) {
+        Super.move(dist);
+        print "Speeeed!";
+    }
+}
+
+var w = SpeedRobot("Sam", 1);
+w.move(3); // expect: Speeeed!
+print w.speed; // expect: 4
+
+var r = Robot("AndOr", 10);
+print (w instanceof SpeedRobot); // expect: true
+print (w instanceof Robot); // expect: true
+print (r instanceof SpeedRobot); // expect: false
+print (r instanceof Robot); // expect: true
