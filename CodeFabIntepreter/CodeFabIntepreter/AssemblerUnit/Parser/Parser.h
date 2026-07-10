@@ -26,7 +26,12 @@ private:
 	unique_ptr<Statement> parseVarDeclareStmt();
 	unique_ptr<Statement> parsePrintStmt();
 	unique_ptr<Statement> parseForStmt();
+	unique_ptr<Statement> parseFunctionStmt();
+	unique_ptr<Statement> parseReturnStmt();
 	unique_ptr<Statement> parseExpressionStmt();
+
+	unique_ptr<BlockStmt> parseBlock();
+	vector<Token> parseParameters();
 
 	unique_ptr<Expression> parseExpression();
 	unique_ptr<Expression> parseAssignExpr();
@@ -37,6 +42,8 @@ private:
 	unique_ptr<Expression> parseTerm();
 	unique_ptr<Expression> parseFactor();
 	unique_ptr<Expression> parseUnaryExpr();
+	unique_ptr<Expression> parseCallExpr();
+	unique_ptr<Expression> finishCallExpr(unique_ptr<Expression> callee);
 	unique_ptr<Expression> parsePrimaryExpr();
 
 	using ExprFactory = unique_ptr<Expression> (*)(unique_ptr<Expression>, const Token&, unique_ptr<Expression>);

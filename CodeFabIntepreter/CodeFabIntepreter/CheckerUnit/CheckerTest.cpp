@@ -293,6 +293,113 @@ TEST(CheckerTreeTest, SameNameInNestedBlockSucceeds) {
 	EXPECT_NO_THROW(checker.check(single(move(outer))));
 }
 
+TEST(CheckerTreeTest, FunctionDeclarationWithoutErrorSucceeds) {
+	auto stmt = assemble("Func add(a, b) { return a + b; }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, RecursiveFunctionCallSucceeds) {
+	// 함수는 var와 달리 자신의 몸통 안에서 스스로를 참조(재귀 호출)할 수 있어야 한다.
+	auto stmt = assemble("Func fact(n) { if (n <= 1) return 1; return n * fact(n - 1); }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, DuplicateParameterNameFails) {
+	auto stmt = assemble("Func foo(a, a) { return a; }");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, DuplicateFunctionDeclarationInSameScopeFails) {
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("Func add(a, b) { return a + b; } Func add(a) { return a; }");
+
+	ASSERT_EQ(statements.size(), 2u);
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(statements), CodeFabException);
+}
+
+TEST(CheckerTreeTest, ReturnStmtOutsideFunctionFails) {
+	auto stmt = assemble("return 5;");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, ReturnStmtInsideNestedBlockOfFunctionSucceeds) {
+	auto stmt = assemble("Func foo() { { return 1; } }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, ReturnStmtWithoutValueInsideFunctionSucceeds) {
+	auto stmt = assemble("Func foo() { return; }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, ReturnStmtAfterFunctionEndsFails) {
+	// 함수 몸통을 벗어난 뒤의 return은 함수 depth가 정상적으로 복원되어 오류가 나야 한다.
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("Func foo() { return 1; } return 2;");
+
+	ASSERT_EQ(statements.size(), 2u);
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(statements), CodeFabException);
+}
+
+TEST(CheckerTreeTest, ParametersAreVisibleInsideFunctionBody) {
+	auto stmt = assemble("Func identity(a) { return a; }");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, FunctionParametersDoNotLeakToOuterScope) {
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("Func identity(a) { return a; } var a = 10;");
+
+	ASSERT_EQ(statements.size(), 2u);
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(statements));
+}
+
+TEST(CheckerTreeTest, CallExprResolvesCalleeAndArguments) {
+	auto stmt = assemble("add(1, 2);");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, CallExprWithSelfReferencingArgumentInInitializerFails) {
+	auto stmt = assemble("var a = add(a);");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
 TEST(CheckerTreeTest, NullStatementEntryInVectorIsSkipped) {
 	// AssemblerUnit이 실제로 nullptr을 담아 반환하는 일은 없지만, check()는
 	// vector 안에 nullptr이 섞여 있어도 안전하게 건너뛰어야 한다.

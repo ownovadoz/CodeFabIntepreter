@@ -7,6 +7,7 @@ void BinaryExpr::accept(ExprVisitor& visitor) const { visitor.visitBinaryExpr(*t
 void UnaryExpr::accept(ExprVisitor& visitor) const { visitor.visitUnaryExpr(*this); }
 void GroupingExpr::accept(ExprVisitor& visitor) const { visitor.visitGroupingExpr(*this); }
 void LogicalExpr::accept(ExprVisitor& visitor) const { visitor.visitLogicalExpr(*this); }
+void CallExpr::accept(ExprVisitor& visitor) const { visitor.visitCallExpr(*this); }
 
 void ExpressionStmt::accept(StmtVisitor& visitor) const { visitor.visitExpressionStmt(*this); }
 void IfStmt::accept(StmtVisitor& visitor) const { visitor.visitIfStmt(*this); }
@@ -14,3 +15,5 @@ void BlockStmt::accept(StmtVisitor& visitor) const { visitor.visitBlockStmt(*thi
 void VarDeclareStmt::accept(StmtVisitor& visitor) const { visitor.visitVarDeclareStmt(*this); }
 void PrintStmt::accept(StmtVisitor& visitor) const { visitor.visitPrintStmt(*this); }
 void ForStmt::accept(StmtVisitor& visitor) const { visitor.visitForStmt(*this); }
+void FunctionStmt::accept(StmtVisitor& visitor) const { visitor.visitFunctionStmt(*this); }
+void ReturnStmt::accept(StmtVisitor& visitor) const { visitor.visitReturnStmt(*this); }

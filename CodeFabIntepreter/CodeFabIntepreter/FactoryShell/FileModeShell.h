@@ -4,14 +4,12 @@
 #include "../CodeFabFacade.h"
 
 #include <string>
-#include <vector>
 
 #ifdef _DEBUG
 #include <functional>
 #endif
 
 using std::string;
-using std::vector;
 
 #ifdef _DEBUG
 using std::function;
@@ -22,25 +20,23 @@ public:
 #ifdef _DEBUG
 	explicit FileModeShell(string file_path,
 		function<bool(const string&)> file_exists = defaultFileExists,
-		function<vector<string>(const string&)> read_lines = defaultReadLines);
+		function<string(const string&)> read_source = defaultReadSource);
 #else
 	explicit FileModeShell(string file_path);
 #endif
 
 	void enter() override;
-	const string& getLastLine() const { return code_line; }
 
 private:
 	static bool defaultFileExists(const string& path);
-	static vector<string> defaultReadLines(const string& path);
+	static string defaultReadSource(const string& path);
 
-	void runLines(const vector<string>& lines);
+	void runSource(const string& source);
 
 	string file_path;
 #ifdef _DEBUG
 	function<bool(const string&)> file_exists;
-	function<vector<string>(const string&)> read_lines;
+	function<string(const string&)> read_source;
 #endif
-	string code_line;
 	CodeFabFacade code_fab_facade;
 };

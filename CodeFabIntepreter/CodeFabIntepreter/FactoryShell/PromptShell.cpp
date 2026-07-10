@@ -1,5 +1,5 @@
 ﻿#include "PromptShell.h"
-#include "../CodeFabException.h"
+#include "shell_exception_reporter.h"
 
 #include <iostream>
 #include <string>
@@ -22,18 +22,7 @@ void PromptShell::enter() {
         else {
             code_line = input_line;
         }
-        try {
-            code_fab_facade.execute(code_line);
-        }
-        catch (const CodeFabException& exception) {
-            std::cerr << exception.what() << std::endl;
-        }
-        catch (const std::exception& exception) {
-            std::cerr << "[unexpected error] " << exception.what() << std::endl;
-        }
-        catch (...) {
-            std::cerr << "[unexpected error] unknown exception" << std::endl;
-        }
+        reportShellExceptions([&] { code_fab_facade.execute(code_line); });
         cout << "> ";
     }
 
