@@ -223,6 +223,95 @@ TEST_F(DebugModeShellTestFixture, InspectCommandListsLocalAndGlobalVariablesWith
 	EXPECT_THAT(output(), HasSubstr("[전역] g = 1 (Number)"));
 }
 
+TEST_F(DebugModeShellTestFixture, NextCommandResumesExecutionLikeStep) {
+	feedCommands("next\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;", "var b = 2;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[DEBUG] 1번째 줄에서 정지 → var a = 1;"));
+	EXPECT_THAT(output(), HasSubstr("[DEBUG] 2번째 줄에서 정지 → var b = 2;"));
+}
+
+TEST_F(DebugModeShellTestFixture, BreakpointsCommandListsCurrentlySetBreakpoints) {
+	feedCommands("break 2\nbreakpoints\nstep\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;", "var b = 2;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[DEBUG] breakpoints: 2"));
+}
+
+TEST_F(DebugModeShellTestFixture, BreakpointsCommandWithNoneSetPrintsEmptyMessage) {
+	feedCommands("breakpoints\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[DEBUG] 설정된 breakpoint가 없습니다"));
+}
+
+TEST_F(DebugModeShellTestFixture, UnknownCommandPrintsErrorMessageAndKeepsWaitingForInput) {
+	feedCommands("bogus\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var a = 1;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("[DEBUG] 알 수 없는 명령어: bogus"));
+}
+
+TEST_F(DebugModeShellTestFixture, InspectCommandTagsStringTypedVariableAsString) {
+	// s가 정의된 이후 지점(두 번째 정지)에서 inspect해야 값이 보인다.
+	feedCommands("step\ninspect\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var s = \"hi\";", "print s;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("(String)"));
+}
+
+TEST_F(DebugModeShellTestFixture, InspectCommandTagsNilValuedVariableAsNil) {
+	// CodeFab 문법은 초기화식 없는 var 선언을 허용하지 않으므로, return 없는
+	// 함수 호출 결과(nil)를 담아 nil 값을 만든다.
+	feedCommands("step\nstep\ninspect\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"Func f() {}", "var x = f();", "print x;"}; });
+
+	shell.enter();
+
+	EXPECT_THAT(output(), HasSubstr("(Nil)"));
+}
+
+TEST_F(DebugModeShellTestFixture, WatchingUndefinedVariableNamePrintsNothingButDoesNotThrow) {
+	// "a"를 감시하지만 실제로는 한 번도 선언되지 않으므로, 정지 시점마다
+	// 스냅샷을 끝까지 훑고도 일치하는 이름을 찾지 못한 채 조용히 넘어가야 한다.
+	feedCommands("watch a\nstep\nstep\n");
+	DebugModeShell shell(
+		"script.txt",
+		[](const string&) { return true; },
+		[](const string&) { return vector<string>{"var b = 1;", "print b;"}; });
+
+	EXPECT_NO_THROW(shell.enter());
+	EXPECT_THAT(output(), Not(HasSubstr("[WATCH] a =")));
+}
+
 TEST_F(DebugModeShellTestFixture, MultipleStatementsOnOneLineEachPauseSeparately) {
 	// 실제 Interpreter 훅으로 연결되어 있어, 한 줄에 문장이 여러 개(세미콜론으로 구분)
 	// 있어도 문장 단위로 각각 멈춘다. 이전 "한 줄 = 한 Stmt" 가정으로는 불가능했던 부분이다.

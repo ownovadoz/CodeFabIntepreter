@@ -27,3 +27,9 @@ TEST(ArgumentParserTest, DebugWithFilePathSelectsDebugMode) {
 	EXPECT_EQ(result.mode, ShellMode::Debug);
 	EXPECT_EQ(result.file_path, "script.txt");
 }
+
+TEST(ArgumentParserTest, UnrecognizedArgumentsSelectInvalidMode) {
+	ParsedArguments result = ArgumentParser::parse({ "unknown" });
+
+	EXPECT_EQ(result.mode, ShellMode::Invalid);
+}

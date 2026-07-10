@@ -36,6 +36,9 @@
     <ClCompile Include="FactoryShell\FileBackedShell.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
+    <ClCompile Include="FactoryShell\FileBackedShellTest.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
     <ClCompile Include="FactoryShell\FileModeShell.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>

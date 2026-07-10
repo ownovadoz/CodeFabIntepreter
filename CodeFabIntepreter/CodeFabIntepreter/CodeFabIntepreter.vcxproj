@@ -146,6 +146,7 @@
     <ClCompile Include="FactoryShell\ArgumentParser.cpp" />
     <ClCompile Include="FactoryShell\ArgumentParserTest.cpp" />
     <ClCompile Include="FactoryShell\FileBackedShell.cpp" />
+    <ClCompile Include="FactoryShell\FileBackedShellTest.cpp" />
     <ClCompile Include="FactoryShell\FileModeShell.cpp" />
     <ClCompile Include="FactoryShell\FileModeShellTest.cpp" />
     <ClCompile Include="FactoryShell\DebugCommand.cpp" />
