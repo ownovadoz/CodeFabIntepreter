@@ -78,6 +78,9 @@
     <ClCompile Include="CodeFabFacadeTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IntegrationTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -180,6 +180,7 @@
     <ClCompile Include="CodeFabExceptionTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
+    <ClCompile Include="IntegrationTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="FactoryShell\PromptShell.cpp" />
     <ClCompile Include="FactoryShell\PromptShellTest.cpp" />
