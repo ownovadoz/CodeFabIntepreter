@@ -1,4 +1,5 @@
 #include "Interpreter.h"
+#include "Environment.h"
 
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Parser/Statement.h"
@@ -14,6 +15,7 @@
 #include <variant>
 #include <vector>
 
+using std::make_shared;
 using std::make_unique;
 using std::monostate;
 using std::move;
@@ -187,6 +189,26 @@ TEST_F(InterpreterTestFixture, EvaluatingAssignExprUpdatesEnvironmentAndReturnsV
 
     EXPECT_EQ(get<double>(interpreter.evaluate(&assign)), 2.0);
     EXPECT_EQ(get<double>(interpreter.getVariableValue("a")), 2.0);
+}
+
+TEST_F(InterpreterTestFixture, AssigningUnresolvedVariableFoundOnlyInEnclosingEnvironmentFallsBackToChainAssign)
+{
+    // Resolver를 거치지 않은 손수 만든 AssignExpr이므로 항상 미해결(globals에도
+    // 없음) 상태다. CodeFabFunctionTest처럼 Resolver 없이 CodeFabFunction을
+    // 직접 호출하는 화이트박스 시나리오에서, 파라미터처럼 environment 체인에만
+    // 있는 이름을 재대입할 때 globals->assign 실패 후 environment 체인
+    // 폴백으로 실제로 대입되는지 검증한다.
+    Token name_token(TokenType::IDENTIFIER, "n", monostate{}, 1);
+    auto local_environment = make_shared<Environment>();
+    local_environment->define("n", 1.0);
+
+    auto block = make_unique<BlockStmt>();
+    block->addStatement(make_unique<ExpressionStmt>(
+        make_unique<AssignExpr>(name_token, make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)))));
+
+    interpreter.executeBlockWithEnvironment(block.get(), local_environment);
+
+    EXPECT_EQ(get<double>(local_environment->get(name_token)), 2.0);
 }
 
 TEST_F(InterpreterTestFixture, BlockScopedVariableShadowsOuterVariableAndDoesNotLeakOut)

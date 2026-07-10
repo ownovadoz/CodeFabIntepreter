@@ -134,6 +134,16 @@ TEST_F(LineResolverTestFixture, EmptyBlockStmtResolvesToZero) {
     EXPECT_EQ(line_resolver.resolve(&block), 0);
 }
 
+TEST_F(LineResolverTestFixture, BlockStmtWithOnlyNestedEmptyBlockLoopsToCompletionAndResolvesToZero) {
+    // 안쪽 BlockStmt도 비어있어 0을 반환하므로, 바깥 반복문이 "if (line != 0)
+    // return;"으로 조기 종료하지 않고 끝까지 돈 뒤 자연스럽게 0을 반환하는
+    // 경로를 검증한다.
+    BlockStmt block;
+    block.addStatement(make_unique<BlockStmt>());
+
+    EXPECT_EQ(line_resolver.resolve(&block), 0);
+}
+
 TEST_F(LineResolverTestFixture, ForStmtWithInitResolvesToInitLine) {
     auto init = make_unique<VarDeclareStmt>(Token(TokenType::IDENTIFIER, "i", monostate{}, 18));
     init->setExpression(numberLiteral(0.0, 18));
