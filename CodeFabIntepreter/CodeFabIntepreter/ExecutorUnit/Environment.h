@@ -28,11 +28,19 @@ public:
     Value get(const Token& name) const;
     void assign(const Token& name, const Value& value);
 
+    // ScopeResolver가 미리 계산해둔 거리만큼 enclosing을 거슬러 올라가 곧바로
+    // 접근한다. 스코프 탐색(get/assign의 재귀적 이름 검색) 없이 O(1)로 동작한다.
+    Value getAt(int distance, const string& name) const;
+    void assignAt(int distance, const string& name, const Value& value);
+
     bool isGlobal() const { return enclosing == nullptr; }
     const unordered_map<string, Value>& getOwnVariables() const { return values; }
     const shared_ptr<Environment>& getEnclosing() const { return enclosing; }
 
 private:
+    const Environment* ancestor(int distance) const;
+    Environment* ancestor(int distance);
+
     shared_ptr<Environment> enclosing;
     unordered_map<string, Value> values;
 };

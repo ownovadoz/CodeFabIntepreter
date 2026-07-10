@@ -24,6 +24,8 @@ Interpreter::Interpreter()
 
 void Interpreter::interpret(const vector<unique_ptr<Statement>>& statements)
 {
+    scope_resolver.resolve(statements);
+
     for (const auto& statement : statements)
         execute(statement.get());
 }
@@ -203,12 +205,22 @@ Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)
 
 Value Interpreter::evaluateVariableExpr(const VariableExpr* variable)
 {
-    return environment->get(variable->getToken());
+    return lookUpVariable(variable->getToken(), variable);
 }
 
 int Interpreter::resolveLine(const Expression* expr) const
 {
     return line_resolver.resolve(expr);
+}
+
+Value Interpreter::lookUpVariable(const Token& name, const Expression* expr) const
+{
+    const auto& locals = scope_resolver.getLocals();
+    auto found = locals.find(expr);
+
+    if (found != locals.end()) return environment->getAt(found->second, name.getLexeme());
+
+    return globals->get(name);
 }
 
 void Interpreter::visitExpressionStmt(const ExpressionStmt& stmt)
@@ -277,7 +289,13 @@ void Interpreter::visitAssignExpr(const AssignExpr& expr)
 Value Interpreter::evaluateAssignExpr(const AssignExpr& expr)
 {
     Value value = evaluate(expr.getValue());
-    environment->assign(expr.getIdentifier(), value);
+
+    const auto& locals = scope_resolver.getLocals();
+    auto found = locals.find(&expr);
+
+    if (found != locals.end()) environment->assignAt(found->second, expr.getIdentifier().getLexeme(), value);
+    else globals->assign(expr.getIdentifier(), value);
+
     return value;
 }
 void Interpreter::visitBinaryExpr(const BinaryExpr& expr)
@@ -465,7 +483,7 @@ void Interpreter::visitThisExpr(const ThisExpr& expr)
 
 Value Interpreter::evaluateThisExpr(const ThisExpr& expr)
 {
-    return environment->get(Token(TokenType::IDENTIFIER, "this", Value(), expr.getKeyword().getLine()));
+    return lookUpVariable(expr.getKeyword(), &expr);
 }
 
 void Interpreter::visitSuperExpr(const SuperExpr& expr)
@@ -476,16 +494,18 @@ void Interpreter::visitSuperExpr(const SuperExpr& expr)
 
 Value Interpreter::evaluateSuperExpr(const SuperExpr& expr)
 {
-    int line = expr.getKeyword().getLine();
+    // ScopeResolver::visitClassStmt는 "super" 스코프를 연 바로 다음에 "this" 스코프를
+    // 열므로, "super"까지의 거리보다 정확히 1 가까운 거리에 "this"가 있다.
+    int distance = scope_resolver.getLocals().at(&expr);
 
-    Value super_value = environment->get(Token(TokenType::IDENTIFIER, "super", Value(), line));
+    Value super_value = environment->getAt(distance, "super");
     shared_ptr<Callable>* super_callable = std::get_if<shared_ptr<Callable>>(&super_value);
     shared_ptr<CodeFabClass> superclass = super_callable ? dynamic_pointer_cast<CodeFabClass>(*super_callable) : nullptr;
 
     shared_ptr<CodeFabFunction> method = superclass->findMethod(expr.getMethod().getLexeme());
     if (!method) throw CodeFabException(expr.getMethod(), "존재하지 않는 메서드입니다: '" + expr.getMethod().getLexeme() + "'");
 
-    Value this_value = environment->get(Token(TokenType::IDENTIFIER, "this", Value(), line));
+    Value this_value = environment->getAt(distance - 1, "this");
     shared_ptr<Callable>* this_callable = std::get_if<shared_ptr<Callable>>(&this_value);
     shared_ptr<CodeFabInstance> instance = this_callable ? dynamic_pointer_cast<CodeFabInstance>(*this_callable) : nullptr;
 

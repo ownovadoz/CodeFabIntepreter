@@ -126,6 +126,12 @@
     <ClCompile Include="ExecutorUnit\LineResolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExecutorUnit\ScopeResolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExecutorUnit\ScopeResolverTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Parser\ParserTest.cpp">
       <Filter>Header Files\Parser</Filter>
     </ClCompile>
@@ -213,6 +219,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExecutorUnit\LineResolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecutorUnit\ScopeResolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Visitor.h">

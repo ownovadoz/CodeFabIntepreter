@@ -131,3 +131,44 @@ TEST_F(NestedEnvironmentTestFixture, GetOwnVariablesDoesNotSeeEnclosingScopeVari
     EXPECT_EQ(inner->getOwnVariables().size(), 1u);
     EXPECT_EQ(std::get<double>(inner->getOwnVariables().at("b")), 4.0);
 }
+
+TEST_F(NestedEnvironmentTestFixture, GetAtZeroReadsOwnVariable)
+{
+    inner->define("a", 3.0);
+
+    EXPECT_EQ(std::get<double>(inner->getAt(0, "a")), 3.0);
+}
+
+TEST_F(NestedEnvironmentTestFixture, GetAtDistanceReadsEnclosingVariable)
+{
+    outer->define("a", 3.0);
+
+    EXPECT_EQ(std::get<double>(inner->getAt(1, "a")), 3.0);
+}
+
+TEST_F(NestedEnvironmentTestFixture, AssignAtZeroUpdatesOwnVariable)
+{
+    inner->define("a", 3.0);
+
+    inner->assignAt(0, "a", 5.0);
+
+    EXPECT_EQ(std::get<double>(inner->get(identifierToken("a"))), 5.0);
+}
+
+TEST_F(NestedEnvironmentTestFixture, AssignAtDistanceUpdatesEnclosingVariable)
+{
+    outer->define("a", 3.0);
+
+    inner->assignAt(1, "a", 5.0);
+
+    EXPECT_EQ(std::get<double>(outer->get(identifierToken("a"))), 5.0);
+}
+
+TEST_F(NestedEnvironmentTestFixture, GetAtIgnoresShadowingVariableAtWrongDistance)
+{
+    outer->define("a", 3.0);
+    inner->define("a", 5.0);
+
+    EXPECT_EQ(std::get<double>(inner->getAt(0, "a")), 5.0);
+    EXPECT_EQ(std::get<double>(inner->getAt(1, "a")), 3.0);
+}

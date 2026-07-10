@@ -2,6 +2,7 @@
 
 #include "Environment.h"
 #include "LineResolver.h"
+#include "ScopeResolver.h"
 
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Parser/Statement.h"
@@ -87,6 +88,7 @@ private:
     Value evaluateIndexExpr(const IndexExpr& expr);
     Value evaluateIndexSetExpr(const IndexSetExpr& expr);
     int resolveLine(const Expression* expr) const;
+    Value lookUpVariable(const Token& name, const Expression* expr) const;
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;
@@ -126,4 +128,9 @@ private:
     // resolveLine/resolveStatementLine이 위임하는 순수 조회용 Visitor. 스스로
     // 관찰 가능한 상태를 갖지 않으므로 const 메서드에서도 안전하게 사용한다.
     mutable LineResolver line_resolver;
+
+    // interpret()이 실행 직전에 호출해 변수 접근 거리를 미리 계산해두는 Resolver.
+    // REPL처럼 interpret()이 여러 번 나뉘어 호출되어도 이미 계산된 거리는 그대로
+    // 누적된다.
+    ScopeResolver scope_resolver;
 };

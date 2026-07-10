@@ -197,6 +197,28 @@ TEST(CodeFabFacadeDefaultConstructorTest, SetBeforeStatementHookIsInvokedForEach
 	EXPECT_THAT(observed_lines, ::testing::ElementsAre(1, 1));
 }
 
+TEST(CodeFabFacadeDefaultConstructorTest, ClosureCapturesVariableFromDeclarationScopeNotCallTimeShadow) {
+	// 정적 바인딩 검증의 핵심 사례: showA는 선언된 시점의 스코프 거리를 기준으로
+	// 바깥쪽 a를 가리키도록 고정되므로, 나중에 안쪽 블록에 같은 이름의 a를 새로
+	// 선언해도 두 번째 호출 결과가 바뀌지 않아야 한다.
+	CodeFabFacade facade;
+
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute(
+		"var a = \"global\";"
+		"{"
+		"  Func showA() { print a; }"
+		"  showA();"
+		"  var a = \"block\";"
+		"  showA();"
+		"}"
+	);
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "global\nglobal\n");
+}
+
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteFunctionDefinitionAndCallPrintsReturnedValue) {
 	CodeFabFacade facade;
 

@@ -8,8 +8,9 @@ CodeFab이라는 팀 전용 스크립트 언어를 파싱하고 실행하는 C++
 ## 진행 상황
 
 기본기능 과제(Custom Language + Code Fab Interpreter + Prompt Shell)와, 추가기능 과제 중
-함수(Chapter 2)·클래스(Chapter 3)·정적 배열·파일 모드·디버그 모드(Chapter 7) 요구사항이 모두
-구현되어 단위 테스트로 검증되었습니다. 실행 전 최적화, import는 아직 착수 전입니다.
+함수(Chapter 2)·클래스(Chapter 3)·정적 배열·파일 모드·디버그 모드(Chapter 7)·실행 전 최적화 중
+정적 바인딩(Chapter 4) 요구사항이 모두 구현되어 단위 테스트로 검증되었습니다. 상수 폴딩과
+import는 아직 착수 전입니다.
 
 ### 기본기능 (완료)
 
@@ -58,7 +59,7 @@ CodeFab이라는 팀 전용 스크립트 언어를 파싱하고 실행하는 C++
 | 정적 배열 | `Array(3)` 생성 후 `arr[i]` 읽기/쓰기 | ✅ |
 | 파일 모드 | `factory run <경로>`로 스크립트 실행 | ✅ |
 | 디버그 모드 | `factory debug <경로>`로 진입, step/next/break/watch/inspect 동작 | ✅ |
-| 실행 전 최적화 - 정적 바인딩 | 변수 접근이 스코프 탐색 없이 O(1)로 동작 (테스트로 검증) | ⬜ |
+| 실행 전 최적화 - 정적 바인딩 | 변수 접근이 스코프 탐색 없이 O(1)로 동작 (테스트로 검증) | ✅ |
 | 실행 전 최적화 - 상수 폴딩 | 리터럴로만 이뤄진 연산식이 실행 전에 계산됨 (테스트로 검증) | ⬜ |
 | import | `import "a.txt" alias a;`로 함수 가져와 `a.func()` 호출 | ⬜ |
 
@@ -126,8 +127,13 @@ CodeFab이라는 팀 전용 스크립트 언어를 파싱하고 실행하는 C++
     Expression/Statement의 모든 구체 타입을 `dynamic_cast`로 하나씩 확인했는데, `ExprVisitor`/`StmtVisitor`의
     세 번째 구현체로 분리해 새 노드 타입이 추가되면 컴파일러가 누락을 잡아주도록 했습니다. 예외 메시지와
     디버그 모드의 정지 위치 표시에 쓰입니다.
-  - `Environment` — 블록 진입/종료마다 생성·소멸하는 지역 스코프 체인이며, 변수 조회는 가장 안쪽
-    스코프부터 전역 스코프까지 거슬러 올라가며 탐색합니다.
+  - `ScopeResolver` — `interpret()` 실행 직전에 AST 전체를 한 번 훑어, 변수/this/Super 참조마다
+    "몇 겹의 스코프를 거슬러 올라가야 하는지"(거리)를 미리 계산해두는 전용 Visitor입니다. Interpreter가
+    실제로 `Environment`를 새로 만드는 시점(Block, for, 함수 호출, `this` 바인딩 등)을 그대로 따라
+    스코프를 열고 닫으므로, Checker의 스코프 추적(중복 선언 검출 목적)과는 스코프 경계가 다릅니다.
+  - `Environment` — 블록 진입/종료마다 생성·소멸하는 지역 스코프 체인입니다. `ScopeResolver`가 거리를
+    계산해준 변수는 `getAt`/`assignAt`으로 스코프 탐색 없이 O(1)에 접근하고, 계산되지 않은(즉 전역) 변수는
+    `globals`에서 바로 조회합니다.
   - `Callable`(`Value.h`) — 함수·클래스·인스턴스처럼 CodeFab 코드에서 호출 가능한(혹은 그 슬롯을
     공유하는) 값이 구현하는 Strategy 패턴 인터페이스입니다. Interpreter는 `arity()`/`call()`만으로
     실제로 무엇이 호출되는지 몰라도 호출을 위임할 수 있습니다.
@@ -173,8 +179,8 @@ CodeFabIntepreter/                 (레포 루트)
         │   ├── Tokenizer/         # Lexer, Token, Value(+ Callable 인터페이스)
         │   └── Parser/            # Parser, Node, Statement, Expression (+ ParserTest)
         ├── CheckerUnit/           # Checker (+ CheckerTest)
-        ├── ExecutorUnit/          # Interpreter, LineResolver, Environment, CodeFabFunction,
-        │                          # CodeFabClass, CodeFabInstance (+ 각 Test)
+        ├── ExecutorUnit/          # Interpreter, LineResolver, ScopeResolver, Environment,
+        │                          # CodeFabFunction, CodeFabClass, CodeFabInstance (+ 각 Test)
         ├── FactoryShell/          # PromptShell, FileBackedShell, FileModeShell,
         │                          # DebugModeShell, DebugCommand, ArgumentParser (+ 각 Test)
         ├── CodeFabFacade.*        # 파이프라인 진입점 (+ Test)

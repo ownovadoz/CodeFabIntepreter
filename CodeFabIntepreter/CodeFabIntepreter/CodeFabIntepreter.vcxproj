@@ -170,6 +170,8 @@
     <ClCompile Include="ExecutorUnit\CodeFabInstance.cpp" />
     <ClCompile Include="ExecutorUnit\CodeFabInstanceTest.cpp" />
     <ClCompile Include="ExecutorUnit\LineResolver.cpp" />
+    <ClCompile Include="ExecutorUnit\ScopeResolver.cpp" />
+    <ClCompile Include="ExecutorUnit\ScopeResolverTest.cpp" />
     <ClCompile Include="CodeFabExceptionTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
@@ -205,6 +207,7 @@
     <ClInclude Include="ExecutorUnit\CodeFabInstance.h" />
     <ClInclude Include="ExecutorUnit\ReturnSignal.h" />
     <ClInclude Include="ExecutorUnit\LineResolver.h" />
+    <ClInclude Include="ExecutorUnit\ScopeResolver.h" />
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />
     <ClInclude Include="AssemblerUnit\Parser\Node.h" />
