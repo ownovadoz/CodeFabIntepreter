@@ -258,6 +258,37 @@ TEST_F(LexerTestFixture, FunctionDeclarationTokens)
     EXPECT_EQ(tokens[8].getType(), TokenType::RETURN);
 }
 
+TEST_F(LexerTestFixture, KeywordArray)
+{
+    auto tokens = scan("Array");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::ARRAY);
+    EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, BracketTokens)
+{
+    auto tokens = scan("[ ]");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::LEFT_BRACKET);
+    EXPECT_EQ(tokens[1].getType(), TokenType::RIGHT_BRACKET);
+    EXPECT_EQ(tokens[2].getType(), TokenType::END_OF_FILE);
+}
+
+TEST_F(LexerTestFixture, ArrayCreationAndIndexTokens)
+{
+    auto tokens = scan("Array(3)[0]");
+
+    EXPECT_EQ(tokens[0].getType(), TokenType::ARRAY);
+    EXPECT_EQ(tokens[1].getType(), TokenType::LEFT_PAREN);
+    EXPECT_EQ(tokens[2].getType(), TokenType::NUMBER);
+    EXPECT_EQ(tokens[3].getType(), TokenType::RIGHT_PAREN);
+    EXPECT_EQ(tokens[4].getType(), TokenType::LEFT_BRACKET);
+    EXPECT_EQ(tokens[5].getType(), TokenType::NUMBER);
+    EXPECT_EQ(tokens[6].getType(), TokenType::RIGHT_BRACKET);
+    EXPECT_EQ(tokens[7].getType(), TokenType::END_OF_FILE);
+}
+
 TEST_F(LexerTestFixture, UnterminatedStringThrows)
 {
     EXPECT_THROW(scan("\"hello"), CodeFabException);

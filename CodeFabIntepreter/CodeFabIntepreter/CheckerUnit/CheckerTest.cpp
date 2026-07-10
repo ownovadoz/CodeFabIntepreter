@@ -478,3 +478,34 @@ TEST(CheckerTreeTest, SelfInheritanceFails) {
 
 	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
+TEST(CheckerTreeTest, ArrayCreationAndIndexReadWriteSucceeds) {
+	auto stmt = assemble("var arr = Array(3);");
+
+	Checker checker;
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST(CheckerTreeTest, ArraySizeSelfReferenceInInitializerFails) {
+	auto stmt = assemble("var a = Array(a);");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, IndexExprWithSelfReferencingArrayInInitializerFails) {
+	auto stmt = assemble("var a = a[0];");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST(CheckerTreeTest, IndexSetExprWithSelfReferencingValueInInitializerFails) {
+	auto stmt = assemble("var a = (arr[0] = a);");
+
+	Checker checker;
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}

@@ -241,6 +241,9 @@ int Interpreter::resolveLine(const Expression* expr) const
     if (const ThisExpr* this_expr = dynamic_cast<const ThisExpr*>(expr)) return this_expr->getKeyword().getLine();
     if (const SuperExpr* super_expr = dynamic_cast<const SuperExpr*>(expr)) return super_expr->getKeyword().getLine();
     if (const InstanceOfExpr* instance_of = dynamic_cast<const InstanceOfExpr*>(expr)) return instance_of->getKeyword().getLine();
+    if (const ArrayExpr* array_expr = dynamic_cast<const ArrayExpr*>(expr)) return resolveLine(array_expr->getSize());
+    if (const IndexExpr* index_expr = dynamic_cast<const IndexExpr*>(expr)) return resolveLine(index_expr->getArray());
+    if (const IndexSetExpr* index_set_expr = dynamic_cast<const IndexSetExpr*>(expr)) return resolveLine(index_set_expr->getArray());
 
     return 0;
 }
@@ -547,4 +550,76 @@ Value Interpreter::evaluateInstanceOfExpr(const InstanceOfExpr& expr)
     if (!klass) throw CodeFabException(expr.getClassName(), "클래스가 아닙니다: '" + expr.getClassName().getLexeme() + "'");
 
     return instance->getClass()->isSubclassOf(klass.get());
+}
+
+void Interpreter::visitArrayExpr(const ArrayExpr& expr)
+{
+    evaluation_result = evaluateArrayExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateArrayExpr(const ArrayExpr& expr)
+{
+    Value size_value = evaluate(expr.getSize());
+    if (!isNumber(size_value))
+        throw CodeFabException(resolveLine(expr.getSize()), "배열 크기는 숫자여야 합니다.");
+
+    double size = std::get<double>(size_value);
+    if (size < 0 || size != static_cast<double>(static_cast<int>(size)))
+        throw CodeFabException(resolveLine(expr.getSize()), "배열 크기는 0 이상의 정수여야 합니다.");
+
+    return make_shared<CodeFabArray>(static_cast<int>(size));
+}
+
+void Interpreter::visitIndexExpr(const IndexExpr& expr)
+{
+    evaluation_result = evaluateIndexExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateIndexExpr(const IndexExpr& expr)
+{
+    Value array_value = evaluate(expr.getArray());
+    if (!isArray(array_value))
+        throw CodeFabException(resolveLine(expr.getArray()), "배열이 아닌 값에는 인덱스로 접근할 수 없습니다.");
+
+    Value index_value = evaluate(expr.getIndex());
+    if (!isNumber(index_value))
+        throw CodeFabException(resolveLine(expr.getIndex()), "배열 인덱스는 숫자여야 합니다.");
+
+    shared_ptr<CodeFabArray> array = std::get<shared_ptr<CodeFabArray>>(array_value);
+    int index = static_cast<int>(std::get<double>(index_value));
+
+    if (index < 0 || index >= array->size())
+        throw CodeFabException(resolveLine(expr.getIndex()), "배열 범위를 벗어났습니다.");
+
+    return array->get(index);
+}
+
+void Interpreter::visitIndexSetExpr(const IndexSetExpr& expr)
+{
+    evaluation_result = evaluateIndexSetExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateIndexSetExpr(const IndexSetExpr& expr)
+{
+    Value array_value = evaluate(expr.getArray());
+    if (!isArray(array_value))
+        throw CodeFabException(resolveLine(expr.getArray()), "배열이 아닌 값에는 인덱스로 접근할 수 없습니다.");
+
+    Value index_value = evaluate(expr.getIndex());
+    if (!isNumber(index_value))
+        throw CodeFabException(resolveLine(expr.getIndex()), "배열 인덱스는 숫자여야 합니다.");
+
+    shared_ptr<CodeFabArray> array = std::get<shared_ptr<CodeFabArray>>(array_value);
+    int index = static_cast<int>(std::get<double>(index_value));
+
+    if (index < 0 || index >= array->size())
+        throw CodeFabException(resolveLine(expr.getIndex()), "배열 범위를 벗어났습니다.");
+
+    Value value = evaluate(expr.getValue());
+    array->set(index, value);
+
+    return value;
 }

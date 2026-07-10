@@ -95,6 +95,9 @@ public:
     void visitThisExpr(const ThisExpr& expr) override;
     void visitSuperExpr(const SuperExpr& expr) override;
     void visitInstanceOfExpr(const InstanceOfExpr& expr) override;
+    void visitArrayExpr(const ArrayExpr& expr) override;
+    void visitIndexExpr(const IndexExpr& expr) override;
+    void visitIndexSetExpr(const IndexSetExpr& expr) override;
 
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;

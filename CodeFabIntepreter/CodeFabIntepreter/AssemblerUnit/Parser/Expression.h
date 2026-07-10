@@ -138,6 +138,73 @@ private:
 	vector<unique_ptr<Expression>> arguments;
 };
 
+class ArrayExpr : public Expression {
+public:
+	explicit ArrayExpr(unique_ptr<Expression> size) : size{ move(size) } {}
+
+	const Expression* getSize() const {
+		return size.get();
+	}
+
+	void accept(ExprVisitor& visitor) const override;
+
+private:
+	unique_ptr<Expression> size;
+};
+
+class IndexExpr : public Expression {
+public:
+	IndexExpr(unique_ptr<Expression> array, unique_ptr<Expression> index)
+		: array{ move(array) }, index{ move(index) } {}
+
+	const Expression* getArray() const {
+		return array.get();
+	}
+
+	const Expression* getIndex() const {
+		return index.get();
+	}
+
+	unique_ptr<Expression> releaseArray() {
+		return move(array);
+	}
+
+	unique_ptr<Expression> releaseIndex() {
+		return move(index);
+	}
+
+	void accept(ExprVisitor& visitor) const override;
+
+private:
+	unique_ptr<Expression> array;
+	unique_ptr<Expression> index;
+};
+
+class IndexSetExpr : public Expression {
+public:
+	IndexSetExpr(unique_ptr<Expression> array, unique_ptr<Expression> index, unique_ptr<Expression> value)
+		: array{ move(array) }, index{ move(index) }, value{ move(value) } {}
+
+	const Expression* getArray() const {
+		return array.get();
+	}
+
+	const Expression* getIndex() const {
+		return index.get();
+	}
+
+	const Expression* getValue() const {
+		return value.get();
+	}
+
+	void accept(ExprVisitor& visitor) const override;
+
+private:
+	unique_ptr<Expression> array;
+	unique_ptr<Expression> index;
+	unique_ptr<Expression> value;
+};
+
 class LogicalExpr : public Expression {
 public:
 	LogicalExpr(unique_ptr<Expression> left, const Token& op, unique_ptr<Expression> right)
