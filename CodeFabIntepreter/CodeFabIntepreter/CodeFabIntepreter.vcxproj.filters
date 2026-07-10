@@ -36,10 +36,22 @@
     <ClCompile Include="FactoryShell\ArgumentParserTest.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
+    <ClCompile Include="FactoryShell\FileBackedShell.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
     <ClCompile Include="FactoryShell\FileModeShell.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
     <ClCompile Include="FactoryShell\FileModeShellTest.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
+    <ClCompile Include="FactoryShell\DebugCommand.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
+    <ClCompile Include="FactoryShell\DebugModeShell.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
+    <ClCompile Include="FactoryShell\DebugModeShellTest.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc">
@@ -116,7 +128,16 @@
     <ClInclude Include="FactoryShell\ArgumentParser.h">
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
+    <ClInclude Include="FactoryShell\FileBackedShell.h">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClInclude>
     <ClInclude Include="FactoryShell\FileModeShell.h">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClInclude>
+    <ClInclude Include="FactoryShell\DebugCommand.h">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClInclude>
+    <ClInclude Include="FactoryShell\DebugModeShell.h">
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="FactoryShell\shell_exception_reporter.h">

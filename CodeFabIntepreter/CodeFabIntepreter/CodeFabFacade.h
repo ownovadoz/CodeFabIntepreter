@@ -4,10 +4,12 @@
 #include "AssemblerUnit/Parser/Statement.h"
 #include "CheckerUnit/Checker.h"
 #include "ExecutorUnit/Interpreter.h"
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+using std::function;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -20,6 +22,13 @@ public:
 #endif
 
     void execute(const string& code_line);
+
+    // Stmt 단위 stepping/breakpoint를 지원하기 위해 Interpreter의
+    // before-statement 훅 등록을 그대로 전달한다.
+    void setBeforeStatementHook(function<void(int line)> hook);
+
+    // watch/inspect가 정지 시점의 변수 스냅샷을 조회하는 데 사용한다.
+    vector<VariableSnapshot> inspectVariables() const;
 
 private:
 #ifdef _DEBUG

@@ -145,8 +145,12 @@
   <ItemGroup>
     <ClCompile Include="FactoryShell\ArgumentParser.cpp" />
     <ClCompile Include="FactoryShell\ArgumentParserTest.cpp" />
+    <ClCompile Include="FactoryShell\FileBackedShell.cpp" />
     <ClCompile Include="FactoryShell\FileModeShell.cpp" />
     <ClCompile Include="FactoryShell\FileModeShellTest.cpp" />
+    <ClCompile Include="FactoryShell\DebugCommand.cpp" />
+    <ClCompile Include="FactoryShell\DebugModeShell.cpp" />
+    <ClCompile Include="FactoryShell\DebugModeShellTest.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnit.cpp" />
     <ClCompile Include="AssemblerUnit\AssemblerUnitTest.cpp" />
     <ClCompile Include="AssemblerUnit\Parser\Parser.cpp" />
@@ -173,7 +177,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FactoryShell\ArgumentParser.h" />
+    <ClInclude Include="FactoryShell\FileBackedShell.h" />
     <ClInclude Include="FactoryShell\FileModeShell.h" />
+    <ClInclude Include="FactoryShell\DebugCommand.h" />
+    <ClInclude Include="FactoryShell\DebugModeShell.h" />
     <ClInclude Include="FactoryShell\IShellMode.h" />
     <ClInclude Include="FactoryShell\ShellMode.h" />
     <ClInclude Include="AssemblerUnit\AssemblerUnit.h" />

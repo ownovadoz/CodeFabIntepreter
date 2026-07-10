@@ -2,6 +2,7 @@
 #include "AssemblerUnit/Parser/Statement.h"
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 using std::unique_ptr;
@@ -38,11 +39,27 @@ void CodeFabFacade::execute(const string& code_line) {
     runPipeline(retained_statements.back(), *checker, *executor);
 }
 
+void CodeFabFacade::setBeforeStatementHook(function<void(int line)> hook) {
+    executor->setBeforeStatementHook(std::move(hook));
+}
+
+vector<VariableSnapshot> CodeFabFacade::inspectVariables() const {
+    return executor->inspectVariables();
+}
+
 #else
 
 void CodeFabFacade::execute(const string& code_line) {
     retained_statements.push_back(assembler_unit.assemble(code_line));
     runPipeline(retained_statements.back(), checker, executor);
+}
+
+void CodeFabFacade::setBeforeStatementHook(function<void(int line)> hook) {
+    executor.setBeforeStatementHook(std::move(hook));
+}
+
+vector<VariableSnapshot> CodeFabFacade::inspectVariables() const {
+    return executor.inspectVariables();
 }
 
 #endif

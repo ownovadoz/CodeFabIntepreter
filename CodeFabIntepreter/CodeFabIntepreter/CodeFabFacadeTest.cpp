@@ -36,6 +36,8 @@ public:
 class MockExecutor : public IExecutor {
 public:
 	MOCK_METHOD(void, interpret, (const vector<unique_ptr<Statement>>& statements), (override));
+	MOCK_METHOD(void, setBeforeStatementHook, (function<void(int line)> hook), (override));
+	MOCK_METHOD(vector<VariableSnapshot>, inspectVariables, (), (const, override));
 };
 
 class CodeFabFacadeTestFixture : public ::testing::Test {
@@ -109,6 +111,12 @@ TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesStdExceptionFromAssemblerUnit)
 	EXPECT_THROW(facade.execute("var x = 10;"), std::out_of_range);
 }
 
+TEST_F(CodeFabFacadeTestFixture, SetBeforeStatementHookForwardsToExecutor) {
+	EXPECT_CALL(mock_executor, setBeforeStatementHook(::testing::_)).Times(1);
+
+	facade.setBeforeStatementHook([](int) {});
+}
+
 TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesUnknownExceptionFromAssemblerUnit) {
 	// std::exception 계층에 속하지 않는 임의의 값도 그대로 전파되어야 한다.
 	EXPECT_CALL(mock_assembler_unit, assemble(::testing::_))
@@ -177,6 +185,16 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateD
 	catch (const CodeFabException& exception) {
 		EXPECT_THAT(exception.what(), ::testing::HasSubstr("이미 해당 변수는 현재 스코프에서 사용중입니다"));
 	}
+}
+
+TEST(CodeFabFacadeDefaultConstructorTest, SetBeforeStatementHookIsInvokedForEachStatementOnRealExecution) {
+	CodeFabFacade facade;
+	vector<int> observed_lines;
+	facade.setBeforeStatementHook([&observed_lines](int line) { observed_lines.push_back(line); });
+
+	facade.execute("var a = 3; print 1;");
+
+	EXPECT_THAT(observed_lines, ::testing::ElementsAre(1, 1));
 }
 
 TEST(CodeFabFacadeDefaultConstructorTest, ExecuteFunctionDefinitionAndCallPrintsReturnedValue) {

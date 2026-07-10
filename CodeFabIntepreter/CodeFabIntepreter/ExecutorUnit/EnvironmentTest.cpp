@@ -57,6 +57,22 @@ TEST_F(EnvironmentTestFixture, AssignToExistingVariableUpdatesValue)
     EXPECT_EQ(std::get<double>(env.get(identifierToken("a"))), 2.0);
 }
 
+TEST_F(EnvironmentTestFixture, DefaultConstructedEnvironmentIsGlobal)
+{
+    EXPECT_TRUE(env.isGlobal());
+    EXPECT_EQ(env.getEnclosing(), nullptr);
+}
+
+TEST_F(EnvironmentTestFixture, GetOwnVariablesOnlyReturnsVariablesDefinedDirectlyHere)
+{
+    env.define("a", 1.0);
+    env.define("b", 2.0);
+
+    EXPECT_EQ(env.getOwnVariables().size(), 2u);
+    EXPECT_EQ(std::get<double>(env.getOwnVariables().at("a")), 1.0);
+    EXPECT_EQ(std::get<double>(env.getOwnVariables().at("b")), 2.0);
+}
+
 class NestedEnvironmentTestFixture : public testing::Test {
 public:
     shared_ptr<Environment> outer = make_shared<Environment>();
@@ -98,4 +114,20 @@ TEST_F(NestedEnvironmentTestFixture, GetUndefinedVariableThrowsThroughChain)
 TEST_F(NestedEnvironmentTestFixture, AssignUndefinedVariableThrowsThroughChain)
 {
     EXPECT_THROW(inner->assign(identifierToken("x"), 1.0), CodeFabException);
+}
+
+TEST_F(NestedEnvironmentTestFixture, InnerEnvironmentIsNotGlobalAndPointsToOuter)
+{
+    EXPECT_FALSE(inner->isGlobal());
+    EXPECT_EQ(inner->getEnclosing(), outer);
+    EXPECT_TRUE(outer->isGlobal());
+}
+
+TEST_F(NestedEnvironmentTestFixture, GetOwnVariablesDoesNotSeeEnclosingScopeVariables)
+{
+    outer->define("a", 3.0);
+    inner->define("b", 4.0);
+
+    EXPECT_EQ(inner->getOwnVariables().size(), 1u);
+    EXPECT_EQ(std::get<double>(inner->getOwnVariables().at("b")), 4.0);
 }

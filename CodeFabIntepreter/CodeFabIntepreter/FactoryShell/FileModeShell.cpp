@@ -1,5 +1,4 @@
 #include "FileModeShell.h"
-#include "shell_exception_reporter.h"
 
 #include <filesystem>
 #include <fstream>
@@ -12,30 +11,36 @@ using std::ostringstream;
 
 #ifdef _DEBUG
 
+namespace {
+	// FileModeShell은 소스를 통째로 문자열로 주입받지만, FileBackedShell은 화면
+	// 표시(및 DebugModeShell의 재사용)를 위해 줄 배열을 필요로 한다. 두 표현을
+	// 일치시키기 위해 '\n' 기준으로 다시 나눠 FileBackedShell에 그대로 넘긴다.
+	vector<string> splitIntoLines(const string& source) {
+		vector<string> lines;
+		size_t start = 0;
+
+		while (start < source.size()) {
+			size_t newline = source.find('\n', start);
+			if (newline == string::npos) {
+				lines.push_back(source.substr(start));
+				break;
+			}
+			lines.push_back(source.substr(start, newline - start));
+			start = newline + 1;
+		}
+
+		return lines;
+	}
+
+	function<vector<string>(const string&)> asLineReader(function<string(const string&)> read_source) {
+		return [read_source = move(read_source)](const string& path) {
+			return splitIntoLines(read_source(path));
+		};
+	}
+}
+
 FileModeShell::FileModeShell(string file_path, function<bool(const string&)> file_exists, function<string(const string&)> read_source)
-	: file_path(move(file_path)), file_exists(move(file_exists)), read_source(move(read_source)) {}
-
-void FileModeShell::enter() {
-	if (!file_exists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
-
-	runSource(read_source(file_path));
-}
-
-#else
-
-FileModeShell::FileModeShell(string file_path) : file_path(move(file_path)) {}
-
-void FileModeShell::enter() {
-	if (!defaultFileExists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
-
-	runSource(defaultReadSource(file_path));
-}
-
-#endif
-
-bool FileModeShell::defaultFileExists(const string& path) {
-	return std::filesystem::exists(path);
-}
+	: FileBackedShell(move(file_path), move(file_exists), asLineReader(move(read_source))) {}
 
 string FileModeShell::defaultReadSource(const string& path) {
 	ifstream file(path);
@@ -44,6 +49,4 @@ string FileModeShell::defaultReadSource(const string& path) {
 	return source.str();
 }
 
-void FileModeShell::runSource(const string& source) {
-	reportShellExceptions([&] { code_fab_facade.execute(source); });
-}
+#endif

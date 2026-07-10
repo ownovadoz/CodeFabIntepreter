@@ -3,5 +3,6 @@
 enum class ShellMode {
 	Prompt,
 	File,
+	Debug,
 	Invalid
 };
