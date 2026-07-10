@@ -553,6 +553,17 @@ TEST_F(ParserTestFixture, ExpressionStmtAssignmentPassed) {
 	EXPECT_NE(expr_stmt, nullptr);
 }
 
+TEST_F(ParserTestFixture, BareSemicolonProducesNoStatement) {
+	// ;
+	const auto& program = buildAndParseProgram({
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	EXPECT_EQ(program[0].get(), nullptr);
+}
+
 TEST_F(ParserTestFixture, ExpressionStmtMissingSemicolonFailed) {
 	// a = 10
 	expectParseThrows({

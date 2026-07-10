@@ -89,6 +89,22 @@ TEST_F(CheckerTestFixture, SelfReferenceThroughLogicalExprInInitializerFails) {
 	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
+TEST_F(CheckerTestFixture, UnaryExprWithoutSelfReferenceSucceeds) {
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("var a = 1; var b = -a;");
+
+	ASSERT_EQ(statements.size(), 2u);
+	EXPECT_NO_THROW(checker.check(statements));
+}
+
+TEST_F(CheckerTestFixture, LogicalExprWithoutSelfReferenceSucceeds) {
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("var a = true; var b = false; var c = a and b;");
+
+	ASSERT_EQ(statements.size(), 3u);
+	EXPECT_NO_THROW(checker.check(statements));
+}
+
 TEST_F(CheckerTestFixture, ReferencingOtherVariableThroughBinaryExprSucceeds) {
 	auto stmt = assemble("var a = b + 1;");
 

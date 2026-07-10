@@ -143,6 +143,15 @@ TEST_F(LexerTestFixture, FloatLiteral)
     EXPECT_EQ(tokens[1].getType(), TokenType::END_OF_FILE);
 }
 
+TEST_F(LexerTestFixture, NumberLiteralTooLargeForDoubleThrowsCodeFabException)
+{
+    // std::stod가 out_of_range를 던지는 경우로, Lexer가 이를 잡아
+    // CodeFabException으로 다시 던지는 경로를 검증한다.
+    string huge_number(400, '9');
+
+    EXPECT_THROW(scan(huge_number), CodeFabException);
+}
+
 TEST_F(LexerTestFixture, MultipleLiterals)
 {
     auto tokens = scan("123 \"abc\" 4.5");

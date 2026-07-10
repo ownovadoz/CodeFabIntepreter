@@ -3,6 +3,7 @@
 #include "CodeFabClass.h"
 #include "CodeFabFunction.h"
 #include "Environment.h"
+#include "Interpreter.h"
 
 #include "../AssemblerUnit/Parser/Statement.h"
 #include "../AssemblerUnit/Tokenizer/Token.h"
@@ -11,9 +12,11 @@
 #include <gmock/gmock.h>
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 using std::get;
 using std::make_shared;
@@ -22,6 +25,7 @@ using std::monostate;
 using std::shared_ptr;
 using std::string;
 using std::unordered_map;
+using std::vector;
 
 namespace {
     Token identifier(const string& name) {
@@ -74,4 +78,9 @@ TEST_F(CodeFabInstanceTestFixture, ToStringIncludesClassName) {
 
 TEST_F(CodeFabInstanceTestFixture, ArityIsZeroAndCallThrows) {
     EXPECT_EQ(instance.arity(), 0);
+
+    // Interpreter::evaluateCallExpr이 인스턴스 호출을 미리 걸러내므로 실제로는
+    // 도달하지 않는 방어적 구현이지만, 그 구현 자체는 직접 검증해둔다.
+    Interpreter interpreter;
+    EXPECT_THROW(instance.call(interpreter, vector<Value>{}), std::logic_error);
 }
