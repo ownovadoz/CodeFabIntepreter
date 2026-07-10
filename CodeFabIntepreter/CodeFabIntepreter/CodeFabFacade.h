@@ -3,12 +3,14 @@
 #include "AssemblerUnit/AssemblerUnit.h"
 #include "CheckerUnit/Checker.h"
 #include "ExecutorUnit/Interpreter.h"
+#include <functional>
 #include <string>
 
 #ifdef _DEBUG
 #include <memory>
 #endif
 
+using std::function;
 using std::string;
 
 class CodeFabFacade {
@@ -19,6 +21,10 @@ public:
 #endif
 
     void execute(const string& code_line);
+
+    // Stmt 단위 stepping/breakpoint를 지원하기 위해 Interpreter의
+    // before-statement 훅 등록을 그대로 전달한다.
+    void setBeforeStatementHook(function<void(int line)> hook);
 
 private:
 #ifdef _DEBUG

@@ -38,7 +38,11 @@ public:
 
     // 문장을 실행하기 직전마다 호출되는 훅을 등록한다. 디버그 모드가 Stmt 단위로
     // stepping/breakpoint를 지원하는 데 사용하며, 등록하지 않으면 아무 영향이 없다.
+#ifdef _DEBUG
+    void setBeforeStatementHook(function<void(int line)> hook) override;
+#else
     void setBeforeStatementHook(function<void(int line)> hook);
+#endif
 
 private:
     void execute(Statement* stmt);
