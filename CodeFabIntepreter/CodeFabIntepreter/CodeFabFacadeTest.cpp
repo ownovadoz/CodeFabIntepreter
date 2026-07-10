@@ -127,21 +127,22 @@ TEST_F(CodeFabFacadeTestFixture, ExecutePropagatesUnknownExceptionFromAssemblerU
 	EXPECT_ANY_THROW(facade.execute("var x = 10;"));
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteDoesNotThrowWithRealDependencies) {
+class CodeFabFacadeDefaultConstructorTestFixture : public ::testing::Test {
+public:
 	CodeFabFacade facade;
+};
+
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecuteDoesNotThrowWithRealDependencies) {
 	EXPECT_NO_THROW(facade.execute(""));
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCodeFabExceptionFromInvalidSyntax) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealCodeFabExceptionFromInvalidSyntax) {
 	// "var a = ;" 는 실제 Parser가 초기화식 누락으로 CodeFabException을 던지는 입력이다.
-	CodeFabFacade facade;
 	EXPECT_THROW(facade.execute("var a = ;"), CodeFabException);
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerSelfReferenceError) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealCheckerSelfReferenceError) {
 	// "var a = a + 1;" 은 실제 Checker가 초기화식 자기참조로 CodeFabException을 던지는 입력이다.
-	CodeFabFacade facade;
-
 	try {
 		facade.execute("var a = a + 1;");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
@@ -151,10 +152,9 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerSelfRefere
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateDeclarationAcrossLines) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealCheckerDuplicateDeclarationAcrossLines) {
 	// 같은 Facade 인스턴스로 여러 줄을 실행하는 REPL 시나리오에서, 전역 스코프의
 	// 중복 선언은 줄이 나뉘어도 실제 Checker에 의해 검출되어야 한다.
-	CodeFabFacade facade;
 	facade.execute("var a = 10;");
 
 	try {
@@ -166,18 +166,14 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateD
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteChecksAndRunsEveryStatementInAMultiStatementLine) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecuteChecksAndRunsEveryStatementInAMultiStatementLine) {
 	// 세미콜론으로 이어진 여러 문장이 한 줄에 있어도 전부 검사/실행 대상이 되어야 한다.
 	// Interpreter::evaluate가 아직 리터럴 외 표현식(변수 참조 등)은 지원하지 않으므로,
 	// 리터럴만 사용해 Checker/Executor 양쪽 모두가 실제로 지원하는 범위로 검증한다.
-	CodeFabFacade facade;
-
 	EXPECT_NO_THROW(facade.execute("var a = 3; print 1; { var b = 4; } print 2;"));
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateDeclarationWithinSameLine) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealCheckerDuplicateDeclarationWithinSameLine) {
 	try {
 		facade.execute("var a = 3; var a = 4;");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
@@ -187,8 +183,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCheckerDuplicateD
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, SetBeforeStatementHookIsInvokedForEachStatementOnRealExecution) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, SetBeforeStatementHookIsInvokedForEachStatementOnRealExecution) {
 	vector<int> observed_lines;
 	facade.setBeforeStatementHook([&observed_lines](int line) { observed_lines.push_back(line); });
 
@@ -197,9 +192,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, SetBeforeStatementHookIsInvokedForEach
 	EXPECT_THAT(observed_lines, ::testing::ElementsAre(1, 1));
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteFunctionDefinitionAndCallPrintsReturnedValue) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecuteFunctionDefinitionAndCallPrintsReturnedValue) {
 	ostringstream captured;
 	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
 	facade.execute("Func add(a, b) { return a + b; } print add(3, 4);");
@@ -208,9 +201,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteFunctionDefinitionAndCallPrints
 	EXPECT_EQ(captured.str(), "7\n");
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteRecursiveFunctionCallComputesFactorial) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecuteRecursiveFunctionCallComputesFactorial) {
 	ostringstream captured;
 	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
 	facade.execute("Func fact(n) { if (n <= 1) return 1; return n * fact(n - 1); } print fact(5);");
@@ -219,9 +210,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteRecursiveFunctionCallComputesFa
 	EXPECT_EQ(captured.str(), "120\n");
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealReturnOutsideFunctionError) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealReturnOutsideFunctionError) {
 	try {
 		facade.execute("return 1;");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
@@ -231,9 +220,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealReturnOutsideFunc
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealDuplicateParameterNameError) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealDuplicateParameterNameError) {
 	try {
 		facade.execute("Func foo(a, a) { return a; }");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
@@ -243,9 +230,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealDuplicateParamete
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCallingNonCallableValueError) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealCallingNonCallableValueError) {
 	try {
 		facade.execute("var x = 10; x(1);");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
@@ -255,9 +240,8 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCallingNonCallabl
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCallingStringVariableAsFunctionError) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealCallingStringVariableAsFunctionError) {
 	// var x = "hello"; x();
-	CodeFabFacade facade;
 	facade.execute("var x = \"hello\";");
 
 	try {
@@ -269,9 +253,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealCallingStringVari
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArgumentCountMismatchError) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealArgumentCountMismatchError) {
 	try {
 		facade.execute("Func foo(a, b, c) { return a; } foo(1, 2);");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
@@ -281,13 +263,12 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArgumentCountMism
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, FunctionDeclaredOnOnePreviousLineCanBeCalledOnALaterLine) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, FunctionDeclaredOnOnePreviousLineCanBeCalledOnALaterLine) {
 	// PromptShell의 REPL처럼 Func 선언과 호출이 서로 다른 execute() 호출(=다른 줄)에
 	// 걸쳐 있어도 동작해야 한다. CodeFabFunction은 선언 시점의 FunctionStmt를 raw
 	// pointer로 참조하므로, 그 문장을 조립했던 줄의 AST가 이후 줄에서도 계속
 	// 살아있어야 한다(그렇지 않으면 dangling pointer로 인자 개수가 0으로 읽히는
 	// 등 정의되지 않은 동작이 발생한다).
-	CodeFabFacade facade;
 	facade.execute("Func add(a, b) { return a + b; }");
 
 	ostringstream captured;
@@ -309,36 +290,35 @@ namespace {
 	}
 }
 
-TEST(CodeFabFacadeClassTest, InstantiatingClassLikeAFunctionCreatesInstance) {
+class CodeFabFacadeClassTestFixture : public ::testing::Test {
+public:
 	CodeFabFacade facade;
+};
 
+TEST_F(CodeFabFacadeClassTestFixture, InstantiatingClassLikeAFunctionCreatesInstance) {
 	EXPECT_NO_THROW(facade.execute("Class Robot {} var r = Robot();"));
 }
 
-TEST(CodeFabFacadeClassTest, FieldsCanBeWrittenAndReadDynamically) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, FieldsCanBeWrittenAndReadDynamically) {
 	facade.execute("Class Robot {} var r = Robot(); r.name = \"SpeedRobot\"; r.speed = 10;");
 
 	EXPECT_EQ(captureStdout(facade, "print r.name;"), "SpeedRobot\n");
 	EXPECT_EQ(captureStdout(facade, "print r.speed;"), "10\n");
 }
 
-TEST(CodeFabFacadeClassTest, FieldCanBeUpdatedFromItsOwnPreviousValue) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, FieldCanBeUpdatedFromItsOwnPreviousValue) {
 	facade.execute("Class Robot {} var r = Robot(); r.speed = 10; r.speed = r.speed + 5;");
 
 	EXPECT_EQ(captureStdout(facade, "print r.speed;"), "15\n");
 }
 
-TEST(CodeFabFacadeClassTest, ReadingUndefinedFieldThrowsRuntimeError) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, ReadingUndefinedFieldThrowsRuntimeError) {
 	facade.execute("Class Robot {} var r = Robot();");
 
 	EXPECT_THROW(facade.execute("print r.power;"), CodeFabException);
 }
 
-TEST(CodeFabFacadeClassTest, MethodUsesThisToReadAndWriteFieldsAndCallOtherMethods) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, MethodUsesThisToReadAndWriteFieldsAndCallOtherMethods) {
 	facade.execute(
 		"Class Robot {"
 		"  move(dist) { this.position = this.position + dist; }"
@@ -349,8 +329,7 @@ TEST(CodeFabFacadeClassTest, MethodUsesThisToReadAndWriteFieldsAndCallOtherMetho
 	EXPECT_EQ(captureStdout(facade, "r.report();"), "5\n");
 }
 
-TEST(CodeFabFacadeClassTest, InitIsCalledAutomaticallyOnInstantiationAndAlwaysReturnsInstance) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, InitIsCalledAutomaticallyOnInstantiationAndAlwaysReturnsInstance) {
 	facade.execute(
 		"Class Robot { init(name, speed) { this.name = name; this.speed = speed; } }"
 		"var r = Robot(\"AndOr\", 10);");
@@ -359,14 +338,11 @@ TEST(CodeFabFacadeClassTest, InitIsCalledAutomaticallyOnInstantiationAndAlwaysRe
 	EXPECT_EQ(captureStdout(facade, "print r.speed;"), "10\n");
 }
 
-TEST(CodeFabFacadeClassTest, ReturnInsideInitIsRejectedByChecker) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeClassTestFixture, ReturnInsideInitIsRejectedByChecker) {
 	EXPECT_THROW(facade.execute("Class Robot { init() { return 5; } }"), CodeFabException);
 }
 
-TEST(CodeFabFacadeClassTest, SubclassInheritsAndCanOverrideAndCallSuperMethod) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, SubclassInheritsAndCanOverrideAndCallSuperMethod) {
 	facade.execute(
 		"Class Robot { move(dist) { print \"move\"; } }"
 		"Class SpeedRobot : Robot {"
@@ -376,8 +352,7 @@ TEST(CodeFabFacadeClassTest, SubclassInheritsAndCanOverrideAndCallSuperMethod) {
 	EXPECT_EQ(captureStdout(facade, "SpeedRobot().move(3);"), "move\nSpeeeed!\n");
 }
 
-TEST(CodeFabFacadeClassTest, InstanceOfIsTrueForOwnClassAndAncestorClass) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, InstanceOfIsTrueForOwnClassAndAncestorClass) {
 	facade.execute(
 		"Class Robot { init(name) { this.name = name; } }"
 		"Class SpeedRobot : Robot { init(name) { Super.init(name); } }"
@@ -387,55 +362,42 @@ TEST(CodeFabFacadeClassTest, InstanceOfIsTrueForOwnClassAndAncestorClass) {
 	EXPECT_EQ(captureStdout(facade, "print (w instanceof Robot);"), "true\n");
 }
 
-TEST(CodeFabFacadeClassTest, InstanceOfIsFalseForUnrelatedClass) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, InstanceOfIsFalseForUnrelatedClass) {
 	facade.execute("Class Robot {} Class Cat {} var r = Robot();");
 
 	EXPECT_EQ(captureStdout(facade, "print (r instanceof Cat);"), "false\n");
 }
 
-TEST(CodeFabFacadeClassTest, ThisOutsideClassIsRejectedByChecker) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeClassTestFixture, ThisOutsideClassIsRejectedByChecker) {
 	EXPECT_THROW(facade.execute("print this;"), CodeFabException);
 }
 
-TEST(CodeFabFacadeClassTest, SuperOutsideClassIsRejectedByChecker) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeClassTestFixture, SuperOutsideClassIsRejectedByChecker) {
 	EXPECT_THROW(facade.execute("Super.move();"), CodeFabException);
 }
 
-TEST(CodeFabFacadeClassTest, SuperInClassWithoutParentIsRejectedByChecker) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeClassTestFixture, SuperInClassWithoutParentIsRejectedByChecker) {
 	EXPECT_THROW(facade.execute("Class Robot { move() { Super.move(); } }"), CodeFabException);
 }
 
-TEST(CodeFabFacadeClassTest, SelfInheritanceIsRejectedByChecker) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeClassTestFixture, SelfInheritanceIsRejectedByChecker) {
 	EXPECT_THROW(facade.execute("Class Robot : Robot {}"), CodeFabException);
 }
 
-TEST(CodeFabFacadeClassTest, InheritingFromNonClassValueThrowsRuntimeError) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, InheritingFromNonClassValueThrowsRuntimeError) {
 	facade.execute("var x = 10;");
 
 	EXPECT_THROW(facade.execute("Class Robot : x {}"), CodeFabException);
 }
 
-TEST(CodeFabFacadeClassTest, AccessingFieldOnNonInstanceThrowsRuntimeError) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeClassTestFixture, AccessingFieldOnNonInstanceThrowsRuntimeError) {
 	facade.execute("var x = \"hello\";");
 
 	EXPECT_THROW(facade.execute("x.field = 1;"), CodeFabException);
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayCreationAndIndexReadWriteSucceeds) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecuteArrayCreationAndIndexReadWriteSucceeds) {
 	// var arr = Array(3); arr[0] = 10; arr[1] = 20; arr[2] = 30; print arr[0];
-	CodeFabFacade facade;
-
 	ostringstream captured;
 	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
 	facade.execute("var arr = Array(3); arr[0] = 10; arr[1] = 20; arr[2] = 30; print arr[0];");
@@ -444,10 +406,8 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayCreationAndIndexReadWriteS
 	EXPECT_EQ(captured.str(), "10\n");
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayIndexWithComputedExpressionSucceeds) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecuteArrayIndexWithComputedExpressionSucceeds) {
 	// var arr = Array(3); var i = 2; arr[i - 1] = 7; print arr[1];
-	CodeFabFacade facade;
-
 	ostringstream captured;
 	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
 	facade.execute("var arr = Array(3); var i = 2; arr[i - 1] = 7; print arr[1];");
@@ -456,9 +416,8 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayIndexWithComputedExpressio
 	EXPECT_EQ(captured.str(), "7\n");
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayCreatedOnOneLineCanBeIndexedOnALaterLine) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecuteArrayCreatedOnOneLineCanBeIndexedOnALaterLine) {
 	// REPL 여러 줄에 걸쳐도 Array가 정상 동작해야 한다 (이번에 리포트된 실제 버그 시나리오).
-	CodeFabFacade facade;
 	facade.execute("var b = Array(3);");
 
 	ostringstream captured;
@@ -469,8 +428,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecuteArrayCreatedOnOneLineCanBeIndex
 	EXPECT_EQ(captured.str(), "1\n");
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArrayIndexOutOfRangeError) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealArrayIndexOutOfRangeError) {
 	facade.execute("var arr = Array(3);");
 
 	try {
@@ -482,8 +440,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArrayIndexOutOfRa
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArrayIndexTypeError) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealArrayIndexTypeError) {
 	facade.execute("var arr = Array(3);");
 
 	try {
@@ -495,8 +452,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArrayIndexTypeErr
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealNonArrayIndexingError) {
-	CodeFabFacade facade;
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealNonArrayIndexingError) {
 	facade.execute("var x = 10;");
 
 	try {
@@ -508,9 +464,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealNonArrayIndexingE
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArraySizeTypeError) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ExecutePropagatesRealArraySizeTypeError) {
 	try {
 		facade.execute("var brr = Array(\"hi\");");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";
@@ -520,9 +474,7 @@ TEST(CodeFabFacadeDefaultConstructorTest, ExecutePropagatesRealArraySizeTypeErro
 	}
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, LiteralOnlyExpressionStillEvaluatesCorrectlyAfterConstantFolding) {
-	CodeFabFacade facade;
-
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, LiteralOnlyExpressionStillEvaluatesCorrectlyAfterConstantFolding) {
 	ostringstream captured;
 	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
 	facade.execute("print 1 + 2 * 3 - (4 / 2);");
@@ -531,11 +483,9 @@ TEST(CodeFabFacadeDefaultConstructorTest, LiteralOnlyExpressionStillEvaluatesCor
 	EXPECT_EQ(captured.str(), "5\n");
 }
 
-TEST(CodeFabFacadeDefaultConstructorTest, LiteralOnlyDivisionByZeroStillThrowsAtRuntimeRatherThanBeingFolded) {
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, LiteralOnlyDivisionByZeroStillThrowsAtRuntimeRatherThanBeingFolded) {
 	// 상수 폴딩이 0으로 나누기 같은 실행 오류를 미리 접어서 삼켜버리면 안 되고,
 	// 실제 실행 시점에 원래와 동일한 예외가 나야 한다.
-	CodeFabFacade facade;
-
 	try {
 		facade.execute("print 1 / 0;");
 		FAIL() << "CodeFabException을 기대했지만 던져지지 않았습니다.";

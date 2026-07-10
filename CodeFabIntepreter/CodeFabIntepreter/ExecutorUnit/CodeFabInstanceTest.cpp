@@ -33,30 +33,29 @@ namespace {
     }
 }
 
-TEST(CodeFabInstanceTestFixture, SetThenGetReturnsTheStoredFieldValue) {
-    CodeFabInstance instance(emptyClass("Robot"));
+class CodeFabInstanceTestFixture : public testing::Test {
+public:
+    CodeFabInstance instance{ emptyClass("Robot") };
+};
 
+TEST_F(CodeFabInstanceTestFixture, SetThenGetReturnsTheStoredFieldValue) {
     instance.set(identifier("speed"), 10.0);
 
     EXPECT_EQ(get<double>(instance.get(identifier("speed"))), 10.0);
 }
 
-TEST(CodeFabInstanceTestFixture, SetOverwritesAnExistingField) {
-    CodeFabInstance instance(emptyClass("Robot"));
-
+TEST_F(CodeFabInstanceTestFixture, SetOverwritesAnExistingField) {
     instance.set(identifier("speed"), 10.0);
     instance.set(identifier("speed"), 20.0);
 
     EXPECT_EQ(get<double>(instance.get(identifier("speed"))), 20.0);
 }
 
-TEST(CodeFabInstanceTestFixture, GetOnUndefinedFieldThrowsCodeFabException) {
-    CodeFabInstance instance(emptyClass("Robot"));
-
+TEST_F(CodeFabInstanceTestFixture, GetOnUndefinedFieldThrowsCodeFabException) {
     EXPECT_THROW(instance.get(identifier("power")), CodeFabException);
 }
 
-TEST(CodeFabInstanceTestFixture, GetFallsBackToBoundMethodWhenNoFieldMatches) {
+TEST_F(CodeFabInstanceTestFixture, GetFallsBackToBoundMethodWhenNoFieldMatches) {
     FunctionStmt move_decl(identifier("move"), {}, make_unique<BlockStmt>());
     auto move_fn = make_shared<CodeFabFunction>(&move_decl, make_shared<Environment>());
     auto klass = make_shared<CodeFabClass>("Robot", nullptr, unordered_map<string, shared_ptr<CodeFabFunction>>{ { "move", move_fn } });
@@ -69,14 +68,10 @@ TEST(CodeFabInstanceTestFixture, GetFallsBackToBoundMethodWhenNoFieldMatches) {
     EXPECT_NE(std::dynamic_pointer_cast<CodeFabFunction>(*callable), nullptr);
 }
 
-TEST(CodeFabInstanceTestFixture, ToStringIncludesClassName) {
-    CodeFabInstance instance(emptyClass("Robot"));
-
+TEST_F(CodeFabInstanceTestFixture, ToStringIncludesClassName) {
     EXPECT_EQ(instance.toString(), "Robot instance");
 }
 
-TEST(CodeFabInstanceTestFixture, ArityIsZeroAndCallThrows) {
-    CodeFabInstance instance(emptyClass("Robot"));
-
+TEST_F(CodeFabInstanceTestFixture, ArityIsZeroAndCallThrows) {
     EXPECT_EQ(instance.arity(), 0);
 }
