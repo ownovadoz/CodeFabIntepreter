@@ -163,6 +163,7 @@
     <ClCompile Include="ExecutorUnit\EnvironmentTest.cpp" />
     <ClCompile Include="ExecutorUnit\Interpreter.cpp" />
     <ClCompile Include="ExecutorUnit\InterpreterTest.cpp" />
+    <ClCompile Include="ExecutorUnit\CodeFabFunction.cpp" />
     <ClCompile Include="CodeFabExceptionTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
@@ -193,10 +194,13 @@
     <ClInclude Include="CodeFabException.h" />
     <ClInclude Include="ExecutorUnit\Environment.h" />
     <ClInclude Include="ExecutorUnit\Interpreter.h" />
+    <ClInclude Include="ExecutorUnit\CodeFabFunction.h" />
+    <ClInclude Include="ExecutorUnit\ReturnSignal.h" />
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />
     <ClInclude Include="AssemblerUnit\Parser\Node.h" />
     <ClInclude Include="FactoryShell\PromptShell.h" />
+    <ClInclude Include="FactoryShell\shell_exception_reporter.h" />
     <ClInclude Include="Visitor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -3,17 +3,28 @@
 
 #include <string>
 
+#ifdef _DEBUG
+#include <functional>
+#endif
+
 using std::string;
+
+#ifdef _DEBUG
+using std::function;
+#endif
 
 class FileModeShell : public FileBackedShell {
 public:
+#ifdef _DEBUG
+	explicit FileModeShell(string file_path,
+		function<bool(const string&)> file_exists = defaultFileExists,
+		function<string(const string&)> read_source = defaultReadSource);
+#else
 	using FileBackedShell::FileBackedShell;
-
-	const string& getLastLine() const { return code_line; }
-
-protected:
-	void beforeExecuteLine(int line_number, const string& line_text) override;
+#endif
 
 private:
-	string code_line;
+#ifdef _DEBUG
+	static string defaultReadSource(const string& path);
+#endif
 };

@@ -38,7 +38,7 @@ public:
 
 protected:
 	void afterLoad(const string& path) override;
-	void beforeExecuteLine(int line_number, const string& line_text) override;
+	void beforeExecute() override;
 
 private:
 	enum class Mode { Step, Next, Continue };
@@ -46,9 +46,9 @@ private:
 	static string defaultReadCommand();
 	static unordered_map<string, unique_ptr<DebugCommand>> createCommandTable();
 
-	// FileBackedShell::runLines가 각 줄을 실행하기 직전에 beforeExecuteLine을
-	// 통해 등록해주면, Interpreter가 실제로 문장을 실행하기 직전마다
-	// onBeforeStatement를 호출한다(중첩된 블록 내부 문장 포함).
+	// FileBackedShell::enter가 전체 소스를 실행하기 직전에 beforeExecute를 통해
+	// 등록해주면, Interpreter가 실제로 문장을 실행하기 직전마다(중첩된 블록 내부
+	// 문장 포함) 실제 절대 줄 번호와 함께 onBeforeStatement를 호출한다.
 	void onBeforeStatement(int line);
 	bool processCommand(const string& raw_command);
 	void printPauseMessage(int line, bool is_breakpoint_hit);

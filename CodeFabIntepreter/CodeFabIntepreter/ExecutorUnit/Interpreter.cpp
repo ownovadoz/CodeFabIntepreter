@@ -1,5 +1,7 @@
 #include "Interpreter.h"
 
+#include "CodeFabFunction.h"
+#include "ReturnSignal.h"
 #include "../CodeFabException.h"
 #include <iostream>
 #include <memory>
@@ -85,12 +87,23 @@ int Interpreter::resolveStatementLine(const Statement* stmt) const
 
 void Interpreter::executeBlockStmt(BlockStmt* block)
 {
-    shared_ptr<Environment> previous = environment;
-    environment = make_shared<Environment>(previous);
+    executeBlockWithEnvironment(block, make_shared<Environment>(environment));
+}
 
-    for (const auto& stmt : block->getStatements()) {
-        execute(stmt.get());
+void Interpreter::executeBlockWithEnvironment(const BlockStmt* block, shared_ptr<Environment> new_environment)
+{
+    shared_ptr<Environment> previous = environment;
+    environment = move(new_environment);
+
+    try {
+        for (const auto& stmt : block->getStatements())
+            execute(stmt.get());
     }
+    catch (...) {
+        environment = previous;
+        throw;
+    }
+
     environment = previous;
 }
 
@@ -123,6 +136,20 @@ void Interpreter::executeIfStmt(IfStmt* if_stmt)
     else {
         execute(const_cast<Statement*>(if_stmt->getElseBranch()));
     }
+}
+
+void Interpreter::executeFunctionStmt(FunctionStmt* stmt)
+{
+    shared_ptr<Callable> function = make_shared<CodeFabFunction>(stmt, environment);
+    environment->define(stmt->getName().getLexeme(), Value(function));
+}
+
+void Interpreter::executeReturnStmt(ReturnStmt* stmt)
+{
+    Value value;
+    if (stmt->getValue() != nullptr) value = evaluate(stmt->getValue());
+
+    throw ReturnSignal(value);
 }
 
 void Interpreter::executeForStmt(ForStmt* for_stmt)
@@ -174,6 +201,7 @@ int Interpreter::resolveLine(const Expression* expr) const
     if (const UnaryExpr* unary = dynamic_cast<const UnaryExpr*>(expr)) return unary->getOperator().getLine();
     if (const LogicalExpr* logical = dynamic_cast<const LogicalExpr*>(expr)) return logical->getOperator().getLine();
     if (const GroupingExpr* grouping = dynamic_cast<const GroupingExpr*>(expr)) return resolveLine(grouping->getExpr());
+    if (const CallExpr* call = dynamic_cast<const CallExpr*>(expr)) return call->getParen().getLine();
 
     return 0;
 }
@@ -206,6 +234,16 @@ void Interpreter::visitPrintStmt(const PrintStmt& stmt)
 void Interpreter::visitForStmt(const ForStmt& stmt)
 {
     executeForStmt(const_cast<ForStmt*>(&stmt));
+}
+
+void Interpreter::visitFunctionStmt(const FunctionStmt& stmt)
+{
+    executeFunctionStmt(const_cast<FunctionStmt*>(&stmt));
+}
+
+void Interpreter::visitReturnStmt(const ReturnStmt& stmt)
+{
+    executeReturnStmt(const_cast<ReturnStmt*>(&stmt));
 }
 
 void Interpreter::visitLiteralExpr(const LiteralExpr& expr)
@@ -342,4 +380,28 @@ Value Interpreter::evaluateLogicalExpr(const LogicalExpr& expr)
     }
 
     return evaluate(expr.getRight());
+}
+
+void Interpreter::visitCallExpr(const CallExpr& expr)
+{
+    evaluation_result = evaluateCallExpr(expr);
+    has_evaluation_result = true;
+}
+
+Value Interpreter::evaluateCallExpr(const CallExpr& expr)
+{
+    Value callee = evaluate(expr.getCallee());
+    if (!isCallable(callee)) throw CodeFabException(expr.getParen(), "호출할 수 없는 대상입니다.");
+
+    vector<Value> arguments;
+    for (const auto& argument : expr.getArguments())
+        arguments.push_back(evaluate(argument.get()));
+
+    shared_ptr<Callable> callable = std::get<shared_ptr<Callable>>(callee);
+
+    if (static_cast<int>(arguments.size()) != callable->arity())
+        throw CodeFabException(expr.getParen(), "인자 개수가 일치하지 않습니다. 필요한 개수: "
+            + std::to_string(callable->arity()) + ", 전달된 개수: " + std::to_string(arguments.size()));
+
+    return callable->call(*this, arguments);
 }

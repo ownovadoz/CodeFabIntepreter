@@ -32,11 +32,10 @@ void DebugModeShell::afterLoad(const string& path) {
 	cout << "[DEBUG] 소스코드 로딩: " << path << "\n";
 }
 
-void DebugModeShell::beforeExecuteLine(int line_number, const string&) {
-	// AssemblerUnit은 execute() 호출마다 새로 렉싱하므로, 훅이 넘겨주는 줄 번호는
-	// 이번 호출 문자열 안에서의 상대 줄 번호(항상 1)일 뿐이다. 파일 전체 기준
-	// 절대 줄 번호는 이 루프가 알고 있으므로, 매 호출마다 그 값으로 다시 바인딩한다.
-	code_fab_facade.setBeforeStatementHook([this, line_number](int) { onBeforeStatement(line_number); });
+void DebugModeShell::beforeExecute() {
+	// 전체 소스를 한 번에 실행하므로, Interpreter가 알려주는 줄 번호가 이미
+	// 파일 기준 절대 줄 번호다.
+	code_fab_facade.setBeforeStatementHook([this](int line) { onBeforeStatement(line); });
 }
 
 void DebugModeShell::onBeforeStatement(int line) {

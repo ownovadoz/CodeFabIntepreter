@@ -17,7 +17,7 @@ using std::vector;
 enum class TokenType
 {
     // 구분자 / 그룹핑
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, SEMICOLON,
+    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, SEMICOLON, COMMA,
 
     // 연산자
     PLUS, MINUS, STAR, SLASH,
@@ -30,7 +30,7 @@ enum class TokenType
     IDENTIFIER, STRING, NUMBER,
 
     // 키워드
-    AND, ELSE, FALSE, FOR, IF, OR, PRINT, TRUE, VAR,
+    AND, ELSE, FALSE, FOR, FUNC, IF, OR, PRINT, RETURN, TRUE, VAR,
 
     END_OF_FILE
 };
@@ -44,6 +44,7 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::LEFT_BRACE:   return "LEFT_BRACE";
     case TokenType::RIGHT_BRACE:  return "RIGHT_BRACE";
     case TokenType::SEMICOLON:    return "SEMICOLON";
+    case TokenType::COMMA:        return "COMMA";
     case TokenType::PLUS:         return "PLUS";
     case TokenType::MINUS:        return "MINUS";
     case TokenType::STAR:         return "STAR";
@@ -63,9 +64,11 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::ELSE:         return "ELSE";
     case TokenType::FALSE:        return "FALSE";
     case TokenType::FOR:          return "FOR";
+    case TokenType::FUNC:         return "FUNC";
     case TokenType::IF:           return "IF";
     case TokenType::OR:           return "OR";
     case TokenType::PRINT:        return "PRINT";
+    case TokenType::RETURN:       return "RETURN";
     case TokenType::TRUE:         return "TRUE";
     case TokenType::VAR:          return "VAR";
     case TokenType::END_OF_FILE:  return "EOF";

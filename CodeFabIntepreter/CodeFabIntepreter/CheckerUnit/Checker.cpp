@@ -113,6 +113,37 @@ void Checker::visitForStmt(const ForStmt& stmt)
     resolveStmt(stmt.getBody());
 }
 
+void Checker::visitFunctionStmt(const FunctionStmt& stmt)
+{
+    declare(stmt.getName());
+    define(stmt.getName());
+
+    resolveFunction(stmt);
+}
+
+void Checker::resolveFunction(const FunctionStmt& stmt)
+{
+    ScopeGuard scope_guard(*this);
+    FunctionGuard function_guard(*this);
+
+    for (const Token& param : stmt.getParams())
+    {
+        declare(param);
+        define(param);
+    }
+
+    for (const auto& body_stmt : stmt.getBody()->getStatements())
+        resolveStmt(body_stmt.get());
+}
+
+void Checker::visitReturnStmt(const ReturnStmt& stmt)
+{
+    if (function_depth == 0)
+        throw CodeFabException(stmt.getKeyword(), "함수 외부에서 return을 사용할 수 없습니다.");
+
+    resolveExpr(stmt.getValue());
+}
+
 void Checker::resolveExpr(const Expression* expr)
 {
     if (expr == nullptr) return;
@@ -160,4 +191,12 @@ void Checker::visitLogicalExpr(const LogicalExpr& expr)
 {
     resolveExpr(expr.getLeft());
     resolveExpr(expr.getRight());
+}
+
+void Checker::visitCallExpr(const CallExpr& expr)
+{
+    resolveExpr(expr.getCallee());
+
+    for (const auto& argument : expr.getArguments())
+        resolveExpr(argument.get());
 }

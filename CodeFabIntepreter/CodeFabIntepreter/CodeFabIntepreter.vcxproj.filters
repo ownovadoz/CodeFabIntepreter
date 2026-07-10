@@ -108,6 +108,9 @@
     <ClCompile Include="ExecutorUnit\InterpreterTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExecutorUnit\CodeFabFunction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Parser\test\ParserTest.cpp">
       <Filter>Header Files\Parser\test</Filter>
     </ClCompile>
@@ -135,6 +138,9 @@
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="FactoryShell\DebugModeShell.h">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClInclude>
+    <ClInclude Include="FactoryShell\shell_exception_reporter.h">
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="FactoryShell\IShellMode.h">
@@ -179,7 +185,10 @@
     <ClInclude Include="ExecutorUnit\Interpreter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RuntimeError.h">
+    <ClInclude Include="ExecutorUnit\CodeFabFunction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecutorUnit\ReturnSignal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Visitor.h">
