@@ -123,6 +123,12 @@
     <ClCompile Include="ExecutorUnit\CodeFabInstanceTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExecutorUnit\CodeFabNamespace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExecutorUnit\CodeFabNamespaceTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ExecutorUnit\LineResolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -136,6 +142,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ExecutorUnit\ResolverTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExecutorUnit\ImportTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AssemblerUnit\Parser\ParserTest.cpp">
@@ -219,6 +228,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExecutorUnit\CodeFabInstance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecutorUnit\CodeFabNamespace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExecutorUnit\ReturnSignal.h">

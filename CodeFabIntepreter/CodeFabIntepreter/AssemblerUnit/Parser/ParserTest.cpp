@@ -1363,3 +1363,43 @@ TEST_F(ParserTestFixture, IndexSetExprMissingValueFailed) {
 		{TokenType::END_OF_FILE, "\n", "\n", 1}
 	});
 }
+
+TEST_F(ParserTestFixture, ImportStmtWithAliasPassed) {
+	// import "a.txt" alias a;
+	const auto& program = buildAndParseProgram({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"a.txt\"", "a.txt", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+
+	ASSERT_EQ(program.size(), 1);
+	const ImportStmt* import_stmt = dynamic_cast<const ImportStmt*>(program[0].get());
+	ASSERT_NE(import_stmt, nullptr);
+	EXPECT_EQ(std::get<string>(import_stmt->getPath().getLiteral()), "a.txt");
+	EXPECT_EQ(import_stmt->getAlias().getLexeme(), "a");
+}
+
+TEST_F(ParserTestFixture, ImportStmtMissingAliasKeywordFailed) {
+	// import "a.txt" a;
+	expectParseThrows({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::STRING, "\"a.txt\"", "a.txt", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}
+
+TEST_F(ParserTestFixture, ImportStmtMissingPathStringFailed) {
+	// import alias a;
+	expectParseThrows({
+		{TokenType::IMPORT, "import", "import", 1},
+		{TokenType::ALIAS, "alias", "alias", 1},
+		{TokenType::IDENTIFIER, "a", "a", 1},
+		{TokenType::SEMICOLON, ";", ";", 1},
+		{TokenType::END_OF_FILE, "\n", "\n", 1}
+	});
+}

@@ -29,7 +29,13 @@ class Interpreter : public ExprVisitor, public StmtVisitor
 #endif
 {
 public:
+#ifdef _DEBUG
+    explicit Interpreter(
+        function<bool(const string&)> file_exists = defaultFileExists,
+        function<string(const string&)> read_source = defaultReadSource);
+#else
     Interpreter();
+#endif
 
 #ifdef _DEBUG
     void interpret(const vector<unique_ptr<Statement>>& statements) override;
@@ -71,6 +77,7 @@ private:
     void executeFunctionStmt(FunctionStmt* stmt);
     void executeReturnStmt(ReturnStmt* stmt);
     void executeClassStmt(ClassStmt* stmt);
+    void executeImportStmt(ImportStmt* stmt);
 
     Value evaluateLiteralExpr(const LiteralExpr* literal);
     Value evaluateVariableExpr(const VariableExpr* variable);
@@ -103,6 +110,7 @@ private:
     void visitFunctionStmt(const FunctionStmt& stmt) override;
     void visitReturnStmt(const ReturnStmt& stmt) override;
     void visitClassStmt(const ClassStmt& stmt) override;
+    void visitImportStmt(const ImportStmt& stmt) override;
 
     void visitLiteralExpr(const LiteralExpr& expr) override;
     void visitVariableExpr(const VariableExpr& expr) override;
@@ -142,4 +150,21 @@ private:
     // interpret()이 실행 직전에 호출해, 리터럴로만 이뤄진 연산식의 값을 미리
     // 계산해두는 Visitor. evaluate()는 여기 값이 있으면 재계산 없이 즉시 돌려준다.
     ConstantFolder constant_folder;
+
+    static bool defaultFileExists(const string& path);
+    static string defaultReadSource(const string& path);
+
+    function<bool(const string&)> file_exists;
+    function<string(const string&)> read_source;
+
+    // executeImportStmt가 재귀적으로 interpret()을 호출하는 동안 현재 import
+    // 경로들을 쌓아두는 스택. 이미 스택에 있는 경로를 다시 import하려 하면
+    // 순환 import로 판단해 예외를 던진다.
+    vector<string> import_stack;
+
+    // import된 파일의 문장(AST)을 이 Interpreter가 살아있는 동안 계속 보관한다.
+    // CodeFabFacade::retained_statements와 같은 이유로, import된 파일 안의
+    // Func/Class 선언이 만드는 클로저가 그 AST를 가리키는 raw pointer를 들고
+    // 있기 때문이다.
+    vector<vector<unique_ptr<Statement>>> imported_statements;
 };

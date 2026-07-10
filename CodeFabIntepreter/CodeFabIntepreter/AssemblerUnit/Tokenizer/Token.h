@@ -31,7 +31,7 @@ enum class TokenType
 
     // 키워드
     AND, ARRAY, ELSE, FALSE, FOR, FUNC, IF, OR, PRINT, RETURN, TRUE, VAR,
-    CLASS, THIS, SUPER, INSTANCEOF,
+    CLASS, THIS, SUPER, INSTANCEOF, IMPORT, ALIAS,
 
     END_OF_FILE
 };
@@ -81,6 +81,8 @@ inline string tokenTypeToString(TokenType type)
     case TokenType::THIS:         return "THIS";
     case TokenType::SUPER:        return "SUPER";
     case TokenType::INSTANCEOF:   return "INSTANCEOF";
+    case TokenType::IMPORT:       return "IMPORT";
+    case TokenType::ALIAS:        return "ALIAS";
     case TokenType::END_OF_FILE:  return "EOF";
     default:                      return "UNKNOWN";
     }

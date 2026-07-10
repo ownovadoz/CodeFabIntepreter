@@ -26,3 +26,4 @@ void ForStmt::accept(StmtVisitor& visitor) const { visitor.visitForStmt(*this); 
 void FunctionStmt::accept(StmtVisitor& visitor) const { visitor.visitFunctionStmt(*this); }
 void ReturnStmt::accept(StmtVisitor& visitor) const { visitor.visitReturnStmt(*this); }
 void ClassStmt::accept(StmtVisitor& visitor) const { visitor.visitClassStmt(*this); }
+void ImportStmt::accept(StmtVisitor& visitor) const { visitor.visitImportStmt(*this); }

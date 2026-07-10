@@ -261,3 +261,9 @@ void Resolver::visitClassStmt(const ClassStmt& stmt)
     if (superclass != nullptr)
         endScope();
 }
+
+void Resolver::visitImportStmt(const ImportStmt& stmt)
+{
+    declare(stmt.getAlias());
+    define(stmt.getAlias());
+}

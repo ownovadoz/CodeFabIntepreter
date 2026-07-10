@@ -160,3 +160,8 @@ void LineResolver::visitClassStmt(const ClassStmt& stmt)
 {
     line = stmt.getName().getLine();
 }
+
+void LineResolver::visitImportStmt(const ImportStmt& stmt)
+{
+    line = stmt.getPath().getLine();
+}

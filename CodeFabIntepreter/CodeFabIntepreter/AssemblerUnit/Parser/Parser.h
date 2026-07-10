@@ -30,6 +30,7 @@ private:
 	unique_ptr<FunctionStmt> finishFunctionDecl(const Token& name);
 	unique_ptr<Statement> parseReturnStmt();
 	unique_ptr<Statement> parseClassStmt();
+	unique_ptr<Statement> parseImportStmt();
 	unique_ptr<Statement> parseExpressionStmt();
 
 	unique_ptr<BlockStmt> parseBlock();

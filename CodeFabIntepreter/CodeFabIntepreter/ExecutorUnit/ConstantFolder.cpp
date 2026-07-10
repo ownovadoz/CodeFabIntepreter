@@ -192,3 +192,10 @@ void ConstantFolder::visitClassStmt(const ClassStmt& stmt)
         for (const auto& body_stmt : method->getBody()->getStatements())
             resolveStmt(body_stmt.get());
 }
+
+void ConstantFolder::visitImportStmt(const ImportStmt&)
+{
+    // import 문 자체에는 접을 수 있는 연산식이 없다. import된 파일의 문장은
+    // Interpreter::executeImportStmt가 별도로 interpret()하면서 그 안에서 다시
+    // 상수 폴딩된다.
+}

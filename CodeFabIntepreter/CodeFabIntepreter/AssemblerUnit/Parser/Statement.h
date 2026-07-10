@@ -182,6 +182,25 @@ private:
 	vector<unique_ptr<FunctionStmt>> methods;
 };
 
+class ImportStmt : public Statement {
+public:
+	ImportStmt(const Token& path, const Token& alias) : path{ path }, alias{ alias } {}
+
+	const Token& getPath() const {
+		return path;
+	}
+
+	const Token& getAlias() const {
+		return alias;
+	}
+
+	void accept(StmtVisitor& visitor) const override;
+
+private:
+	Token path;
+	Token alias;
+};
+
 class ForStmt : public Statement {
 public:
 	ForStmt(unique_ptr<VarDeclareStmt> init, unique_ptr<Expression> condition, unique_ptr<Expression> increment, unique_ptr<Statement> body)

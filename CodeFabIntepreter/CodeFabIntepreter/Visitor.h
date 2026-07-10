@@ -36,4 +36,5 @@ public:
 	virtual void visitFunctionStmt(const FunctionStmt& stmt) = 0;
 	virtual void visitReturnStmt(const ReturnStmt& stmt) = 0;
 	virtual void visitClassStmt(const ClassStmt& stmt) = 0;
+	virtual void visitImportStmt(const ImportStmt& stmt) = 0;
 };

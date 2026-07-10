@@ -106,6 +106,7 @@ void Checker::visitForStmt(const ForStmt& stmt)
     // for 문의 초기화 변수는 for 문 자신의 스코프에 속하며, body 블록과는
     // 별개로 for 문이 끝나면 함께 소멸한다.
     ScopeGuard guard(*this);
+    LoopGuard loop_guard(*this);
 
     resolveStmt(stmt.getInit());
     resolveExpr(stmt.getCondition());
@@ -273,4 +274,13 @@ void Checker::visitIndexSetExpr(const IndexSetExpr& expr)
     resolveExpr(expr.getArray());
     resolveExpr(expr.getIndex());
     resolveExpr(expr.getValue());
+}
+
+void Checker::visitImportStmt(const ImportStmt& stmt)
+{
+    if (loop_depth > 0)
+        throw CodeFabException(stmt.getPath(), "반복문 안에서는 import를 사용할 수 없습니다.");
+
+    declare(stmt.getAlias());
+    define(stmt.getAlias());
 }

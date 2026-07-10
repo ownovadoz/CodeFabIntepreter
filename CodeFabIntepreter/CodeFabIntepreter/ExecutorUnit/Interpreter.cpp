@@ -3,23 +3,59 @@
 #include "CodeFabClass.h"
 #include "CodeFabFunction.h"
 #include "CodeFabInstance.h"
+#include "CodeFabNamespace.h"
 #include "ReturnSignal.h"
+#include "../AssemblerUnit/AssemblerUnit.h"
+#include "../CheckerUnit/Checker.h"
 #include "../CodeFabException.h"
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <variant>
 using std::cout;
 using std::dynamic_pointer_cast;
+using std::ifstream;
 using std::make_shared;
+using std::ostringstream;
 using std::unordered_map;
 
-Interpreter::Interpreter() : constant_folder(*this)
+#ifdef _DEBUG
+
+Interpreter::Interpreter(function<bool(const string&)> file_exists, function<string(const string&)> read_source)
+    : constant_folder(*this), file_exists(std::move(file_exists)), read_source(std::move(read_source))
 {
     globals = make_shared<Environment>();
     environment = globals;
+}
+
+#else
+
+Interpreter::Interpreter()
+    : constant_folder(*this), file_exists(defaultFileExists), read_source(defaultReadSource)
+{
+    globals = make_shared<Environment>();
+    environment = globals;
+}
+
+#endif
+
+bool Interpreter::defaultFileExists(const string& path)
+{
+    return std::filesystem::exists(path);
+}
+
+string Interpreter::defaultReadSource(const string& path)
+{
+    ifstream file(path);
+    ostringstream source;
+    source << file.rdbuf();
+    return source.str();
 }
 
 void Interpreter::interpret(const vector<unique_ptr<Statement>>& statements)
@@ -169,6 +205,59 @@ void Interpreter::executeClassStmt(ClassStmt* stmt)
     environment->define(stmt->getName().getLexeme(), klass);
 }
 
+void Interpreter::executeImportStmt(ImportStmt* stmt)
+{
+    const string path = std::get<string>(stmt->getPath().getLiteral());
+
+    if (!file_exists(path))
+        throw CodeFabException(stmt->getPath(), "파일을 찾을 수 없습니다: '" + path + "'");
+
+    if (std::find(import_stack.begin(), import_stack.end(), path) != import_stack.end())
+        throw CodeFabException(stmt->getPath(), "순환 import가 감지되었습니다: '" + path + "'");
+
+    string source = read_source(path);
+
+    AssemblerUnit assembler;
+    vector<unique_ptr<Statement>> module_statements = assembler.assemble(source);
+
+    // import된 파일도 이 파일과 동일한 정적 검사를 거친다. 검사기 자체는
+    // 상태를 밖으로 들고 다니지 않으므로(현재 스코프 안에서만 스스로 검증)
+    // 별도 인스턴스를 새로 만들어 써도 이 Interpreter의 상태와 섞이지 않는다.
+    Checker module_checker;
+    module_checker.check(module_statements);
+
+    // import된 파일의 최상위 선언은 이 파일의 전역/현재 스코프와 완전히
+    // 분리된 스코프에서 실행되어야 alias를 통하지 않고서는 접근할 수 없다.
+    // interpret()을 재귀 호출하는 동안만 globals/environment를 새 Environment로
+    // 바꿔치기하고, 끝나면 원래대로 되돌린다.
+    shared_ptr<Environment> previous_globals = globals;
+    shared_ptr<Environment> previous_environment = environment;
+    globals = make_shared<Environment>();
+    environment = globals;
+
+    import_stack.push_back(path);
+    try {
+        interpret(module_statements);
+    }
+    catch (...) {
+        import_stack.pop_back();
+        globals = previous_globals;
+        environment = previous_environment;
+        throw;
+    }
+    import_stack.pop_back();
+
+    auto module_namespace = make_shared<CodeFabNamespace>();
+    for (const auto& [name, value] : globals->getOwnVariables())
+        module_namespace->define(name, value);
+
+    globals = previous_globals;
+    environment = previous_environment;
+
+    imported_statements.push_back(move(module_statements));
+    environment->define(stmt->getAlias().getLexeme(), Value(shared_ptr<Callable>(module_namespace)));
+}
+
 void Interpreter::executeForStmt(ForStmt* for_stmt)
 {
     shared_ptr<Environment> previous = environment;
@@ -284,6 +373,11 @@ void Interpreter::visitReturnStmt(const ReturnStmt& stmt)
 void Interpreter::visitClassStmt(const ClassStmt& stmt)
 {
     executeClassStmt(const_cast<ClassStmt*>(&stmt));
+}
+
+void Interpreter::visitImportStmt(const ImportStmt& stmt)
+{
+    executeImportStmt(const_cast<ImportStmt*>(&stmt));
 }
 
 void Interpreter::visitLiteralExpr(const LiteralExpr& expr)
@@ -452,9 +546,10 @@ Value Interpreter::evaluateCallExpr(const CallExpr& expr)
 
     shared_ptr<Callable> callable = std::get<shared_ptr<Callable>>(callee);
 
-    // 인스턴스도 Callable을 구현하지만(Value가 객체 슬롯을 하나만 가지므로) 실제로
-    // 호출할 수 있는 대상은 아니므로, CodeFabInstance::call()에 도달하기 전에 걸러낸다.
-    if (dynamic_pointer_cast<CodeFabInstance>(callable))
+    // 인스턴스/네임스페이스도 Callable을 구현하지만(Value가 객체 슬롯을 하나만
+    // 가지므로) 실제로 호출할 수 있는 대상은 아니므로, 각자의 call()에
+    // 도달하기 전에 걸러낸다.
+    if (dynamic_pointer_cast<CodeFabInstance>(callable) || dynamic_pointer_cast<CodeFabNamespace>(callable))
         throw CodeFabException(expr.getParen(), "호출할 수 없는 대상입니다.");
 
     if (static_cast<int>(arguments.size()) != callable->arity())
@@ -474,11 +569,16 @@ Value Interpreter::evaluateGetExpr(const GetExpr& expr)
 {
     Value object = evaluate(expr.getObject());
     shared_ptr<Callable>* callable = std::get_if<shared_ptr<Callable>>(&object);
-    shared_ptr<CodeFabInstance> instance = callable ? dynamic_pointer_cast<CodeFabInstance>(*callable) : nullptr;
 
-    if (!instance) throw CodeFabException(expr.getName(), "인스턴스만 필드에 접근할 수 있습니다.");
+    if (callable) {
+        if (shared_ptr<CodeFabInstance> instance = dynamic_pointer_cast<CodeFabInstance>(*callable))
+            return instance->get(expr.getName());
 
-    return instance->get(expr.getName());
+        if (shared_ptr<CodeFabNamespace> module_namespace = dynamic_pointer_cast<CodeFabNamespace>(*callable))
+            return module_namespace->get(expr.getName());
+    }
+
+    throw CodeFabException(expr.getName(), "인스턴스만 필드에 접근할 수 있습니다.");
 }
 
 void Interpreter::visitSetExpr(const SetExpr& expr)

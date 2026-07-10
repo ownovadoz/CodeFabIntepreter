@@ -159,6 +159,53 @@ TEST_F(CheckerTestFixture, ForStmtSelfReferenceInInitializerFails) {
 	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
 }
 
+TEST_F(CheckerTestFixture, ImportStmtInsideLoopBodyFails) {
+	auto stmt = assemble("for (var i = 0; i < 3; i = i + 1) { import \"a.txt\" alias a; }");
+
+	EXPECT_THROW(checker.check(single(move(stmt))), CodeFabException);
+}
+
+TEST_F(CheckerTestFixture, ImportStmtInsideFunctionDeclaredInsideLoopBodySucceeds) {
+	// 함수 몸통은 그 함수가 반복문 안에서 선언됐더라도 호출될 때만 실행되므로,
+	// 함수 경계를 넘으면 반복문 문맥이 리셋되어 import가 허용되어야 한다.
+	auto stmt = assemble("for (var i = 0; i < 3; i = i + 1) { Func f() { import \"a.txt\" alias a; } }");
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST_F(CheckerTestFixture, ImportStmtAtTopLevelSucceeds) {
+	auto stmt = assemble("import \"a.txt\" alias a;");
+
+	EXPECT_NO_THROW(checker.check(single(move(stmt))));
+}
+
+TEST_F(CheckerTestFixture, DuplicateImportAliasInSameScopeFails) {
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("import \"a.txt\" alias a; import \"b.txt\" alias a;");
+
+	ASSERT_EQ(statements.size(), 2u);
+
+	EXPECT_THROW(checker.check(statements), CodeFabException);
+}
+
+TEST_F(CheckerTestFixture, ImportAliasCollidingWithExistingVariableNameFails) {
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("var a = 10; import \"a.txt\" alias a;");
+
+	ASSERT_EQ(statements.size(), 2u);
+
+	EXPECT_THROW(checker.check(statements), CodeFabException);
+}
+
+TEST_F(CheckerTestFixture, SeparateImportsWithDifferentAliasesInSameScopeSucceed) {
+	AssemblerUnit assembler;
+	auto statements = assembler.assemble("import \"a.txt\" alias a; import \"b.txt\" alias b;");
+
+	ASSERT_EQ(statements.size(), 2u);
+
+	EXPECT_NO_THROW(checker.check(statements));
+}
+
 TEST_F(CheckerTestFixture, DuplicateDeclarationAcrossSeparateTopLevelChecksFails) {
 	// REPL에서 한 줄씩 입력되는 각 문장은 같은 Checker 인스턴스로 검사되므로,
 	// 전역 스코프의 중복 선언은 호출이 나뉘어도 검출되어야 한다.

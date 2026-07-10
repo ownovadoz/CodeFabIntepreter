@@ -76,6 +76,7 @@ public:
     void visitFunctionStmt(const FunctionStmt& stmt) override;
     void visitReturnStmt(const ReturnStmt& stmt) override;
     void visitClassStmt(const ClassStmt& stmt) override;
+    void visitImportStmt(const ImportStmt& stmt) override;
 
 private:
     void beginScope();

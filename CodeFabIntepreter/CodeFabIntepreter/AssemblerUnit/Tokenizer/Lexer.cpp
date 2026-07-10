@@ -162,6 +162,8 @@ void Lexer::scanIdentifier()
         {"this",       TokenType::THIS},
         {"Super",      TokenType::SUPER},
         {"instanceof", TokenType::INSTANCEOF},
+        {"import",     TokenType::IMPORT},
+        {"alias",      TokenType::ALIAS},
     };
 
     string_view text(source.data() + start, current - start);

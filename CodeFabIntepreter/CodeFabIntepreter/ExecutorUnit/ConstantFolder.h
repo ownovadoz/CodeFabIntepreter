@@ -59,6 +59,7 @@ private:
     void visitFunctionStmt(const FunctionStmt& stmt) override;
     void visitReturnStmt(const ReturnStmt& stmt) override;
     void visitClassStmt(const ClassStmt& stmt) override;
+    void visitImportStmt(const ImportStmt& stmt) override;
 
     Interpreter& interpreter;
     unordered_map<const Expression*, Value> folded;
