@@ -7,11 +7,14 @@
 
 #include <gmock/gmock.h>
 
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 
+using std::ofstream;
 using std::ostringstream;
 using std::string;
 using std::unordered_map;
@@ -117,6 +120,21 @@ TEST_F(ImportTestFixture, StaticErrorInImportedFilePropagatesAsCodeFabException)
     EXPECT_THROW(interpreter.interpret(statements), CodeFabException);
 }
 
+TEST_F(ImportTestFixture, RuntimeErrorInImportedFileDuringInterpretRestoresOuterScopeAndPropagates) {
+    // 정적 검사는 통과하지만 실행 중(0으로 나누기)에 실패하는 경우로,
+    // executeImportStmt가 재귀 interpret() 도중 던져진 예외를 잡아 globals/
+    // environment를 되돌리고 다시 던지는 catch(...) 경로를 검증한다.
+    file_system.addFile("bad.txt", "print 1 / 0;");
+
+    auto import_statements = assembler.assemble("import \"bad.txt\" alias b;");
+    EXPECT_THROW(interpreter.interpret(import_statements), CodeFabException);
+
+    // import 실패 이후에도 바깥 스코프(globals/environment)가 정상 복구되어
+    // 계속 사용할 수 있어야 한다.
+    auto followup_statements = assembler.assemble("var x = 1; print x;");
+    EXPECT_EQ(captureStdout(interpreter, followup_statements), "1\n");
+}
+
 TEST_F(ImportTestFixture, SameFileImportedTwiceWithDifferentAliasesIsNotTreatedAsCircular) {
     file_system.addFile("shared.txt", "var x = 1;");
 
@@ -140,6 +158,29 @@ TEST_F(ImportTestFixture, CallingImportedNamespaceDirectlyThrowsCodeFabException
     auto statements = assembler.assemble("import \"m.txt\" alias m; m();");
 
     EXPECT_THROW(interpreter.interpret(statements), CodeFabException);
+}
+
+TEST(ImportRealFileSystemTest, ImportOfRealFileOnDiskReadsAndExecutesItsActualContent) {
+    // Interpreter()를 기본 인자(실제 파일 시스템)로 생성해, 가짜 파일 시스템을
+    // 주입하지 않는 기본 defaultFileExists/defaultReadSource 경로 자체를 검증한다.
+    string path = (std::filesystem::temp_directory_path() / "codefab_import_test.txt").string();
+    {
+        ofstream file(path, std::ios::binary);
+        file << "Func greet() { return \"hi\"; }";
+    }
+
+    Interpreter interpreter;
+    AssemblerUnit assembler;
+    auto statements = assembler.assemble("import \"" + path + "\" alias m; print m.greet();");
+
+    ostringstream captured;
+    std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+    interpreter.interpret(statements);
+    std::cout.rdbuf(original_buf);
+
+    std::filesystem::remove(path);
+
+    EXPECT_EQ(captured.str(), "hi\n");
 }
 
 #endif

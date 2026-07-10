@@ -329,6 +329,41 @@ TEST_F(InterpreterTestFixture, BinaryGreaterEqualComparesNumbers)
     EXPECT_TRUE(get<bool>(interpreter.evaluate(&binary)));
 }
 
+TEST_F(InterpreterTestFixture, BinaryLessComparesNumbers)
+{
+    Token less_token(TokenType::LESS, "<", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1)),
+        less_token,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)));
+
+    EXPECT_TRUE(get<bool>(interpreter.evaluate(&binary)));
+}
+
+TEST_F(InterpreterTestFixture, BinaryExprWithUnsupportedOperatorThrowsCodeFabException)
+{
+    // Parser는 이 조합을 만들 수 없지만(BinaryExpr은 항상 지원되는 연산자 토큰만
+    // 갖는다), Interpreter::evaluateBinaryExpr의 default 분기 자체는 방어적으로
+    // 검증해둔다.
+    Token bogus_op(TokenType::AND, "and", monostate{}, 1);
+    BinaryExpr binary(
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)),
+        bogus_op,
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "2", 2.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&binary), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, UnaryExprWithUnsupportedOperatorThrowsCodeFabException)
+{
+    // Parser는 단항 연산자로 -/!만 만들지만, evaluateUnaryExpr의 default 분기
+    // 자체는 방어적으로 검증해둔다.
+    Token bogus_op(TokenType::PLUS, "+", monostate{}, 1);
+    UnaryExpr unary(bogus_op, make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&unary), CodeFabException);
+}
+
 TEST_F(InterpreterTestFixture, BinaryEqualEqualComparesValuesOfSameType)
 {
     Token op_token(TokenType::EQUAL_EQUAL, "==", monostate{}, 1);
@@ -801,6 +836,51 @@ TEST_F(InterpreterTestFixture, IndexingNonArrayValueThrowsCodeFabException)
     EXPECT_THROW(interpreter.evaluate(&index_expr), CodeFabException);
 }
 
+TEST_F(InterpreterTestFixture, IndexSetOnNonArrayValueThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "x", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "10", 10.0, 1)));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexSetExpr index_set_expr(
+        make_unique<VariableExpr>(name_token),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "0", 0.0, 1)),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&index_set_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, IndexSetWithNonNumberIndexThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "arr", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<ArrayExpr>(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1))));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexSetExpr index_set_expr(
+        make_unique<VariableExpr>(name_token),
+        make_unique<LiteralExpr>(Token(TokenType::STRING, "hello", string("hello"), 1)),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&index_set_expr), CodeFabException);
+}
+
+TEST_F(InterpreterTestFixture, IndexSetOutOfRangeThrowsCodeFabException)
+{
+    Token name_token(TokenType::IDENTIFIER, "arr", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<ArrayExpr>(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "3", 3.0, 1))));
+    interpreter.interpret(single(move(var_decl)));
+
+    IndexSetExpr index_set_expr(
+        make_unique<VariableExpr>(name_token),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "5", 5.0, 1)),
+        make_unique<LiteralExpr>(Token(TokenType::NUMBER, "1", 1.0, 1)));
+
+    EXPECT_THROW(interpreter.evaluate(&index_set_expr), CodeFabException);
+}
+
 TEST_F(InterpreterTestFixture, AssigningArrayToAnotherVariableSharesSameArray)
 {
     // var a = Array(1); var b = a; b[0] = 5; a[0]; (== 5, 참조 공유)
@@ -822,4 +902,17 @@ TEST_F(InterpreterTestFixture, AssigningArrayToAnotherVariableSharesSameArray)
 
     IndexExpr get_via_a(make_unique<VariableExpr>(a_token), make_unique<LiteralExpr>(Token(TokenType::NUMBER, "0", 0.0, 1)));
     EXPECT_EQ(get<double>(interpreter.evaluate(&get_via_a)), 5.0);
+}
+
+TEST_F(InterpreterTestFixture, ReadingFieldOnNonInstanceValueThrowsCodeFabException)
+{
+    // var x = 10; x.field; (인스턴스도 네임스페이스도 아닌 값의 필드 접근)
+    Token name_token(TokenType::IDENTIFIER, "x", monostate{}, 1);
+    auto var_decl = make_unique<VarDeclareStmt>(name_token);
+    var_decl->setExpression(make_unique<LiteralExpr>(Token(TokenType::NUMBER, "10", 10.0, 1)));
+    interpreter.interpret(single(move(var_decl)));
+
+    GetExpr get_expr(make_unique<VariableExpr>(name_token), Token(TokenType::IDENTIFIER, "field", monostate{}, 1));
+
+    EXPECT_THROW(interpreter.evaluate(&get_expr), CodeFabException);
 }

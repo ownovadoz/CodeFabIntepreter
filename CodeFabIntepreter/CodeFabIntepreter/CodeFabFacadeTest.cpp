@@ -515,4 +515,17 @@ TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ClosureCapturesVariableVisibl
 
 	EXPECT_EQ(captured.str(), "global\nglobal\n");
 }
+
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ForLoopIncrementReassignsResolvedLoopVariableAcrossIterations) {
+	// for의 증감식(i = i + 1)은 반복문 자신의 스코프에서 선언된 지역 변수를
+	// 다시 대입하는 것이므로, Resolver가 계산해둔 거리로 Environment::assignAt을
+	// 거쳐야 한다(정적 바인딩이 도입되기 전까지 실제 반복이 있는 for 문이 실제
+	// 파이프라인으로 검증된 적이 없었다).
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute("for (var i = 0; i < 3; i = i + 1) { print i; }");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "0\n1\n2\n");
+}
 #endif
