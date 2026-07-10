@@ -24,6 +24,7 @@ Interpreter::Interpreter() : constant_folder(*this)
 
 void Interpreter::interpret(const vector<unique_ptr<Statement>>& statements)
 {
+    resolver.resolve(statements);
     constant_folder.fold(statements);
 
     for (const auto& statement : statements)
@@ -209,7 +210,30 @@ Value Interpreter::evaluateLiteralExpr(const LiteralExpr* literal)
 
 Value Interpreter::evaluateVariableExpr(const VariableExpr* variable)
 {
-    return environment->get(variable->getToken());
+    return lookUpVariable(variable->getToken(), variable);
+}
+
+Value Interpreter::lookUpVariable(const Token& name, const Expression* expr)
+{
+    const int* distance = resolver.getDistance(expr);
+    if (distance) return environment->getAt(*distance, name.getLexeme());
+
+    // Resolver가 이 참조를 어느 지역 스코프에서도 찾지 못했다면 전역 변수다.
+    // environment(현재 블록 체인)를 따라 훑지 않고 globals로 곧장 접근해야
+    // 한다 - 그렇지 않으면 참조가 선언된 시점 이후 같은 블록에 우연히 같은
+    // 이름이 다시 선언됐을 때, 그 늦게 생긴 지역 변수를 잘못 붙잡아 정적
+    // 스코프가 아닌 동적 스코프처럼 동작하게 된다.
+    //
+    // 다만 CodeFabFunctionTest처럼 Resolver를 거치지 않고 CodeFabFunction을
+    // 직접 호출하는 화이트박스 테스트에서는 애초에 어떤 참조도 지역 변수로
+    // 해석되지 않으므로, globals에도 없다면 기존처럼 environment 체인을 훑어
+    // 실제 호출 스코프(파라미터 등)에서 찾는다.
+    try {
+        return globals->get(name);
+    }
+    catch (const CodeFabException&) {
+        return environment->get(name);
+    }
 }
 
 int Interpreter::resolveLine(const Expression* expr) const
@@ -283,7 +307,20 @@ void Interpreter::visitAssignExpr(const AssignExpr& expr)
 Value Interpreter::evaluateAssignExpr(const AssignExpr& expr)
 {
     Value value = evaluate(expr.getValue());
-    environment->assign(expr.getIdentifier(), value);
+
+    const int* distance = resolver.getDistance(&expr);
+    if (distance) {
+        environment->assignAt(*distance, expr.getIdentifier().getLexeme(), value);
+    }
+    else {
+        try {
+            globals->assign(expr.getIdentifier(), value);
+        }
+        catch (const CodeFabException&) {
+            environment->assign(expr.getIdentifier(), value);
+        }
+    }
+
     return value;
 }
 void Interpreter::visitBinaryExpr(const BinaryExpr& expr)
@@ -471,7 +508,8 @@ void Interpreter::visitThisExpr(const ThisExpr& expr)
 
 Value Interpreter::evaluateThisExpr(const ThisExpr& expr)
 {
-    return environment->get(Token(TokenType::IDENTIFIER, "this", Value(), expr.getKeyword().getLine()));
+    Token this_token(TokenType::IDENTIFIER, "this", Value(), expr.getKeyword().getLine());
+    return lookUpVariable(this_token, &expr);
 }
 
 void Interpreter::visitSuperExpr(const SuperExpr& expr)
@@ -484,7 +522,8 @@ Value Interpreter::evaluateSuperExpr(const SuperExpr& expr)
 {
     int line = expr.getKeyword().getLine();
 
-    Value super_value = environment->get(Token(TokenType::IDENTIFIER, "super", Value(), line));
+    Token super_token(TokenType::IDENTIFIER, "super", Value(), line);
+    Value super_value = lookUpVariable(super_token, &expr);
     shared_ptr<Callable>* super_callable = std::get_if<shared_ptr<Callable>>(&super_value);
     shared_ptr<CodeFabClass> superclass = super_callable ? dynamic_pointer_cast<CodeFabClass>(*super_callable) : nullptr;
 
@@ -512,7 +551,7 @@ Value Interpreter::evaluateInstanceOfExpr(const InstanceOfExpr& expr)
 
     if (!instance) return false;
 
-    Value class_value = environment->get(expr.getClassName());
+    Value class_value = lookUpVariable(expr.getClassName(), &expr);
     shared_ptr<Callable>* class_callable = std::get_if<shared_ptr<Callable>>(&class_value);
     shared_ptr<CodeFabClass> klass = class_callable ? dynamic_pointer_cast<CodeFabClass>(*class_callable) : nullptr;
 

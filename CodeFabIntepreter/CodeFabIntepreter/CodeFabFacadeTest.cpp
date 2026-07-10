@@ -494,4 +494,25 @@ TEST_F(CodeFabFacadeDefaultConstructorTestFixture, LiteralOnlyDivisionByZeroStil
 		EXPECT_THAT(exception.what(), ::testing::HasSubstr("0으로 나눌 수 없습니다"));
 	}
 }
+
+TEST_F(CodeFabFacadeDefaultConstructorTestFixture, ClosureCapturesVariableVisibleAtDeclarationRatherThanAtCallTime) {
+	// 정적 바인딩(Resolver)이 없다면 이름만으로 enclosing 체인을 훑기 때문에,
+	// showA() 선언 이후 블록 안에 새로 선언된 "block" a를 두 번째 호출에서
+	// 잘못 찾아 "global\nblock\n"을 출력하게 된다. 정적 바인딩은 showA가
+	// 선언되던 시점의 어휘적 스코프(바깥의 전역 a)에 고정되므로 두 번 모두
+	// "global"이 출력되어야 한다.
+	ostringstream captured;
+	std::streambuf* original_buf = std::cout.rdbuf(captured.rdbuf());
+	facade.execute(
+		"var a = \"global\";"
+		"{"
+		"  Func showA() { print a; }"
+		"  showA();"
+		"  var a = \"block\";"
+		"  showA();"
+		"}");
+	std::cout.rdbuf(original_buf);
+
+	EXPECT_EQ(captured.str(), "global\nglobal\n");
+}
 #endif

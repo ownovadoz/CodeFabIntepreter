@@ -132,6 +132,12 @@
     <ClCompile Include="ExecutorUnit\ConstantFolderTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExecutorUnit\Resolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExecutorUnit\ResolverTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AssemblerUnit\Parser\ParserTest.cpp">
       <Filter>Header Files\Parser</Filter>
     </ClCompile>
@@ -222,6 +228,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExecutorUnit\ConstantFolder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecutorUnit\Resolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Visitor.h">

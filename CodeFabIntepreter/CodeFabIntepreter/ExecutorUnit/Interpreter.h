@@ -3,6 +3,7 @@
 #include "ConstantFolder.h"
 #include "Environment.h"
 #include "LineResolver.h"
+#include "Resolver.h"
 
 #include "../AssemblerUnit/Parser/Expression.h"
 #include "../AssemblerUnit/Parser/Statement.h"
@@ -89,6 +90,10 @@ private:
     Value evaluateIndexSetExpr(const IndexSetExpr& expr);
     int resolveLine(const Expression* expr) const;
 
+    // resolver가 expr에 대해 계산해둔 거리가 있으면 그 스코프로 곧장 접근하고,
+    // 없으면(전역 변수) 기존 이름 기반 체인 탐색으로 대체 처리한다.
+    Value lookUpVariable(const Token& name, const Expression* expr);
+
     void visitExpressionStmt(const ExpressionStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;
     void visitBlockStmt(const BlockStmt& stmt) override;
@@ -127,6 +132,12 @@ private:
     // resolveLine/resolveStatementLine이 위임하는 순수 조회용 Visitor. 스스로
     // 관찰 가능한 상태를 갖지 않으므로 const 메서드에서도 안전하게 사용한다.
     mutable LineResolver line_resolver;
+
+    // interpret()이 실행 직전에 호출해, 변수/this/super 참조마다 몇 단계 바깥
+    // 스코프에서 선언됐는지 미리 계산해두는 Visitor(정적 바인딩). lookUpVariable과
+    // evaluateAssignExpr은 여기 계산된 거리가 있으면 Environment::getAt/assignAt으로
+    // 곧장 접근하고, 없으면(전역 변수) 기존 이름 기반 체인 탐색으로 대체 처리한다.
+    Resolver resolver;
 
     // interpret()이 실행 직전에 호출해, 리터럴로만 이뤄진 연산식의 값을 미리
     // 계산해두는 Visitor. evaluate()는 여기 값이 있으면 재계산 없이 즉시 돌려준다.

@@ -172,6 +172,8 @@
     <ClCompile Include="ExecutorUnit\LineResolver.cpp" />
     <ClCompile Include="ExecutorUnit\ConstantFolder.cpp" />
     <ClCompile Include="ExecutorUnit\ConstantFolderTest.cpp" />
+    <ClCompile Include="ExecutorUnit\Resolver.cpp" />
+    <ClCompile Include="ExecutorUnit\ResolverTest.cpp" />
     <ClCompile Include="CodeFabExceptionTest.cpp" />
     <ClCompile Include="CodeFabFacade.cpp" />
     <ClCompile Include="CodeFabFacadeTest.cpp" />
@@ -208,6 +210,7 @@
     <ClInclude Include="ExecutorUnit\ReturnSignal.h" />
     <ClInclude Include="ExecutorUnit\LineResolver.h" />
     <ClInclude Include="ExecutorUnit\ConstantFolder.h" />
+    <ClInclude Include="ExecutorUnit\Resolver.h" />
     <ClInclude Include="CodeFabFacade.h" />
     <ClInclude Include="InterfaceForCodeFabTest.h" />
     <ClInclude Include="AssemblerUnit\Parser\Node.h" />

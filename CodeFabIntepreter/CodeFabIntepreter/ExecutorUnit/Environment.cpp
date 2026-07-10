@@ -40,3 +40,22 @@ void Environment::assign(const Token& name, const Value& value)
 
     throw CodeFabException(name, "Undefined variable '" + name.getLexeme() + "'.");
 }
+
+Environment* Environment::ancestor(int distance)
+{
+    Environment* environment = this;
+    for (int i = 0; i < distance; i++)
+        environment = environment->enclosing.get();
+
+    return environment;
+}
+
+Value Environment::getAt(int distance, const string& name)
+{
+    return ancestor(distance)->values.at(name);
+}
+
+void Environment::assignAt(int distance, const string& name, const Value& value)
+{
+    ancestor(distance)->values[name] = value;
+}
