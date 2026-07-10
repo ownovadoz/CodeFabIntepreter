@@ -36,6 +36,9 @@
     <ClCompile Include="FactoryShell\ArgumentParserTest.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
+    <ClCompile Include="FactoryShell\FileBackedShell.cpp">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClCompile>
     <ClCompile Include="FactoryShell\FileModeShell.cpp">
       <Filter>Source Files\FactoryShell</Filter>
     </ClCompile>
@@ -117,6 +120,9 @@
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="FactoryShell\ArgumentParser.h">
+      <Filter>Source Files\FactoryShell</Filter>
+    </ClInclude>
+    <ClInclude Include="FactoryShell\FileBackedShell.h">
       <Filter>Source Files\FactoryShell</Filter>
     </ClInclude>
     <ClInclude Include="FactoryShell\FileModeShell.h">

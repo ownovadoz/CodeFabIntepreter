@@ -1,72 +1,21 @@
 #include "DebugModeShell.h"
 
-#include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <utility>
 
 using std::cin;
 using std::cout;
-using std::ifstream;
 using std::istringstream;
-using std::move;
 
-#ifdef _DEBUG
-
-DebugModeShell::DebugModeShell(string file_path, function<bool(const string&)> file_exists, function<vector<string>(const string&)> read_lines)
-	: file_path(move(file_path)), file_exists(move(file_exists)), read_lines(move(read_lines)) {}
-
-void DebugModeShell::enter() {
-	if (!file_exists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
-
-	loaded_lines = read_lines(file_path);
-	cout << "[DEBUG] 소스코드 로딩: " << file_path << "\n";
-
-	runLines(loaded_lines);
+void DebugModeShell::afterLoad(const string& path) {
+	cout << "[DEBUG] 소스코드 로딩: " << path << "\n";
 }
 
-#else
-
-DebugModeShell::DebugModeShell(string file_path) : file_path(move(file_path)) {}
-
-void DebugModeShell::enter() {
-	if (!defaultFileExists(file_path)) throw CodeFabException(0, "파일을 찾을 수 없습니다: '" + file_path + "'");
-
-	loaded_lines = defaultReadLines(file_path);
-	cout << "[DEBUG] 소스코드 로딩: " << file_path << "\n";
-
-	runLines(loaded_lines);
-}
-
-#endif
-
-void DebugModeShell::runLines(const vector<string>& lines) {
-	int line_number = 0;
-	for (const string& input_line : lines) {
-		line_number++;
-
-		// AssemblerUnit은 execute() 호출마다 새로 렉싱하므로, 훅이 넘겨주는 줄 번호는
-		// 이번 호출 문자열 안에서의 상대 줄 번호(항상 1)일 뿐이다. 파일 전체 기준
-		// 절대 줄 번호는 이 루프가 알고 있으므로, 매 호출마다 그 값으로 다시 바인딩한다.
-		code_fab_facade.setBeforeStatementHook([this, line_number](int) { onBeforeStatement(line_number); });
-
-		try {
-			code_fab_facade.execute(input_line);
-		}
-		catch (const CodeFabException& exception) {
-			std::cerr << "[line " << line_number << "] Error: " << exception.getMessage() << std::endl;
-			return;
-		}
-		catch (const std::exception& exception) {
-			std::cerr << "[line " << line_number << "] [unexpected error] " << exception.what() << std::endl;
-			return;
-		}
-		catch (...) {
-			std::cerr << "[line " << line_number << "] [unexpected error] unknown exception" << std::endl;
-			return;
-		}
-	}
+void DebugModeShell::beforeExecuteLine(int line_number, const string&) {
+	// AssemblerUnit은 execute() 호출마다 새로 렉싱하므로, 훅이 넘겨주는 줄 번호는
+	// 이번 호출 문자열 안에서의 상대 줄 번호(항상 1)일 뿐이다. 파일 전체 기준
+	// 절대 줄 번호는 이 루프가 알고 있으므로, 매 호출마다 그 값으로 다시 바인딩한다.
+	code_fab_facade.setBeforeStatementHook([this, line_number](int) { onBeforeStatement(line_number); });
 }
 
 void DebugModeShell::onBeforeStatement(int line) {
@@ -150,18 +99,4 @@ bool DebugModeShell::processCommand(const string& raw_command) {
 
 	cout << "[DEBUG] 알 수 없는 명령어: " << raw_command << "\n";
 	return false;
-}
-
-bool DebugModeShell::defaultFileExists(const string& path) {
-	return std::filesystem::exists(path);
-}
-
-vector<string> DebugModeShell::defaultReadLines(const string& path) {
-	vector<string> lines;
-	ifstream file(path);
-	string line;
-	while (std::getline(file, line)) {
-		lines.push_back(line);
-	}
-	return lines;
 }
