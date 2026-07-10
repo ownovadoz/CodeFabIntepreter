@@ -1,0 +1,4 @@
+// Executor 런타임 오류 데모: 0으로 나누기
+var a = 10;
+print a; // expect: 10
+var b = a / 0; // expect error: [line 4] Type : SLASH, Lexeme : /, literal : nil, message : 0으로 나눌 수 없습니다.

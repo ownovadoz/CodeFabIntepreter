@@ -1,0 +1,4 @@
+// Executor 런타임 오류 데모: 배열 인덱스 범위 초과 (음수 인덱스도 같은 오류로 처리됨)
+var arr = Array(3);
+print "start"; // expect: start
+print arr[3]; // expect error: [line 4] Error: 배열 범위를 벗어났습니다.

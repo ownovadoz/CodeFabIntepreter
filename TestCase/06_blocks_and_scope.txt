@@ -1,0 +1,5 @@
+// 블록 스코프, 변수 가리기(shadowing) 데모
+var a = 1;
+{ var a = 2; print a; } // expect: 2
+print a; // expect: 1
+{ var b = 10; { var b = 20; print b; } print b; } // expect: 20, 10 (2줄 출력)

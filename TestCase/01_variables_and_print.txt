@@ -1,0 +1,7 @@
+// 변수 선언과 print 기본 동작 데모
+var a = 3;
+var b = "hello";
+var c = true;
+print a; // expect: 3
+print b; // expect: hello
+print c; // expect: true

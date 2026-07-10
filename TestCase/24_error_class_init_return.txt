@@ -1,0 +1,8 @@
+// Checker 오류 데모: 생성자(init) 안에서 return 사용
+Class Robot {
+    init(name) {
+        this.name = name;
+        return this; // expect error: [line 5] Type : RETURN, Lexeme : return, literal : nil, message : 생성자(init)에서는 return을 사용할 수 없습니다.
+    }
+}
+var r = Robot("AndOr"); // expect: (실행되지 않음 - Checker 단계에서 전체 검사 후 오류로 중단)

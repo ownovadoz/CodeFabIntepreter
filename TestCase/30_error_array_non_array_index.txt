@@ -1,0 +1,4 @@
+// Executor 런타임 오류 데모: 배열이 아닌 값(숫자)에 인덱스로 접근
+var notArray = 10;
+print "start"; // expect: start
+print notArray[0]; // expect error: [line 4] Error: 배열이 아닌 값에는 인덱스로 접근할 수 없습니다.

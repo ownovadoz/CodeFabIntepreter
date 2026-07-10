@@ -1,0 +1,5 @@
+// Checker 오류 데모: 같은 스코프에서 변수 중복 선언
+// 파일 전체를 먼저 검사(Checker)한 뒤에 실행하므로, 아래 print는 실행되지 않는다.
+var a = 10;
+print a; // expect: (실행되지 않음 - Checker 단계에서 전체 검사 후 오류로 중단)
+var a = 20; // expect error: [line 5] Type : IDENTIFIER, Lexeme : a, literal : nil, message : 이미 해당 변수는 현재 스코프에서 사용중입니다: 'a'

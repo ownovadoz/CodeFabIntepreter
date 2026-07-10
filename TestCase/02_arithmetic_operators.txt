@@ -1,0 +1,11 @@
+// 산술 연산자(+ - * /), 문자열 덧셈, 단항 연산자 데모
+var a = 10;
+var b = 3;
+print a + b; // expect: 13
+print a - b; // expect: 7
+print a * b; // expect: 30
+print a / b; // expect: 3.33333
+print -a; // expect: -10
+var s1 = "Hello, ";
+var s2 = "CodeFab!";
+print s1 + s2; // expect: Hello, CodeFab!

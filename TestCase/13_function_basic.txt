@@ -1,0 +1,7 @@
+// 함수 선언, 호출, return 기본 동작 데모
+Func add(a, b) { return a + b; }
+print add(3, 4); // expect: 7
+Func greet(name) { print "Hello, " + name + "!"; }
+greet("CodeFab"); // expect: Hello, CodeFab!
+Func noop() { }
+print noop(); // expect: nil (return문 없는 함수는 nil을 반환)

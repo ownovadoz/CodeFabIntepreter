@@ -1,0 +1,4 @@
+// Executor 런타임 오류 데모: 함수 호출 시 인자 개수 불일치
+Func add(a, b) { return a + b; }
+print "start"; // expect: start
+print add(1); // expect error: [line 4] Type : RIGHT_PAREN, Lexeme : ), literal : nil, message : 인자 개수가 일치하지 않습니다. 필요한 개수: 2, 전달된 개수: 1

@@ -1,0 +1,6 @@
+// if / else 분기 데모
+var score = 85;
+if (score >= 90) { print "A"; } else { print "B"; } // expect: B
+var age = 15;
+if (age >= 18) { print "성인"; } else { print "미성년자"; } // expect: 미성년자
+if (false) { print "실행되지 않음"; } // expect: (아무 출력 없음)

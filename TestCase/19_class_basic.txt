@@ -1,0 +1,21 @@
+// 클래스 선언, 인스턴스 생성, 필드, 메서드, this, 생성자(init) 데모
+Class Robot {
+    init(name, speed) {
+        this.name = name;
+        this.speed = speed;
+    }
+    move(dist) {
+        this.speed = this.speed + dist;
+    }
+    report() {
+        print this.name;
+        print this.speed;
+    }
+}
+
+var r = Robot("AndOr", 10);
+r.move(5);
+r.report(); // expect: AndOr, 15
+print r.name; // expect: AndOr
+r.speed = 100;
+print r.speed; // expect: 100

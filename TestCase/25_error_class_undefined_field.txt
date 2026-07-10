@@ -1,0 +1,9 @@
+// Executor 런타임 오류 데모: 존재하지 않는 필드 접근
+Class Robot {
+    init(name) {
+        this.name = name;
+    }
+}
+var r = Robot("AndOr");
+print r.name; // expect: AndOr
+print r.speed; // expect error: [line 9] Type : IDENTIFIER, Lexeme : speed, literal : nil, message : 존재하지 않는 필드입니다: 'speed'

@@ -1,0 +1,4 @@
+// Executor 런타임 오류 데모: 함수가 아닌 대상을 호출
+var x = "hello";
+print "start"; // expect: start
+x(); // expect error: [line 4] Type : RIGHT_PAREN, Lexeme : ), literal : nil, message : 호출할 수 없는 대상입니다.
